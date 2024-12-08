@@ -2,8 +2,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./components/layout/Layout";
+import ProtectedRoute from "./components/ProtectedRoute";
+import Login from "./pages/Login";
+import SelectArea from "./pages/SelectArea";
 import Dashboard from "./pages/Dashboard";
 import Compras from "./pages/Compras";
 import Secretaria from "./pages/Secretaria";
@@ -17,14 +20,43 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/compras" element={<Compras />} />
-            <Route path="/secretaria" element={<Secretaria />} />
-            <Route path="/mantenimiento" element={<Mantenimiento />} />
-          </Routes>
-        </Layout>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/select-area" element={
+            <ProtectedRoute>
+              <SelectArea />
+            </ProtectedRoute>
+          } />
+          <Route path="/" element={
+            <ProtectedRoute>
+              <Layout>
+                <Dashboard />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/compras" element={
+            <ProtectedRoute>
+              <Layout>
+                <Compras />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/secretaria" element={
+            <ProtectedRoute>
+              <Layout>
+                <Secretaria />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/mantenimiento" element={
+            <ProtectedRoute>
+              <Layout>
+                <Mantenimiento />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
