@@ -5,7 +5,7 @@ import {
   LayoutDashboard, 
   ShoppingCart, 
   FileText, 
-  Tool,
+  Wrench,
   Menu
 } from "lucide-react";
 
@@ -13,7 +13,7 @@ const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
   { icon: ShoppingCart, label: "Compras", path: "/compras" },
   { icon: FileText, label: "Secretaría", path: "/secretaria" },
-  { icon: Tool, label: "Mantenimiento", path: "/mantenimiento" },
+  { icon: Wrench, label: "Mantenimiento", path: "/mantenimiento" },
 ];
 
 export const Sidebar = () => {

@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { ShoppingCart, FileText, Tool } from "lucide-react";
+import { ShoppingCart, FileText, Wrench } from "lucide-react";
 
 const DashboardCard = ({ 
   title, 
@@ -45,7 +45,7 @@ const Dashboard = () => {
         <DashboardCard
           title="Tareas de Mantenimiento"
           value="8"
-          icon={Tool}
+          icon={Wrench}
         />
       </div>
     </div>
