@@ -7,13 +7,37 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 
 export const Header = () => {
   const navigate = useNavigate();
   const selectedArea = localStorage.getItem("selectedArea") || "No seleccionada";
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  const handleLogout = () => {
-    localStorage.removeItem("isAuthenticated");
+  useEffect(() => {
+    const getProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserEmail(user.email);
+        
+        // Check if user is admin
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', user.id)
+          .single();
+        
+        setIsAdmin(profile?.is_admin || false);
+      }
+    };
+
+    getProfile();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     localStorage.removeItem("selectedArea");
     navigate("/login");
     toast.success("Sesión cerrada exitosamente");
@@ -36,12 +60,19 @@ export const Header = () => {
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg">
               <User className="h-5 w-5 text-gray-600" />
-              <span className="text-sm font-medium">Admin</span>
+              <span className="text-sm font-medium">
+                {userEmail || 'Usuario'}
+                {isAdmin && ' (Admin)'}
+              </span>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem>Perfil</DropdownMenuItem>
-            <DropdownMenuItem>Configuración</DropdownMenuItem>
+            {isAdmin && (
+              <DropdownMenuItem onClick={() => navigate("/admin")}>
+                Panel de Admin
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onClick={handleLogout} className="text-red-600">
               Cerrar Sesión
             </DropdownMenuItem>

@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import Compras from "./pages/Compras";
 import Secretaria from "./pages/Secretaria";
 import Mantenimiento from "./pages/Mantenimiento";
+import Admin from "./pages/Admin";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,13 @@ const App = () => (
             <ProtectedRoute>
               <Layout>
                 <Dashboard />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin" element={
+            <ProtectedRoute>
+              <Layout>
+                <Admin />
               </Layout>
             </ProtectedRoute>
           } />

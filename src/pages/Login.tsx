@@ -1,27 +1,23 @@
-import { useState } from "react";
+import { Auth } from "@supabase/auth-ui-react";
+import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const Login = () => {
   const navigate = useNavigate();
-  const [credentials, setCredentials] = useState({
-    username: "",
-    password: "",
-  });
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    // En un caso real, aquí iría la validación contra un backend
-    if (credentials.username && credentials.password) {
-      localStorage.setItem("isAuthenticated", "true");
-      navigate("/select-area");
-      toast.success("Inicio de sesión exitoso");
-    } else {
-      toast.error("Por favor complete todos los campos");
-    }
-  };
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN") {
+        toast.success("Inicio de sesión exitoso");
+        navigate("/select-area");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -31,41 +27,22 @@ const Login = () => {
           <p className="mt-2 text-gray-600">Inicie sesión para continuar</p>
         </div>
         
-        <form onSubmit={handleLogin} className="mt-8 space-y-6">
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                Usuario
-              </label>
-              <Input
-                id="username"
-                type="text"
-                value={credentials.username}
-                onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
-                className="mt-1"
-                placeholder="Ingrese su usuario"
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Contraseña
-              </label>
-              <Input
-                id="password"
-                type="password"
-                value={credentials.password}
-                onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
-                className="mt-1"
-                placeholder="Ingrese su contraseña"
-              />
-            </div>
-          </div>
-
-          <Button type="submit" className="w-full">
-            Iniciar Sesión
-          </Button>
-        </form>
+        <Auth
+          supabaseClient={supabase}
+          appearance={{
+            theme: ThemeSupa,
+            variables: {
+              default: {
+                colors: {
+                  brand: '#2563eb',
+                  brandAccent: '#1d4ed8',
+                }
+              }
+            }
+          }}
+          providers={[]}
+          redirectTo={`${window.location.origin}/select-area`}
+        />
       </div>
     </div>
   );
