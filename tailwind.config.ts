@@ -52,7 +52,6 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // Colores corporativos personalizados
         corporate: {
           50: "#f0f7ff",
           100: "#e0effe",

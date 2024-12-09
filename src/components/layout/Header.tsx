@@ -1,4 +1,4 @@
-import { Bell, User } from "lucide-react";
+import { Bell, User, Moon, Sun } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
@@ -9,12 +9,15 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
+import { Button } from "@/components/ui/button";
 
 export const Header = () => {
   const navigate = useNavigate();
   const selectedArea = localStorage.getItem("selectedArea") || "No seleccionada";
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     const getProfile = async () => {
@@ -46,20 +49,30 @@ export const Header = () => {
   return (
     <header className="header">
       <div className="flex-1">
-        <span className="text-sm font-medium text-gray-600">
+        <span className="text-sm font-medium text-muted-foreground">
           Área: {selectedArea}
         </span>
       </div>
       <div className="flex items-center gap-4">
-        <button className="p-2 hover:bg-gray-100 rounded-full relative">
-          <Bell className="h-5 w-5 text-gray-600" />
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+        >
+          <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+          <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+          <span className="sr-only">Cambiar tema</span>
+        </Button>
+        
+        <button className="p-2 hover:bg-accent rounded-full relative">
+          <Bell className="h-5 w-5 text-foreground" />
           <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
         </button>
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg">
-              <User className="h-5 w-5 text-gray-600" />
+            <button className="flex items-center gap-2 p-2 hover:bg-accent rounded-lg">
+              <User className="h-5 w-5 text-foreground" />
               <span className="text-sm font-medium">
                 {userEmail || 'Usuario'}
                 {isAdmin && ' (Admin)'}
