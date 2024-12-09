@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      budget_codes: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       invoices: {
         Row: {
           amount: number
@@ -59,6 +83,71 @@ export type Database = {
           },
         ]
       }
+      laboratories: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          code: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          supplier_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          supplier_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          supplier_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -100,6 +189,143 @@ export type Database = {
           },
         ]
       }
+      purchase_request_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string
+          file_type: string | null
+          id: string
+          purchase_request_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_type?: string | null
+          id?: string
+          purchase_request_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_type?: string | null
+          id?: string
+          purchase_request_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_request_attachments_purchase_request_id_fkey"
+            columns: ["purchase_request_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_request_items: {
+        Row: {
+          created_at: string
+          currency: string | null
+          id: string
+          product_id: string
+          purchase_request_id: string
+          quantity: number
+          unit_price: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string | null
+          id?: string
+          product_id: string
+          purchase_request_id: string
+          quantity: number
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string | null
+          id?: string
+          product_id?: string
+          purchase_request_id?: string
+          quantity?: number
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_request_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_request_items_purchase_request_id_fkey"
+            columns: ["purchase_request_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_requests: {
+        Row: {
+          budget_code_id: string | null
+          created_at: string
+          id: string
+          laboratory_id: string | null
+          number: number
+          observations: string | null
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget_code_id?: string | null
+          created_at?: string
+          id?: string
+          laboratory_id?: string | null
+          number?: number
+          observations?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budget_code_id?: string | null
+          created_at?: string
+          id?: string
+          laboratory_id?: string | null
+          number?: number
+          observations?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_requests_budget_code_id_fkey"
+            columns: ["budget_code_id"]
+            isOneToOne: false
+            referencedRelation: "budget_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_requests_laboratory_id_fkey"
+            columns: ["laboratory_id"]
+            isOneToOne: false
+            referencedRelation: "laboratories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       roles: {
         Row: {
           created_at: string
@@ -118,6 +344,39 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      suppliers: {
+        Row: {
+          address: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          ruc: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          ruc?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          ruc?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
