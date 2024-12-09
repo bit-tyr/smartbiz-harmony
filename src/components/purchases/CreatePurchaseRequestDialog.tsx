@@ -76,13 +76,23 @@ export const CreatePurchaseRequestDialog = ({
     try {
       setIsSubmitting(true);
 
+      // Get the current user's session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) throw sessionError;
+      if (!session?.user) {
+        toast.error("Usuario no autenticado");
+        return;
+      }
+
       const { error } = await supabase
         .from('purchase_requests')
-        .insert([{
+        .insert({
           laboratory_id: values.laboratoryId,
           budget_code_id: values.budgetCodeId,
           observations: values.observations,
-        }]);
+          user_id: session.user.id, // Add the user_id from the session
+        });
 
       if (error) throw error;
 
@@ -91,8 +101,8 @@ export const CreatePurchaseRequestDialog = ({
       onOpenChange(false);
       form.reset();
     } catch (error) {
+      console.error('Error creating purchase request:', error);
       toast.error("Error al crear la solicitud");
-      console.error(error);
     } finally {
       setIsSubmitting(false);
     }
