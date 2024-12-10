@@ -40,14 +40,26 @@ export const Sidebar = () => {
   useEffect(() => {
     const fetchQuotations = async () => {
       try {
-        const response = await fetch('https://magicloops.dev/api/loop/d9e2aac8-f8c7-4108-b626-6da74536978a/run?input=I+love+Magic+Loops%21');
-        const data = await response.json();
+        const url = 'https://magicloops.dev/api/loop/d9e2aac8-f8c7-4108-b626-6da74536978a/run';
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ "input": "I love Magic Loops!" }),
+        });
         
-        // Verify that data is an array before setting it
-        if (Array.isArray(data)) {
-          setQuotations(data);
+        const data = await response.json();
+        console.log('API Response:', data); // For debugging
+
+        // Process the response into the format we need
+        if (data && typeof data === 'object') {
+          const processedData: QuotationData[] = [
+            { date: new Date().toLocaleDateString(), value: parseFloat(data.value) || 0 }
+          ];
+          setQuotations(processedData);
         } else {
-          console.error('API response is not an array:', data);
+          console.error('Invalid data format:', data);
           setError('Invalid data format received');
         }
       } catch (error) {
