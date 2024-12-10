@@ -19,6 +19,7 @@ interface PurchaseRequestTableRowProps {
     date: boolean;
     observations: boolean;
   };
+  onClick?: () => void;
 }
 
 const getStatusBadge = (status: string) => {
@@ -43,13 +44,18 @@ const formatCurrency = (amount: number, currency: string) => {
 
 export const PurchaseRequestTableRow = ({ 
   request, 
-  visibleColumns 
+  visibleColumns,
+  onClick
 }: PurchaseRequestTableRowProps) => {
   const status = getStatusBadge(request.status);
   const firstItem = request.purchase_request_items?.[0];
 
   return (
-    <TableRow key={request.id}>
+    <TableRow 
+      key={request.id} 
+      className="cursor-pointer hover:bg-gray-50"
+      onClick={onClick}
+    >
       {visibleColumns.number && (
         <TableCell className="font-medium">#{request.number}</TableCell>
       )}

@@ -10,12 +10,20 @@ import {
 } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 interface Profile {
   id: string;
   email: string;
   is_admin: boolean;
   role_id: string;
+  laboratory_id: string | null;
 }
 
 interface Role {
@@ -23,10 +31,17 @@ interface Role {
   name: string;
 }
 
+interface Laboratory {
+  id: string;
+  name: string;
+}
+
 const Admin = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
+  const [laboratories, setLaboratories] = useState<Laboratory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -38,7 +53,14 @@ const Admin = () => {
         
         if (rolesData) setRoles(rolesData);
 
-        // Fetch profiles with emails
+        // Fetch laboratories
+        const { data: labsData } = await supabase
+          .from('laboratories')
+          .select('*');
+        
+        if (labsData) setLaboratories(labsData);
+
+        // Fetch profiles with emails and related data
         const { data: profilesData } = await supabase
           .from('profiles')
           .select(`
@@ -90,6 +112,34 @@ const Admin = () => {
     }
   };
 
+  const updateUserLaboratory = async (userId: string, laboratoryId: string) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ laboratory_id: laboratoryId })
+        .eq('id', userId);
+
+      if (error) throw error;
+      
+      toast.success('Laboratorio asignado exitosamente');
+      
+      // Refresh the profiles list
+      const { data } = await supabase
+        .from('profiles')
+        .select(`
+          *,
+          roles (
+            name
+          )
+        `);
+      
+      if (data) setProfiles(data);
+    } catch (error) {
+      console.error('Error updating laboratory:', error);
+      toast.error('Error al asignar el laboratorio');
+    }
+  };
+
   const toggleAdminStatus = async (userId: string, currentStatus: boolean) => {
     try {
       const { error } = await supabase
@@ -118,6 +168,10 @@ const Admin = () => {
     }
   };
 
+  const filteredProfiles = profiles.filter(profile => 
+    profile.email?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (loading) {
     return <div>Cargando...</div>;
   }
@@ -129,17 +183,27 @@ const Admin = () => {
         <p className="text-gray-600 mt-2">Gestiona los usuarios y sus permisos</p>
       </div>
 
+      <div className="flex justify-end mb-4">
+        <Input
+          placeholder="Buscar por email..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="max-w-sm"
+        />
+      </div>
+
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Email</TableHead>
             <TableHead>Rol</TableHead>
+            <TableHead>Laboratorio</TableHead>
             <TableHead>Admin</TableHead>
             <TableHead>Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {profiles.map((profile) => (
+          {filteredProfiles.map((profile) => (
             <TableRow key={profile.id}>
               <TableCell>{profile.email}</TableCell>
               <TableCell>
@@ -151,6 +215,20 @@ const Admin = () => {
                   {roles.map((role) => (
                     <option key={role.id} value={role.id}>
                       {role.name}
+                    </option>
+                  ))}
+                </select>
+              </TableCell>
+              <TableCell>
+                <select
+                  className="border rounded p-1"
+                  value={profile.laboratory_id || ''}
+                  onChange={(e) => updateUserLaboratory(profile.id, e.target.value)}
+                >
+                  <option value="">Sin laboratorio</option>
+                  {laboratories.map((lab) => (
+                    <option key={lab.id} value={lab.id}>
+                      {lab.name}
                     </option>
                   ))}
                 </select>
