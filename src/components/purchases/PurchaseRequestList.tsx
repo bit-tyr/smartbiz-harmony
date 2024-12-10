@@ -14,7 +14,7 @@ interface PurchaseRequest {
   observations: string | null;
   purchase_request_items?: {
     product: { name: string } | null;
-    supplier: { name: string } | null;
+    supplier: { name: string }[] | null;
     quantity: number;
     unit_price: number | null;
     currency: string | null;
