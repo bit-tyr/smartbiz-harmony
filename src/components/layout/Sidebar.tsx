@@ -1,136 +1,130 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { 
-  LayoutDashboard, 
-  ShoppingCart, 
-  FileText, 
-  Wrench,
-  Menu,
-  DollarSign
-} from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ShoppingCart, FileText, Wrench, Home, Users } from "lucide-react";
+import { useMobile } from "@/hooks/use-mobile";
 
-const menuItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
-  { icon: ShoppingCart, label: "Compras", path: "/compras" },
-  { icon: FileText, label: "Secretaría", path: "/secretaria" },
-  { icon: Wrench, label: "Mantenimiento", path: "/mantenimiento" },
-  { icon: DollarSign, label: "Cotizaciones", path: "/cotizaciones" },
-];
+interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
-interface QuotationData {
-  date: string;
-  value: number;
-}
-
-export const Sidebar = () => {
+export function Sidebar({ className }: SidebarProps) {
   const location = useLocation();
-  const [isOpen, setIsOpen] = useState(false);
-  const [quotations, setQuotations] = useState<QuotationData[]>([]);
+  const isMobile = useMobile();
+  const [quotations, setQuotations] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchQuotations = async () => {
-      try {
-        const url = 'https://magicloops.dev/api/loop/d9e2aac8-f8c7-4108-b626-6da74536978a/run';
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ "input": "I love Magic Loops!" }),
-        });
-        
-        const data = await response.json();
-        console.log('API Response:', data); // For debugging
+  const selectedArea = localStorage.getItem("selectedArea");
 
-        // Process the response into the format we need
-        if (data && typeof data === 'object') {
-          const processedData: QuotationData[] = [
-            { date: new Date().toLocaleDateString(), value: parseFloat(data.value) || 0 }
-          ];
-          setQuotations(processedData);
-        } else {
-          console.error('Invalid data format:', data);
-          setError('Invalid data format received');
-        }
-      } catch (error) {
-        console.error('Error fetching quotations:', error);
-        setError('Failed to fetch quotations');
+  const fetchQuotations = async () => {
+    try {
+      const url = 'https://magicloops.dev/api/loop/d9e2aac8-f8c7-4108-b626-6da74536978a/run';
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ "input": "I love Magic Loops!" }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    };
 
+      const data = await response.json();
+      console.log("API Response:", data);
+      setQuotations(data);
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching quotations:", err);
+      setError("Error loading quotations");
+    }
+  };
+
+  useEffect(() => {
     fetchQuotations();
+    const interval = setInterval(fetchQuotations, 300000); // Refresh every 5 minutes
+    return () => clearInterval(interval);
   }, []);
 
-  return (
-    <>
-      <button
-        className="md:hidden fixed top-4 left-4 z-20 p-2 bg-white rounded-md shadow-md"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <Menu className="h-6 w-6" />
-      </button>
-      
-      <aside className={cn("sidebar", isOpen && "open")}>
-        <div className="p-6">
-          <h1 className="text-2xl font-heading font-bold text-corporate-800">ERP System</h1>
-        </div>
-        
-        <nav className="flex-1 px-4">
-          {menuItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-md mb-1 transition-colors",
-                "hover:bg-corporate-50 hover:text-corporate-700",
-                location.pathname === item.path
-                  ? "bg-corporate-100 text-corporate-700"
-                  : "text-gray-600"
-              )}
-              onClick={() => setIsOpen(false)}
-            >
-              <item.icon className="h-5 w-5" />
-              <span>{item.label}</span>
-            </Link>
-          ))}
-        </nav>
+  const isAdmin = true; // This should be replaced with actual admin check logic
 
-        <div className="px-4 py-6">
-          <h2 className="text-lg font-semibold mb-4">Cotizaciones Recientes</h2>
-          <div className="overflow-x-auto">
-            {error ? (
-              <p className="text-red-500 text-sm">{error}</p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead>Valor</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {quotations.map((quote, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{quote.date}</TableCell>
-                      <TableCell>${quote.value}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+  if (isMobile) {
+    return null;
+  }
+
+  return (
+    <div className={cn("pb-12 w-64", className)}>
+      <div className="space-y-4 py-4">
+        <div className="px-3 py-2">
+          <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
+            Menu
+          </h2>
+          <div className="space-y-1">
+            <Link to="/">
+              <Button
+                variant={location.pathname === "/" ? "secondary" : "ghost"}
+                className="w-full justify-start"
+              >
+                <Home className="mr-2 h-4 w-4" />
+                Dashboard
+              </Button>
+            </Link>
+            {isAdmin && (
+              <Link to="/admin">
+                <Button
+                  variant={location.pathname === "/admin" ? "secondary" : "ghost"}
+                  className="w-full justify-start"
+                >
+                  <Users className="mr-2 h-4 w-4" />
+                  Admin
+                </Button>
+              </Link>
             )}
+            <Link to="/compras">
+              <Button
+                variant={location.pathname === "/compras" ? "secondary" : "ghost"}
+                className="w-full justify-start"
+              >
+                <ShoppingCart className="mr-2 h-4 w-4" />
+                Compras
+              </Button>
+            </Link>
+            <Link to="/secretaria">
+              <Button
+                variant={location.pathname === "/secretaria" ? "secondary" : "ghost"}
+                className="w-full justify-start"
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Secretaría
+              </Button>
+            </Link>
+            <Link to="/mantenimiento">
+              <Button
+                variant={location.pathname === "/mantenimiento" ? "secondary" : "ghost"}
+                className="w-full justify-start"
+              >
+                <Wrench className="mr-2 h-4 w-4" />
+                Mantenimiento
+              </Button>
+            </Link>
           </div>
         </div>
-      </aside>
-    </>
+        <div className="px-3 py-2">
+          <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
+            Cotizaciones
+          </h2>
+          <ScrollArea className="h-[300px] px-4">
+            {error ? (
+              <div className="text-red-500">{error}</div>
+            ) : quotations ? (
+              <pre className="text-sm">{JSON.stringify(quotations, null, 2)}</pre>
+            ) : (
+              <div>Loading quotations...</div>
+            )}
+          </ScrollArea>
+        </div>
+      </div>
+    </div>
   );
-};
+}
