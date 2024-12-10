@@ -20,10 +20,17 @@ import { Input } from "@/components/ui/input";
 
 interface Profile {
   id: string;
-  email: string;
-  is_admin: boolean;
+  email: string | null;
+  is_admin: boolean | null;
   role_id: string;
-  laboratory_id: string | null;
+  laboratory_id?: string | null; // Made optional with ?
+  first_name: string | null;
+  last_name: string | null;
+  created_at: string;
+  updated_at: string;
+  roles?: {
+    name: string;
+  };
 }
 
 interface Role {
@@ -61,7 +68,7 @@ const Admin = () => {
         if (labsData) setLaboratories(labsData);
 
         // Fetch profiles with emails and related data
-        const { data: profilesData } = await supabase
+        const { data: profilesData, error } = await supabase
           .from('profiles')
           .select(`
             *,
@@ -70,8 +77,9 @@ const Admin = () => {
             )
           `);
 
+        if (error) throw error;
         if (profilesData) {
-          setProfiles(profilesData);
+          setProfiles(profilesData as Profile[]);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -105,14 +113,14 @@ const Admin = () => {
           )
         `);
       
-      if (data) setProfiles(data);
+      if (data) setProfiles(data as Profile[]);
     } catch (error) {
       console.error('Error updating role:', error);
       toast.error('Error al actualizar el rol');
     }
   };
 
-  const updateUserLaboratory = async (userId: string, laboratoryId: string) => {
+  const updateUserLaboratory = async (userId: string, laboratoryId: string | null) => {
     try {
       const { error } = await supabase
         .from('profiles')
@@ -133,14 +141,14 @@ const Admin = () => {
           )
         `);
       
-      if (data) setProfiles(data);
+      if (data) setProfiles(data as Profile[]);
     } catch (error) {
       console.error('Error updating laboratory:', error);
       toast.error('Error al asignar el laboratorio');
     }
   };
 
-  const toggleAdminStatus = async (userId: string, currentStatus: boolean) => {
+  const toggleAdminStatus = async (userId: string, currentStatus: boolean | null) => {
     try {
       const { error } = await supabase
         .from('profiles')
@@ -161,7 +169,7 @@ const Admin = () => {
           )
         `);
       
-      if (data) setProfiles(data);
+      if (data) setProfiles(data as Profile[]);
     } catch (error) {
       console.error('Error toggling admin status:', error);
       toast.error('Error al actualizar el estado de administrador');
@@ -223,7 +231,7 @@ const Admin = () => {
                 <select
                   className="border rounded p-1"
                   value={profile.laboratory_id || ''}
-                  onChange={(e) => updateUserLaboratory(profile.id, e.target.value)}
+                  onChange={(e) => updateUserLaboratory(profile.id, e.target.value || null)}
                 >
                   <option value="">Sin laboratorio</option>
                   {laboratories.map((lab) => (
