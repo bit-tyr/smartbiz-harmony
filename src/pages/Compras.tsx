@@ -40,8 +40,10 @@ const Compras = () => {
             quantity,
             unit_price,
             currency,
-            product:products(name),
-            supplier:suppliers(name)
+            product:products(
+              name,
+              supplier:suppliers(name)
+            )
           )
         `)
         .eq('user_id', session.user.id)
