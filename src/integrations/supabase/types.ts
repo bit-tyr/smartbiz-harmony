@@ -155,6 +155,7 @@ export type Database = {
           first_name: string | null
           id: string
           is_admin: boolean | null
+          laboratory_id: string | null
           last_name: string | null
           role_id: string
           updated_at: string
@@ -165,6 +166,7 @@ export type Database = {
           first_name?: string | null
           id: string
           is_admin?: boolean | null
+          laboratory_id?: string | null
           last_name?: string | null
           role_id: string
           updated_at?: string
@@ -175,6 +177,7 @@ export type Database = {
           first_name?: string | null
           id?: string
           is_admin?: boolean | null
+          laboratory_id?: string | null
           last_name?: string | null
           role_id?: string
           updated_at?: string
@@ -185,6 +188,13 @@ export type Database = {
             columns: ["role_id"]
             isOneToOne: false
             referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_laboratory_id_fkey"
+            columns: ["laboratory_id"]
+            isOneToOne: false
+            referencedRelation: "laboratories"
             referencedColumns: ["id"]
           },
         ]
