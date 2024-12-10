@@ -13,11 +13,13 @@ export interface PurchaseRequest {
   budget_code: { code: string; description: string } | null;
   observations: string | null;
   purchase_request_items?: {
-    product: { name: string } | null;
-    supplier: { name: string }[] | null;
     quantity: number;
     unit_price: number | null;
     currency: string | null;
+    product: {
+      name: string;
+      supplier: { name: string };
+    } | null;
   }[];
 }
 

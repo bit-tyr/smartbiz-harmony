@@ -47,7 +47,6 @@ export const PurchaseRequestTableRow = ({
 }: PurchaseRequestTableRowProps) => {
   const status = getStatusBadge(request.status);
   const firstItem = request.purchase_request_items?.[0];
-  const firstSupplier = firstItem?.supplier?.[0];
 
   return (
     <TableRow key={request.id}>
@@ -73,7 +72,7 @@ export const PurchaseRequestTableRow = ({
         <TableCell>{firstItem?.product?.name || "-"}</TableCell>
       )}
       {visibleColumns.supplier && (
-        <TableCell>{firstSupplier?.name || "-"}</TableCell>
+        <TableCell>{firstItem?.product?.supplier?.name || "-"}</TableCell>
       )}
       {visibleColumns.quantity && (
         <TableCell>{firstItem?.quantity || "-"}</TableCell>
