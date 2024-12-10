@@ -35,7 +35,14 @@ const Compras = () => {
         .select(`
           *,
           laboratory:laboratories(name),
-          budget_code:budget_codes(code, description)
+          budget_code:budget_codes(code, description),
+          purchase_request_items(
+            quantity,
+            unit_price,
+            currency,
+            product:products(name),
+            supplier:suppliers(name)
+          )
         `)
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false });

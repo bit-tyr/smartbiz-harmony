@@ -29,11 +29,13 @@ interface PurchaseRequest {
   laboratory: { name: string } | null;
   budget_code: { code: string; description: string } | null;
   observations: string | null;
-  product: { name: string } | null;
-  supplier: { name: string } | null;
-  quantity: number;
-  unit_price: number;
-  currency: string;
+  purchase_request_items?: {
+    product: { name: string } | null;
+    supplier: { name: string } | null;
+    quantity: number;
+    unit_price: number;
+    currency: string;
+  }[];
 }
 
 interface PurchaseRequestListProps {
@@ -233,26 +235,26 @@ export const PurchaseRequestList = ({ requests, isLoading }: PurchaseRequestList
                     ) : "-"}
                   </TableCell>
                 )}
-                {visibleColumns.product && (
-                  <TableCell>{request.product?.name || "-"}</TableCell>
-                )}
-                {visibleColumns.supplier && (
-                  <TableCell>{request.supplier?.name || "-"}</TableCell>
-                )}
-                {visibleColumns.quantity && (
-                  <TableCell>{request.quantity || "-"}</TableCell>
-                )}
-                {visibleColumns.unitPrice && (
-                  <TableCell>
-                    {request.unit_price ? 
-                      formatCurrency(request.unit_price, request.currency) : 
+                {visibleColumns.product && request.purchase_request_items && request.purchase_request_items.map(item => (
+                  <TableCell key={item.product?.name}>{item.product?.name || "-"}</TableCell>
+                ))}
+                {visibleColumns.supplier && request.purchase_request_items && request.purchase_request_items.map(item => (
+                  <TableCell key={item.supplier?.name}>{item.supplier?.name || "-"}</TableCell>
+                ))}
+                {visibleColumns.quantity && request.purchase_request_items && request.purchase_request_items.map(item => (
+                  <TableCell key={item.quantity}>{item.quantity || "-"}</TableCell>
+                ))}
+                {visibleColumns.unitPrice && request.purchase_request_items && request.purchase_request_items.map(item => (
+                  <TableCell key={item.unit_price}>
+                    {item.unit_price ? 
+                      formatCurrency(item.unit_price, item.currency) : 
                       "-"
                     }
                   </TableCell>
-                )}
-                {visibleColumns.currency && (
-                  <TableCell>{request.currency || "-"}</TableCell>
-                )}
+                ))}
+                {visibleColumns.currency && request.purchase_request_items && request.purchase_request_items.map(item => (
+                  <TableCell key={item.currency}>{item.currency || "-"}</TableCell>
+                ))}
                 {visibleColumns.status && (
                   <TableCell>
                     <Badge variant="secondary" className={status.className}>
