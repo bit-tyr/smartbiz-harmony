@@ -1,81 +1,89 @@
-import { Auth } from "@supabase/auth-ui-react";
-import { ThemeSupa } from "@supabase/auth-ui-shared";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { useTheme } from "next-themes";
 
 const Login = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { theme } = useTheme();
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN") {
-        toast.success("Inicio de sesión exitoso");
-        navigate("/select-area");
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        let errorMessage = "Ha ocurrido un error al iniciar sesión";
+        
+        if (error.message.includes("Invalid login credentials")) {
+          errorMessage = "Credenciales inválidas. Por favor, verifica tu email y contraseña";
+        } else if (error.message.includes("Email not confirmed")) {
+          errorMessage = "Email no confirmado. Por favor, verifica tu correo electrónico";
+        }
+        
+        toast.error(errorMessage);
+        return;
       }
-    });
 
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+      toast.success("Inicio de sesión exitoso");
+      navigate("/");
+    } catch (error) {
+      toast.error("Ha ocurrido un error al iniciar sesión");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="w-full max-w-md space-y-8 p-8 bg-card rounded-xl shadow-lg">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold text-foreground">Conecta2</h2>
-          <p className="mt-2 text-muted-foreground">Inicie sesión para continuar</p>
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="mx-auto w-full max-w-[350px] space-y-6">
+        <div className="space-y-2 text-center">
+          <h1 className="text-2xl font-bold">Iniciar Sesión</h1>
+          <p className="text-gray-500">
+            Ingresa tus credenciales para acceder al sistema
+          </p>
         </div>
-        
-        <Auth
-          supabaseClient={supabase}
-          appearance={{
-            theme: ThemeSupa,
-            variables: {
-              default: {
-                colors: {
-                  brand: 'hsl(var(--primary))',
-                  brandAccent: 'hsl(var(--primary))',
-                }
-              }
-            },
-            className: {
-              container: 'flex flex-col gap-4',
-              button: 'bg-primary text-primary-foreground hover:bg-primary/90',
-              input: 'bg-background',
-            }
-          }}
-          localization={{
-            variables: {
-              sign_in: {
-                email_label: 'Correo electrónico',
-                password_label: 'Contraseña',
-                button_label: 'Iniciar sesión',
-                loading_button_label: 'Iniciando sesión...',
-                social_provider_text: 'Iniciar sesión con {{provider}}',
-                link_text: '¿Ya tienes una cuenta? Inicia sesión',
-              },
-              sign_up: {
-                email_label: 'Correo electrónico',
-                password_label: 'Contraseña',
-                button_label: 'Registrarse',
-                loading_button_label: 'Registrando...',
-                social_provider_text: 'Registrarse con {{provider}}',
-                link_text: '¿No tienes una cuenta? Regístrate',
-              },
-              forgotten_password: {
-                email_label: 'Correo electrónico',
-                button_label: 'Enviar instrucciones',
-                loading_button_label: 'Enviando instrucciones...',
-                link_text: '¿Olvidaste tu contraseña?',
-              },
-            },
-          }}
-          providers={[]}
-          redirectTo={`${window.location.origin}/select-area`}
-        />
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">Correo electrónico</Label>
+            <Input
+              id="email"
+              placeholder="Ingresa tu correo electrónico"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Contraseña</Label>
+            <Input
+              id="password"
+              placeholder="Ingresa tu contraseña"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <Button
+            className="w-full"
+            type="submit"
+            disabled={isLoading}
+          >
+            {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
+          </Button>
+        </form>
       </div>
     </div>
   );

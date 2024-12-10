@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -61,6 +62,9 @@ export const CreatePurchaseRequestDialog = ({
       <DialogContent className="sm:max-w-[800px]">
         <DialogHeader>
           <DialogTitle>Nueva Solicitud de Compra</DialogTitle>
+          <DialogDescription>
+            Complete los campos para crear una nueva solicitud de compra
+          </DialogDescription>
         </DialogHeader>
         <PurchaseRequestForm
           onSubmit={onSubmit}
