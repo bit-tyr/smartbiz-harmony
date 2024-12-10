@@ -214,6 +214,7 @@ export const PurchaseRequestList = ({ requests, isLoading }: PurchaseRequestList
         <TableBody>
           {requests.map((request) => {
             const status = getStatusBadge(request.status);
+            const firstItem = request.purchase_request_items?.[0];
             
             return (
               <TableRow key={request.id}>
@@ -235,26 +236,26 @@ export const PurchaseRequestList = ({ requests, isLoading }: PurchaseRequestList
                     ) : "-"}
                   </TableCell>
                 )}
-                {visibleColumns.product && request.purchase_request_items && request.purchase_request_items.map(item => (
-                  <TableCell key={item.product?.name}>{item.product?.name || "-"}</TableCell>
-                ))}
-                {visibleColumns.supplier && request.purchase_request_items && request.purchase_request_items.map(item => (
-                  <TableCell key={item.supplier?.name}>{item.supplier?.name || "-"}</TableCell>
-                ))}
-                {visibleColumns.quantity && request.purchase_request_items && request.purchase_request_items.map(item => (
-                  <TableCell key={item.quantity}>{item.quantity || "-"}</TableCell>
-                ))}
-                {visibleColumns.unitPrice && request.purchase_request_items && request.purchase_request_items.map(item => (
-                  <TableCell key={item.unit_price}>
-                    {item.unit_price ? 
-                      formatCurrency(item.unit_price, item.currency) : 
+                {visibleColumns.product && (
+                  <TableCell>{firstItem?.product?.name || "-"}</TableCell>
+                )}
+                {visibleColumns.supplier && (
+                  <TableCell>{firstItem?.supplier?.name || "-"}</TableCell>
+                )}
+                {visibleColumns.quantity && (
+                  <TableCell>{firstItem?.quantity || "-"}</TableCell>
+                )}
+                {visibleColumns.unitPrice && (
+                  <TableCell>
+                    {firstItem?.unit_price ? 
+                      formatCurrency(firstItem.unit_price, firstItem.currency) : 
                       "-"
                     }
                   </TableCell>
-                ))}
-                {visibleColumns.currency && request.purchase_request_items && request.purchase_request_items.map(item => (
-                  <TableCell key={item.currency}>{item.currency || "-"}</TableCell>
-                ))}
+                )}
+                {visibleColumns.currency && (
+                  <TableCell>{firstItem?.currency || "-"}</TableCell>
+                )}
                 {visibleColumns.status && (
                   <TableCell>
                     <Badge variant="secondary" className={status.className}>
