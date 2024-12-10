@@ -11,6 +11,14 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 interface Profile {
   id: string;
@@ -43,48 +51,69 @@ const Admin = () => {
   const [laboratories, setLaboratories] = useState<Laboratory[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserPassword, setNewUserPassword] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch roles
-        const { data: rolesData } = await supabase
-          .from('roles')
-          .select('*');
-        
-        if (rolesData) setRoles(rolesData);
-
-        // Fetch laboratories
-        const { data: labsData } = await supabase
-          .from('laboratories')
-          .select('*');
-        
-        if (labsData) setLaboratories(labsData);
-
-        // Fetch profiles with emails and related data
-        const { data: profilesData, error } = await supabase
-          .from('profiles')
-          .select(`
-            *,
-            roles (
-              name
-            )
-          `);
-
-        if (error) throw error;
-        if (profilesData) {
-          setProfiles(profilesData as Profile[]);
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        toast.error('Error al cargar los datos');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
+
+  const fetchData = async () => {
+    try {
+      // Fetch roles
+      const { data: rolesData } = await supabase
+        .from('roles')
+        .select('*');
+      
+      if (rolesData) setRoles(rolesData);
+
+      // Fetch laboratories
+      const { data: labsData } = await supabase
+        .from('laboratories')
+        .select('*');
+      
+      if (labsData) setLaboratories(labsData);
+
+      // Fetch profiles with emails and related data
+      const { data: profilesData, error } = await supabase
+        .from('profiles')
+        .select(`
+          *,
+          roles (
+            name
+          )
+        `);
+
+      if (error) throw error;
+      if (profilesData) {
+        setProfiles(profilesData as Profile[]);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast.error('Error al cargar los datos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createUser = async () => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: newUserEmail,
+        password: newUserPassword,
+      });
+
+      if (error) throw error;
+
+      toast.success('Usuario creado exitosamente');
+      setIsDialogOpen(false);
+      fetchData(); // Refresh the list
+    } catch (error) {
+      console.error('Error creating user:', error);
+      toast.error('Error al crear usuario');
+    }
+  };
 
   const updateUserRole = async (userId: string, roleId: string) => {
     try {
@@ -199,13 +228,46 @@ const Admin = () => {
         <p className="text-gray-600 mt-2">Gestiona los usuarios y sus permisos</p>
       </div>
 
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-between items-center mb-4">
         <Input
           placeholder="Buscar por email..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="max-w-sm"
         />
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>Crear Usuario</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Crear Nuevo Usuario</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Correo electrónico</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={newUserEmail}
+                  onChange={(e) => setNewUserEmail(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Contraseña</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={newUserPassword}
+                  onChange={(e) => setNewUserPassword(e.target.value)}
+                />
+              </div>
+              <Button onClick={createUser} className="w-full">
+                Crear Usuario
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Table>

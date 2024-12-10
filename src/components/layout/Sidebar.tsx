@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { 
@@ -6,19 +6,49 @@ import {
   ShoppingCart, 
   FileText, 
   Wrench,
-  Menu
+  Menu,
+  DollarSign
 } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
   { icon: ShoppingCart, label: "Compras", path: "/compras" },
   { icon: FileText, label: "Secretaría", path: "/secretaria" },
   { icon: Wrench, label: "Mantenimiento", path: "/mantenimiento" },
+  { icon: DollarSign, label: "Cotizaciones", path: "/cotizaciones" },
 ];
+
+interface QuotationData {
+  date: string;
+  value: number;
+}
 
 export const Sidebar = () => {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
+  const [quotations, setQuotations] = useState<QuotationData[]>([]);
+
+  useEffect(() => {
+    const fetchQuotations = async () => {
+      try {
+        const response = await fetch('https://magicloops.dev/api/loop/d9e2aac8-f8c7-4108-b626-6da74536978a/run?input=I+love+Magic+Loops%21');
+        const data = await response.json();
+        setQuotations(data);
+      } catch (error) {
+        console.error('Error fetching quotations:', error);
+      }
+    };
+
+    fetchQuotations();
+  }, []);
 
   return (
     <>
@@ -53,6 +83,28 @@ export const Sidebar = () => {
             </Link>
           ))}
         </nav>
+
+        <div className="px-4 py-6">
+          <h2 className="text-lg font-semibold mb-4">Cotizaciones Recientes</h2>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Valor</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {quotations.map((quote, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{quote.date}</TableCell>
+                    <TableCell>${quote.value}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
       </aside>
     </>
   );
