@@ -35,15 +35,24 @@ export const Sidebar = () => {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [quotations, setQuotations] = useState<QuotationData[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchQuotations = async () => {
       try {
         const response = await fetch('https://magicloops.dev/api/loop/d9e2aac8-f8c7-4108-b626-6da74536978a/run?input=I+love+Magic+Loops%21');
         const data = await response.json();
-        setQuotations(data);
+        
+        // Verify that data is an array before setting it
+        if (Array.isArray(data)) {
+          setQuotations(data);
+        } else {
+          console.error('API response is not an array:', data);
+          setError('Invalid data format received');
+        }
       } catch (error) {
         console.error('Error fetching quotations:', error);
+        setError('Failed to fetch quotations');
       }
     };
 
@@ -87,22 +96,26 @@ export const Sidebar = () => {
         <div className="px-4 py-6">
           <h2 className="text-lg font-semibold mb-4">Cotizaciones Recientes</h2>
           <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Valor</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {quotations.map((quote, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{quote.date}</TableCell>
-                    <TableCell>${quote.value}</TableCell>
+            {error ? (
+              <p className="text-red-500 text-sm">{error}</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead>Valor</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {quotations.map((quote, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{quote.date}</TableCell>
+                      <TableCell>${quote.value}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </div>
         </div>
       </aside>
