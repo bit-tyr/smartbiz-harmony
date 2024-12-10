@@ -12,8 +12,30 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  const validateForm = () => {
+    if (!email || !password) {
+      toast.error("Por favor, completa todos los campos");
+      return false;
+    }
+    
+    if (!email.includes("@")) {
+      toast.error("Por favor, ingresa un email válido");
+      return false;
+    }
+
+    if (password.length < 6) {
+      toast.error("La contraseña debe tener al menos 6 caracteres");
+      return false;
+    }
+
+    return true;
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) return;
+    
     setIsLoading(true);
 
     try {
@@ -26,7 +48,7 @@ const Login = () => {
         let errorMessage = "Ha ocurrido un error al iniciar sesión";
         
         if (error.message.includes("Invalid login credentials")) {
-          errorMessage = "Credenciales inválidas. Por favor, verifica tu email y contraseña";
+          errorMessage = "Email o contraseña incorrectos";
         } else if (error.message.includes("Email not confirmed")) {
           errorMessage = "Email no confirmado. Por favor, verifica tu correo electrónico";
         }
@@ -39,6 +61,7 @@ const Login = () => {
       navigate("/");
     } catch (error) {
       toast.error("Ha ocurrido un error al iniciar sesión");
+      console.error("Login error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -63,6 +86,8 @@ const Login = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
+              disabled={isLoading}
             />
           </div>
           <div className="space-y-2">
@@ -74,6 +99,8 @@ const Login = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="current-password"
+              disabled={isLoading}
             />
           </div>
           <Button
