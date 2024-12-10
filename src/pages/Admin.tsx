@@ -10,12 +10,6 @@ import {
 } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
 interface Profile {
@@ -23,7 +17,7 @@ interface Profile {
   email: string | null;
   is_admin: boolean | null;
   role_id: string;
-  laboratory_id?: string | null; // Made optional with ?
+  laboratory_id?: string | null;
   first_name: string | null;
   last_name: string | null;
   created_at: string;
@@ -122,9 +116,16 @@ const Admin = () => {
 
   const updateUserLaboratory = async (userId: string, laboratoryId: string | null) => {
     try {
+      // Find the current profile to get its role_id
+      const currentProfile = profiles.find(p => p.id === userId);
+      if (!currentProfile) throw new Error('Profile not found');
+
       const { error } = await supabase
         .from('profiles')
-        .update({ laboratory_id: laboratoryId })
+        .update({ 
+          laboratory_id: laboratoryId,
+          role_id: currentProfile.role_id // Include the current role_id
+        })
         .eq('id', userId);
 
       if (error) throw error;
@@ -150,9 +151,16 @@ const Admin = () => {
 
   const toggleAdminStatus = async (userId: string, currentStatus: boolean | null) => {
     try {
+      // Find the current profile to get its role_id
+      const currentProfile = profiles.find(p => p.id === userId);
+      if (!currentProfile) throw new Error('Profile not found');
+
       const { error } = await supabase
         .from('profiles')
-        .update({ is_admin: !currentStatus })
+        .update({ 
+          is_admin: !currentStatus,
+          role_id: currentProfile.role_id // Include the current role_id
+        })
         .eq('id', userId);
 
       if (error) throw error;
