@@ -29,6 +29,11 @@ interface PurchaseRequest {
   laboratory: { name: string } | null;
   budget_code: { code: string; description: string } | null;
   observations: string | null;
+  product: { name: string } | null;
+  supplier: { name: string } | null;
+  quantity: number;
+  unit_price: number;
+  currency: string;
 }
 
 interface PurchaseRequestListProps {
@@ -54,9 +59,14 @@ export const PurchaseRequestList = ({ requests, isLoading }: PurchaseRequestList
     number: true,
     laboratory: true,
     budgetCode: true,
+    product: true,
+    supplier: true,
+    quantity: true,
+    unitPrice: true,
+    currency: true,
     status: true,
     date: true,
-    observations: false,
+    observations: true,
   });
 
   if (isLoading) {
@@ -71,6 +81,13 @@ export const PurchaseRequestList = ({ requests, isLoading }: PurchaseRequestList
     );
   }
 
+  const formatCurrency = (amount: number, currency: string) => {
+    return new Intl.NumberFormat('es-PE', {
+      style: 'currency',
+      currency: currency,
+    }).format(amount);
+  };
+
   return (
     <div>
       <div className="mb-4 flex justify-end">
@@ -81,7 +98,7 @@ export const PurchaseRequestList = ({ requests, isLoading }: PurchaseRequestList
               Columnas
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>Columnas visibles</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuCheckboxItem
@@ -107,6 +124,46 @@ export const PurchaseRequestList = ({ requests, isLoading }: PurchaseRequestList
               }
             >
               Código Presupuestal
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={visibleColumns.product}
+              onCheckedChange={(checked) =>
+                setVisibleColumns({ ...visibleColumns, product: checked })
+              }
+            >
+              Producto
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={visibleColumns.supplier}
+              onCheckedChange={(checked) =>
+                setVisibleColumns({ ...visibleColumns, supplier: checked })
+              }
+            >
+              Proveedor
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={visibleColumns.quantity}
+              onCheckedChange={(checked) =>
+                setVisibleColumns({ ...visibleColumns, quantity: checked })
+              }
+            >
+              Cantidad
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={visibleColumns.unitPrice}
+              onCheckedChange={(checked) =>
+                setVisibleColumns({ ...visibleColumns, unitPrice: checked })
+              }
+            >
+              Precio Unitario
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={visibleColumns.currency}
+              onCheckedChange={(checked) =>
+                setVisibleColumns({ ...visibleColumns, currency: checked })
+              }
+            >
+              Moneda
             </DropdownMenuCheckboxItem>
             <DropdownMenuCheckboxItem
               checked={visibleColumns.status}
@@ -142,6 +199,11 @@ export const PurchaseRequestList = ({ requests, isLoading }: PurchaseRequestList
             {visibleColumns.number && <TableHead>Número</TableHead>}
             {visibleColumns.laboratory && <TableHead>Laboratorio</TableHead>}
             {visibleColumns.budgetCode && <TableHead>Código Presupuestal</TableHead>}
+            {visibleColumns.product && <TableHead>Producto</TableHead>}
+            {visibleColumns.supplier && <TableHead>Proveedor</TableHead>}
+            {visibleColumns.quantity && <TableHead>Cantidad</TableHead>}
+            {visibleColumns.unitPrice && <TableHead>Precio Unitario</TableHead>}
+            {visibleColumns.currency && <TableHead>Moneda</TableHead>}
             {visibleColumns.status && <TableHead>Estado</TableHead>}
             {visibleColumns.date && <TableHead>Fecha</TableHead>}
             {visibleColumns.observations && <TableHead>Observaciones</TableHead>}
@@ -170,6 +232,26 @@ export const PurchaseRequestList = ({ requests, isLoading }: PurchaseRequestList
                       </div>
                     ) : "-"}
                   </TableCell>
+                )}
+                {visibleColumns.product && (
+                  <TableCell>{request.product?.name || "-"}</TableCell>
+                )}
+                {visibleColumns.supplier && (
+                  <TableCell>{request.supplier?.name || "-"}</TableCell>
+                )}
+                {visibleColumns.quantity && (
+                  <TableCell>{request.quantity || "-"}</TableCell>
+                )}
+                {visibleColumns.unitPrice && (
+                  <TableCell>
+                    {request.unit_price ? 
+                      formatCurrency(request.unit_price, request.currency) : 
+                      "-"
+                    }
+                  </TableCell>
+                )}
+                {visibleColumns.currency && (
+                  <TableCell>{request.currency || "-"}</TableCell>
                 )}
                 {visibleColumns.status && (
                   <TableCell>
