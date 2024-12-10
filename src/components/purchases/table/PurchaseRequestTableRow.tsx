@@ -2,6 +2,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { PurchaseRequest } from "../PurchaseRequestList";
 
 interface PurchaseRequestTableRowProps {
   request: PurchaseRequest;
@@ -18,23 +19,6 @@ interface PurchaseRequestTableRowProps {
     date: boolean;
     observations: boolean;
   };
-}
-
-interface PurchaseRequest {
-  id: string;
-  number: number;
-  status: string;
-  created_at: string;
-  laboratory: { name: string } | null;
-  budget_code: { code: string; description: string } | null;
-  observations: string | null;
-  purchase_request_items?: {
-    product: { name: string } | null;
-    supplier: { name: string } | null;
-    quantity: number;
-    unit_price: number;
-    currency: string;
-  }[];
 }
 
 const getStatusBadge = (status: string) => {
@@ -63,6 +47,7 @@ export const PurchaseRequestTableRow = ({
 }: PurchaseRequestTableRowProps) => {
   const status = getStatusBadge(request.status);
   const firstItem = request.purchase_request_items?.[0];
+  const firstSupplier = firstItem?.supplier?.[0];
 
   return (
     <TableRow key={request.id}>
@@ -88,14 +73,14 @@ export const PurchaseRequestTableRow = ({
         <TableCell>{firstItem?.product?.name || "-"}</TableCell>
       )}
       {visibleColumns.supplier && (
-        <TableCell>{firstItem?.supplier?.name || "-"}</TableCell>
+        <TableCell>{firstSupplier?.name || "-"}</TableCell>
       )}
       {visibleColumns.quantity && (
         <TableCell>{firstItem?.quantity || "-"}</TableCell>
       )}
       {visibleColumns.unitPrice && (
         <TableCell>
-          {firstItem?.unit_price ? 
+          {firstItem?.unit_price && firstItem.currency ? 
             formatCurrency(firstItem.unit_price, firstItem.currency) : 
             "-"
           }

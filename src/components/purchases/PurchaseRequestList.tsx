@@ -4,7 +4,7 @@ import { PurchaseRequestTableHeader } from "./table/PurchaseRequestTableHeader";
 import { PurchaseRequestTableRow } from "./table/PurchaseRequestTableRow";
 import { ColumnSelector } from "./table/ColumnSelector";
 
-interface PurchaseRequest {
+export interface PurchaseRequest {
   id: string;
   number: number;
   status: string;
