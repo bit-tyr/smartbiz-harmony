@@ -16,8 +16,8 @@ interface PurchaseRequest {
     product: { name: string } | null;
     supplier: { name: string } | null;
     quantity: number;
-    unit_price: number;
-    currency: string;
+    unit_price: number | null;
+    currency: string | null;
   }[];
 }
 
