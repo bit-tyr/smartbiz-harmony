@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { LoadingSpinner } from "../ui/loading";
 
 interface LoginFormProps {
   onToggleRegister: () => void;
@@ -50,24 +51,31 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
       });
 
       if (error) {
+        console.error("Login error details:", error);
+        
         if (error.message.includes("Invalid login credentials")) {
           toast.error("Email o contraseña incorrectos");
         } else if (error.message.includes("Email not confirmed")) {
           toast.error("Por favor, verifica tu correo electrónico");
+        } else if (error.message.includes("404")) {
+          toast.error("Error de conexión. Por favor, intenta de nuevo más tarde.");
+          console.error("Connection error:", error);
         } else {
           toast.error("Error al iniciar sesión. Por favor, intenta de nuevo.");
-          console.error("Login error:", error);
         }
         return;
       }
 
-      if (data?.user) {
-        toast.success("Inicio de sesión exitoso");
-        navigate("/");
+      if (!data?.user) {
+        toast.error("No se pudo obtener la información del usuario");
+        return;
       }
+
+      toast.success("Inicio de sesión exitoso");
+      navigate("/select-area");
     } catch (error) {
-      toast.error("Ha ocurrido un error al iniciar sesión");
-      console.error("Login error:", error);
+      console.error("Unexpected error during login:", error);
+      toast.error("Ha ocurrido un error inesperado. Por favor, intenta de nuevo.");
     } finally {
       setIsLoading(false);
     }
@@ -106,13 +114,14 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
         type="submit"
         disabled={isLoading}
       >
-        {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
+        {isLoading ? <LoadingSpinner /> : "Iniciar Sesión"}
       </Button>
       <div className="flex flex-col gap-2">
         <Button
           variant="outline"
           type="button"
           onClick={onToggleRegister}
+          disabled={isLoading}
         >
           ¿No tienes cuenta? Regístrate
         </Button>
@@ -120,6 +129,7 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
           variant="link" 
           type="button"
           onClick={onForgotPassword}
+          disabled={isLoading}
         >
           ¿Olvidaste tu contraseña?
         </Button>
