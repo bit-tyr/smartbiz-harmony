@@ -51,7 +51,6 @@ export const ChatWindow = () => {
     initializeAuth();
   }, []);
 
-  // Fetch messages and set up real-time subscription
   useEffect(() => {
     const fetchMessages = async () => {
       try {
@@ -88,7 +87,6 @@ export const ChatWindow = () => {
 
     fetchMessages();
 
-    // Set up real-time subscription
     const channel = supabase
       .channel('chat_messages')
       .on(
@@ -100,22 +98,30 @@ export const ChatWindow = () => {
         },
         async (payload) => {
           try {
-            const { data: userData } = await supabase
-              .from('auth.users')
-              .select('email')
-              .eq('id', payload.new.sender_id)
-              .single();
+            const { data: messageData } = await supabase
+              .from('chat_messages')
+              .select(`
+                id,
+                content,
+                sender_id,
+                created_at,
+                sender:sender_id(email)
+              `)
+              .eq('id', payload.new.id)
+              .single() as { data: ChatMessageWithProfile | null };
 
-            const newMessage: Message = {
-              id: payload.new.id,
-              content: payload.new.content,
-              sender_id: payload.new.sender_id,
-              created_at: payload.new.created_at,
-              sender_email: userData?.email || 'Unknown'
-            };
+            if (messageData) {
+              const newMessage: Message = {
+                id: messageData.id,
+                content: messageData.content,
+                sender_id: messageData.sender_id,
+                created_at: messageData.created_at,
+                sender_email: messageData.sender?.email || 'Unknown'
+              };
 
-            setMessages(prev => [...prev, newMessage]);
-            setTimeout(scrollToBottom, 100);
+              setMessages(prev => [...prev, newMessage]);
+              setTimeout(scrollToBottom, 100);
+            }
           } catch (error) {
             console.error('Error processing new message:', error);
           }
