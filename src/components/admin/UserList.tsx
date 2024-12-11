@@ -11,6 +11,7 @@ import {
 import { UserActions } from "./UserActions";
 import { UserRoleSelect } from "./UserRoleSelect";
 import { UserLaboratorySelect } from "./UserLaboratorySelect";
+import { toast } from "sonner";
 
 interface Profile {
   id: string;

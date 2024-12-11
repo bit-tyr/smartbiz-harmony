@@ -155,6 +155,7 @@ export type Database = {
           first_name: string | null
           id: string
           is_admin: boolean | null
+          is_blocked: boolean | null
           laboratory_id: string | null
           last_name: string | null
           role_id: string
@@ -166,6 +167,7 @@ export type Database = {
           first_name?: string | null
           id: string
           is_admin?: boolean | null
+          is_blocked?: boolean | null
           laboratory_id?: string | null
           last_name?: string | null
           role_id: string
@@ -177,6 +179,7 @@ export type Database = {
           first_name?: string | null
           id?: string
           is_admin?: boolean | null
+          is_blocked?: boolean | null
           laboratory_id?: string | null
           last_name?: string | null
           role_id?: string
