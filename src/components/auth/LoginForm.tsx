@@ -44,24 +44,27 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
         password,
       });
 
       if (error) {
         if (error.message.includes("Invalid login credentials")) {
-          toast.error("Email o contraseña incorrectos. ¿Ya te has registrado?");
+          toast.error("Email o contraseña incorrectos");
         } else if (error.message.includes("Email not confirmed")) {
-          toast.error("Email no confirmado. Por favor, verifica tu correo electrónico");
+          toast.error("Por favor, verifica tu correo electrónico");
         } else {
           toast.error("Error al iniciar sesión. Por favor, intenta de nuevo.");
+          console.error("Login error:", error);
         }
         return;
       }
 
-      toast.success("Inicio de sesión exitoso");
-      navigate("/");
+      if (data?.user) {
+        toast.success("Inicio de sesión exitoso");
+        navigate("/");
+      }
     } catch (error) {
       toast.error("Ha ocurrido un error al iniciar sesión");
       console.error("Login error:", error);
