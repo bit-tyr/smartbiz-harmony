@@ -13,8 +13,14 @@ interface Message {
   created_at: string;
 }
 
-interface ProfileResponse {
-  email: string;
+interface ChatMessageWithProfile {
+  id: string;
+  content: string;
+  sender_id: string;
+  created_at: string;
+  profiles: {
+    email: string;
+  } | null;
 }
 
 export const ChatWindow = () => {
@@ -34,7 +40,7 @@ export const ChatWindow = () => {
           created_at,
           profiles (email)
         `)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true }) as { data: ChatMessageWithProfile[] | null, error: any };
 
       if (error) {
         toast.error("Error al cargar los mensajes");
