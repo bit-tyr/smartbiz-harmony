@@ -3,13 +3,14 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 import { toast } from "sonner";
+import { LoadingSpinner } from "./ui/loading";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
 }
 
-const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
+const useAuth = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
@@ -21,11 +22,16 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
         setSession(session);
 
         if (session) {
-          const { data: profile } = await supabase
+          const { data: profile, error } = await supabase
             .from('profiles')
             .select('is_admin, is_blocked')
             .eq('id', session.user.id)
             .single();
+
+          if (error) {
+            console.error('Error fetching profile:', error);
+            return;
+          }
 
           if (profile?.is_blocked) {
             await supabase.auth.signOut();
@@ -69,8 +75,14 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
     return () => subscription.unsubscribe();
   }, []);
 
+  return { session, isAdmin, loading };
+};
+
+const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
+  const { session, isAdmin, loading } = useAuth();
+
   if (loading) {
-    return <div>Loading...</div>;
+    return <LoadingSpinner />;
   }
 
   if (!session) {
