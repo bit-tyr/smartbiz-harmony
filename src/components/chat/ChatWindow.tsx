@@ -19,7 +19,7 @@ interface ChatMessageWithProfile {
   content: string;
   sender_id: string;
   created_at: string;
-  sender: {
+  profiles: {
     email: string;
   } | null;
 }
@@ -61,7 +61,7 @@ export const ChatWindow = () => {
             content,
             sender_id,
             created_at,
-            sender:sender_id(email)
+            profiles!chat_messages_sender_id_fkey(email)
           `)
           .order('created_at', { ascending: true }) as { data: ChatMessageWithProfile[] | null, error: any };
 
@@ -73,7 +73,7 @@ export const ChatWindow = () => {
             content: msg.content,
             sender_id: msg.sender_id,
             created_at: msg.created_at,
-            sender_email: msg.sender?.email || 'Unknown'
+            sender_email: msg.profiles?.email || 'Unknown'
           }));
           
           setMessages(formattedMessages);
@@ -105,7 +105,7 @@ export const ChatWindow = () => {
                 content,
                 sender_id,
                 created_at,
-                sender:sender_id(email)
+                profiles!chat_messages_sender_id_fkey(email)
               `)
               .eq('id', payload.new.id)
               .single() as { data: ChatMessageWithProfile | null };
@@ -116,7 +116,7 @@ export const ChatWindow = () => {
                 content: messageData.content,
                 sender_id: messageData.sender_id,
                 created_at: messageData.created_at,
-                sender_email: messageData.sender?.email || 'Unknown'
+                sender_email: messageData.profiles?.email || 'Unknown'
               };
 
               setMessages(prev => [...prev, newMessage]);
