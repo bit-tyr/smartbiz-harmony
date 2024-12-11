@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
@@ -30,54 +30,67 @@ export const ChatWindow = () => {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  useEffect(() => {
-    // Set initial user
-    const user = supabase.auth.getUser().then(({ data: { user } }) => {
-      setCurrentUser(user);
-    });
-
-    // Subscribe to auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setCurrentUser(session?.user ?? null);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
+  // Scroll to bottom helper
+  const scrollToBottom = useCallback(() => {
+    if (scrollAreaRef.current) {
+      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+    }
   }, []);
 
+  // Initialize auth state
+  useEffect(() => {
+    const initializeAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        setCurrentUser(session?.user ?? null);
+      });
+
+      return () => subscription.unsubscribe();
+    };
+
+    initializeAuth();
+  }, []);
+
+  // Fetch messages and set up real-time subscription
   useEffect(() => {
     const fetchMessages = async () => {
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .select(`
-          id,
-          content,
-          sender_id,
-          created_at,
-          profiles (email)
-        `)
-        .order('created_at', { ascending: true }) as { data: ChatMessageWithProfile[] | null, error: any };
+      try {
+        const { data, error } = await supabase
+          .from('chat_messages')
+          .select(`
+            id,
+            content,
+            sender_id,
+            created_at,
+            profiles (email)
+          `)
+          .order('created_at', { ascending: true }) as { data: ChatMessageWithProfile[] | null, error: any };
 
-      if (error) {
+        if (error) throw error;
+
+        if (data) {
+          const formattedMessages = data.map(msg => ({
+            id: msg.id,
+            content: msg.content,
+            sender_id: msg.sender_id,
+            created_at: msg.created_at,
+            sender_email: msg.profiles?.email || 'Unknown'
+          }));
+          
+          setMessages(formattedMessages);
+          setTimeout(scrollToBottom, 100);
+        }
+      } catch (error) {
+        console.error('Error fetching messages:', error);
         toast.error("Error al cargar los mensajes");
-        return;
-      }
-
-      if (data) {
-        setMessages(data.map(msg => ({
-          id: msg.id,
-          content: msg.content,
-          sender_id: msg.sender_id,
-          created_at: msg.created_at,
-          sender_email: msg.profiles?.email || 'Unknown'
-        })));
       }
     };
 
     fetchMessages();
 
-    // Subscribe to new messages
+    // Set up real-time subscription
     const channel = supabase
       .channel('chat_messages')
       .on(
@@ -88,25 +101,25 @@ export const ChatWindow = () => {
           table: 'chat_messages'
         },
         async (payload) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('email')
-            .eq('id', payload.new.sender_id)
-            .single();
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('email')
+              .eq('id', payload.new.sender_id)
+              .single();
 
-          const newMessage: Message = {
-            id: payload.new.id,
-            content: payload.new.content,
-            sender_id: payload.new.sender_id,
-            created_at: payload.new.created_at,
-            sender_email: profile?.email || 'Unknown'
-          };
+            const newMessage: Message = {
+              id: payload.new.id,
+              content: payload.new.content,
+              sender_id: payload.new.sender_id,
+              created_at: payload.new.created_at,
+              sender_email: profile?.email || 'Unknown'
+            };
 
-          setMessages(prev => [...prev, newMessage]);
-          
-          // Scroll to bottom on new message
-          if (scrollAreaRef.current) {
-            scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+            setMessages(prev => [...prev, newMessage]);
+            setTimeout(scrollToBottom, 100);
+          } catch (error) {
+            console.error('Error processing new message:', error);
           }
         }
       )
@@ -115,9 +128,11 @@ export const ChatWindow = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [scrollToBottom]);
 
   const handleSendMessage = async (content: string) => {
+    if (!content.trim()) return;
+    
     setIsLoading(true);
 
     if (!currentUser) {
@@ -126,18 +141,21 @@ export const ChatWindow = () => {
       return;
     }
 
-    const { error } = await supabase
-      .from('chat_messages')
-      .insert({
-        content,
-        sender_id: currentUser.id
-      });
+    try {
+      const { error } = await supabase
+        .from('chat_messages')
+        .insert({
+          content: content.trim(),
+          sender_id: currentUser.id
+        });
 
-    if (error) {
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error sending message:', error);
       toast.error("Error al enviar el mensaje");
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
   return (
