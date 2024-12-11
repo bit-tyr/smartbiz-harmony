@@ -8,13 +8,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { UserActions } from "./UserActions";
+import { UserRoleSelect } from "./UserRoleSelect";
+import { UserLaboratorySelect } from "./UserLaboratorySelect";
 
 interface Profile {
   id: string;
   email: string | null;
   is_admin: boolean | null;
+  is_blocked: boolean | null;
   role_id: string;
   laboratory_id?: string | null;
   first_name: string | null;
@@ -26,47 +28,16 @@ interface Profile {
   };
 }
 
-interface Role {
-  id: string;
-  name: string;
-}
-
-interface Laboratory {
-  id: string;
-  name: string;
-}
-
 interface UserListProps {
   searchQuery: string;
 }
 
 export const UserList = ({ searchQuery }: UserListProps) => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [laboratories, setLaboratories] = useState<Laboratory[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   const fetchData = async () => {
     try {
-      // Fetch roles
-      const { data: rolesData } = await supabase
-        .from('roles')
-        .select('*');
-      
-      if (rolesData) setRoles(rolesData);
-
-      // Fetch laboratories
-      const { data: labsData } = await supabase
-        .from('laboratories')
-        .select('*');
-      
-      if (labsData) setLaboratories(labsData);
-
-      // Fetch all profiles with their related data
       const { data: profilesData, error } = await supabase
         .from('profiles')
         .select(`
@@ -88,56 +59,9 @@ export const UserList = ({ searchQuery }: UserListProps) => {
     }
   };
 
-  const updateUserRole = async (userId: string, roleId: string) => {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ role_id: roleId })
-        .eq('id', userId);
-
-      if (error) throw error;
-      
-      toast.success('Rol actualizado exitosamente');
-      fetchData(); // Refresh the list
-    } catch (error) {
-      console.error('Error updating role:', error);
-      toast.error('Error al actualizar el rol');
-    }
-  };
-
-  const updateUserLaboratory = async (userId: string, laboratoryId: string | null) => {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ laboratory_id: laboratoryId })
-        .eq('id', userId);
-
-      if (error) throw error;
-      
-      toast.success('Laboratorio asignado exitosamente');
-      fetchData(); // Refresh the list
-    } catch (error) {
-      console.error('Error updating laboratory:', error);
-      toast.error('Error al asignar el laboratorio');
-    }
-  };
-
-  const toggleAdminStatus = async (userId: string, currentStatus: boolean | null) => {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ is_admin: !currentStatus })
-        .eq('id', userId);
-
-      if (error) throw error;
-      
-      toast.success('Estado de administrador actualizado');
-      fetchData(); // Refresh the list
-    } catch (error) {
-      console.error('Error toggling admin status:', error);
-      toast.error('Error al actualizar el estado de administrador');
-    }
-  };
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const filteredProfiles = profiles.filter(profile => 
     profile.email?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -155,6 +79,7 @@ export const UserList = ({ searchQuery }: UserListProps) => {
           <TableHead>Rol</TableHead>
           <TableHead>Laboratorio</TableHead>
           <TableHead>Admin</TableHead>
+          <TableHead>Estado</TableHead>
           <TableHead>Acciones</TableHead>
         </TableRow>
       </TableHeader>
@@ -163,40 +88,31 @@ export const UserList = ({ searchQuery }: UserListProps) => {
           <TableRow key={profile.id}>
             <TableCell>{profile.email}</TableCell>
             <TableCell>
-              <select
-                className="border rounded p-1"
-                value={profile.role_id}
-                onChange={(e) => updateUserRole(profile.id, e.target.value)}
-              >
-                {roles.map((role) => (
-                  <option key={role.id} value={role.id}>
-                    {role.name}
-                  </option>
-                ))}
-              </select>
+              <UserRoleSelect
+                userId={profile.id}
+                currentRoleId={profile.role_id}
+                onUpdate={fetchData}
+              />
             </TableCell>
             <TableCell>
-              <select
-                className="border rounded p-1"
-                value={profile.laboratory_id || ''}
-                onChange={(e) => updateUserLaboratory(profile.id, e.target.value || null)}
-              >
-                <option value="">Sin laboratorio</option>
-                {laboratories.map((lab) => (
-                  <option key={lab.id} value={lab.id}>
-                    {lab.name}
-                  </option>
-                ))}
-              </select>
+              <UserLaboratorySelect
+                userId={profile.id}
+                currentLabId={profile.laboratory_id}
+                onUpdate={fetchData}
+              />
             </TableCell>
             <TableCell>{profile.is_admin ? 'Sí' : 'No'}</TableCell>
             <TableCell>
-              <Button
-                variant="outline"
-                onClick={() => toggleAdminStatus(profile.id, profile.is_admin)}
-              >
-                {profile.is_admin ? 'Quitar Admin' : 'Hacer Admin'}
-              </Button>
+              {profile.is_blocked ? 'Bloqueado' : 'Activo'}
+            </TableCell>
+            <TableCell>
+              <div className="space-x-2">
+                <UserActions
+                  userId={profile.id}
+                  isBlocked={profile.is_blocked || false}
+                  onUpdate={fetchData}
+                />
+              </div>
             </TableCell>
           </TableRow>
         ))}
