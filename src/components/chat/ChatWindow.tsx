@@ -19,7 +19,7 @@ interface ChatMessageWithProfile {
   content: string;
   sender_id: string;
   created_at: string;
-  profiles: {
+  sender: {
     email: string;
   } | null;
 }
@@ -30,14 +30,12 @@ export const ChatWindow = () => {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  // Scroll to bottom helper
   const scrollToBottom = useCallback(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
   }, []);
 
-  // Initialize auth state
   useEffect(() => {
     const initializeAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -64,7 +62,7 @@ export const ChatWindow = () => {
             content,
             sender_id,
             created_at,
-            profiles (email)
+            sender:sender_id(email)
           `)
           .order('created_at', { ascending: true }) as { data: ChatMessageWithProfile[] | null, error: any };
 
@@ -76,7 +74,7 @@ export const ChatWindow = () => {
             content: msg.content,
             sender_id: msg.sender_id,
             created_at: msg.created_at,
-            sender_email: msg.profiles?.email || 'Unknown'
+            sender_email: msg.sender?.email || 'Unknown'
           }));
           
           setMessages(formattedMessages);
@@ -102,8 +100,8 @@ export const ChatWindow = () => {
         },
         async (payload) => {
           try {
-            const { data: profile } = await supabase
-              .from('profiles')
+            const { data: userData } = await supabase
+              .from('auth.users')
               .select('email')
               .eq('id', payload.new.sender_id)
               .single();
@@ -113,7 +111,7 @@ export const ChatWindow = () => {
               content: payload.new.content,
               sender_id: payload.new.sender_id,
               created_at: payload.new.created_at,
-              sender_email: profile?.email || 'Unknown'
+              sender_email: userData?.email || 'Unknown'
             };
 
             setMessages(prev => [...prev, newMessage]);
