@@ -4,6 +4,7 @@ import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
+import { User } from "@supabase/supabase-js";
 
 interface Message {
   id: string;
@@ -27,7 +28,23 @@ export const ChatWindow = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const [currentUser, setCurrentUser] = useState(supabase.auth.getUser());
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    // Set initial user
+    const user = supabase.auth.getUser().then(({ data: { user } }) => {
+      setCurrentUser(user);
+    });
+
+    // Subscribe to auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setCurrentUser(session?.user ?? null);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -102,11 +119,10 @@ export const ChatWindow = () => {
 
   const handleSendMessage = async (content: string) => {
     setIsLoading(true);
-    const userResponse = await currentUser;
-    const user = userResponse.data.user;
 
-    if (!user) {
+    if (!currentUser) {
       toast.error("Debes iniciar sesión para enviar mensajes");
+      setIsLoading(false);
       return;
     }
 
@@ -114,7 +130,7 @@ export const ChatWindow = () => {
       .from('chat_messages')
       .insert({
         content,
-        sender_id: user.id
+        sender_id: currentUser.id
       });
 
     if (error) {
@@ -134,7 +150,7 @@ export const ChatWindow = () => {
               message={message.content}
               sender={message.sender_email}
               timestamp={message.created_at}
-              isSentByMe={message.sender_id === currentUser.data?.user?.id}
+              isSentByMe={message.sender_id === currentUser?.id}
             />
           ))}
         </div>
