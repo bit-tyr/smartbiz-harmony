@@ -13,11 +13,15 @@ interface Message {
   created_at: string;
 }
 
+interface ProfileResponse {
+  email: string;
+}
+
 export const ChatWindow = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const currentUser = supabase.auth.getUser();
+  const [currentUser, setCurrentUser] = useState(supabase.auth.getUser());
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -37,10 +41,15 @@ export const ChatWindow = () => {
         return;
       }
 
-      setMessages(data.map(msg => ({
-        ...msg,
-        sender_email: msg.profiles.email
-      })));
+      if (data) {
+        setMessages(data.map(msg => ({
+          id: msg.id,
+          content: msg.content,
+          sender_id: msg.sender_id,
+          created_at: msg.created_at,
+          sender_email: msg.profiles?.email || 'Unknown'
+        })));
+      }
     };
 
     fetchMessages();
@@ -62,9 +71,12 @@ export const ChatWindow = () => {
             .eq('id', payload.new.sender_id)
             .single();
 
-          const newMessage = {
-            ...payload.new,
-            sender_email: profile?.email
+          const newMessage: Message = {
+            id: payload.new.id,
+            content: payload.new.content,
+            sender_id: payload.new.sender_id,
+            created_at: payload.new.created_at,
+            sender_email: profile?.email || 'Unknown'
           };
 
           setMessages(prev => [...prev, newMessage]);
@@ -84,7 +96,8 @@ export const ChatWindow = () => {
 
   const handleSendMessage = async (content: string) => {
     setIsLoading(true);
-    const user = (await currentUser).data.user;
+    const userResponse = await currentUser;
+    const user = userResponse.data.user;
 
     if (!user) {
       toast.error("Debes iniciar sesión para enviar mensajes");
@@ -115,7 +128,7 @@ export const ChatWindow = () => {
               message={message.content}
               sender={message.sender_email}
               timestamp={message.created_at}
-              isSentByMe={message.sender_id === (currentUser.data?.user?.id)}
+              isSentByMe={message.sender_id === currentUser.data?.user?.id}
             />
           ))}
         </div>
