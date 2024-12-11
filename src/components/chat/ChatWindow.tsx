@@ -14,16 +14,6 @@ interface Message {
   created_at: string;
 }
 
-interface ChatMessageWithProfile {
-  id: string;
-  content: string;
-  sender_id: string;
-  created_at: string;
-  profiles: {
-    email: string;
-  } | null;
-}
-
 export const ChatWindow = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -54,26 +44,35 @@ export const ChatWindow = () => {
   useEffect(() => {
     const fetchMessages = async () => {
       try {
-        const { data, error } = await supabase
+        const { data: messagesData, error: messagesError } = await supabase
           .from('chat_messages')
-          .select(`
-            id,
-            content,
-            sender_id,
-            created_at,
-            profiles!chat_messages_sender_id_fkey(email)
-          `)
-          .order('created_at', { ascending: true }) as { data: ChatMessageWithProfile[] | null, error: any };
+          .select('*')
+          .order('created_at', { ascending: true });
 
-        if (error) throw error;
+        if (messagesError) throw messagesError;
 
-        if (data) {
-          const formattedMessages = data.map(msg => ({
+        if (messagesData) {
+          // Fetch all unique sender IDs
+          const senderIds = [...new Set(messagesData.map(msg => msg.sender_id))];
+          
+          // Fetch profiles for all senders
+          const { data: profilesData, error: profilesError } = await supabase
+            .from('profiles')
+            .select('id, email')
+            .in('id', senderIds);
+
+          if (profilesError) throw profilesError;
+
+          // Create a map of sender IDs to emails
+          const emailMap = new Map(profilesData?.map(profile => [profile.id, profile.email]) || []);
+
+          // Combine messages with sender emails
+          const formattedMessages = messagesData.map(msg => ({
             id: msg.id,
             content: msg.content,
             sender_id: msg.sender_id,
             created_at: msg.created_at,
-            sender_email: msg.profiles?.email || 'Unknown'
+            sender_email: emailMap.get(msg.sender_id) || 'Unknown'
           }));
           
           setMessages(formattedMessages);
@@ -98,30 +97,24 @@ export const ChatWindow = () => {
         },
         async (payload) => {
           try {
-            const { data: messageData } = await supabase
-              .from('chat_messages')
-              .select(`
-                id,
-                content,
-                sender_id,
-                created_at,
-                profiles!chat_messages_sender_id_fkey(email)
-              `)
-              .eq('id', payload.new.id)
-              .single() as { data: ChatMessageWithProfile | null };
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('email')
+              .eq('id', payload.new.sender_id)
+              .single();
 
-            if (messageData) {
-              const newMessage: Message = {
-                id: messageData.id,
-                content: messageData.content,
-                sender_id: messageData.sender_id,
-                created_at: messageData.created_at,
-                sender_email: messageData.profiles?.email || 'Unknown'
-              };
+            if (profileError) throw profileError;
 
-              setMessages(prev => [...prev, newMessage]);
-              setTimeout(scrollToBottom, 100);
-            }
+            const newMessage: Message = {
+              id: payload.new.id,
+              content: payload.new.content,
+              sender_id: payload.new.sender_id,
+              created_at: payload.new.created_at,
+              sender_email: profileData?.email || 'Unknown'
+            };
+
+            setMessages(prev => [...prev, newMessage]);
+            setTimeout(scrollToBottom, 100);
           } catch (error) {
             console.error('Error processing new message:', error);
           }
