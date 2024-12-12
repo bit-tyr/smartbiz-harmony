@@ -1,11 +1,16 @@
 import { useState, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export const SidebarQuotations = () => {
   const [quotations, setQuotations] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const fetchQuotations = async () => {
+    setIsLoading(true);
+    setError(null);
     try {
       const url = 'https://magicloops.dev/api/loop/d9e2aac8-f8c7-4108-b626-6da74536978a/run';
       const response = await fetch(url, {
@@ -17,16 +22,17 @@ export const SidebarQuotations = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`Error de servidor: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log("API Response:", data);
       setQuotations(data);
       setError(null);
     } catch (err) {
       console.error("Error fetching quotations:", err);
-      setError("Error loading quotations");
+      setError("Error al cargar las cotizaciones. Por favor, intente nuevamente.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -43,12 +49,25 @@ export const SidebarQuotations = () => {
       </h2>
       <ScrollArea className="h-[300px] px-4">
         {error ? (
-          <div className="text-red-500">{error}</div>
+          <div className="flex flex-col items-center justify-center space-y-4 p-4">
+            <AlertCircle className="h-8 w-8 text-red-500" />
+            <p className="text-sm text-red-500 text-center">{error}</p>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={fetchQuotations}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Cargando...' : 'Reintentar'}
+            </Button>
+          </div>
+        ) : isLoading ? (
+          <div className="flex items-center justify-center p-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          </div>
         ) : quotations ? (
-          <pre className="text-sm">{JSON.stringify(quotations, null, 2)}</pre>
-        ) : (
-          <div>Loading quotations...</div>
-        )}
+          <pre className="text-sm whitespace-pre-wrap">{JSON.stringify(quotations, null, 2)}</pre>
+        ) : null}
       </ScrollArea>
     </div>
   );
