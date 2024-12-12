@@ -18,18 +18,27 @@ const useAuth = () => {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          await supabase.auth.signOut();
+          setSession(null);
+          setLoading(false);
+          return;
+        }
+
         setSession(session);
 
         if (session) {
-          const { data: profile, error } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('is_admin, is_blocked')
             .eq('id', session.user.id)
             .single();
 
-          if (error) {
-            console.error('Error fetching profile:', error);
+          if (profileError) {
+            console.error('Error fetching profile:', profileError);
             return;
           }
 
@@ -44,6 +53,8 @@ const useAuth = () => {
         }
       } catch (error) {
         console.error('Error checking session:', error);
+        await supabase.auth.signOut();
+        setSession(null);
       } finally {
         setLoading(false);
       }
@@ -51,28 +62,41 @@ const useAuth = () => {
 
     checkSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      if (session) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('is_admin, is_blocked')
-          .eq('id', session.user.id)
-          .single();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') {
+        setSession(session);
+        
+        if (session) {
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('is_admin, is_blocked')
+            .eq('id', session.user.id)
+            .single();
 
-        if (profile?.is_blocked) {
-          await supabase.auth.signOut();
-          toast.error("Tu cuenta ha sido bloqueada. Contacta al administrador.");
-          setSession(null);
-          return;
+          if (profileError) {
+            console.error('Error fetching profile:', profileError);
+            return;
+          }
+
+          if (profile?.is_blocked) {
+            await supabase.auth.signOut();
+            toast.error("Tu cuenta ha sido bloqueada. Contacta al administrador.");
+            setSession(null);
+            return;
+          }
+
+          setIsAdmin(profile?.is_admin || false);
         }
-
-        setIsAdmin(profile?.is_admin || false);
+      } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+        setSession(null);
+        setIsAdmin(false);
       }
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   return { session, isAdmin, loading };
