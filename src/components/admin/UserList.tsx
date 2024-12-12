@@ -31,6 +31,15 @@ interface Profile {
   };
 }
 
+interface AdminUser {
+  id: string;
+  email?: string;
+  user_metadata?: {
+    first_name?: string;
+    last_name?: string;
+  };
+}
+
 interface UserListProps {
   searchQuery: string;
 }
@@ -66,7 +75,7 @@ export const UserList = ({ searchQuery }: UserListProps) => {
 
       // Combine profile data with user data
       const combinedData = profilesData?.map(profile => {
-        const user = users?.find(u => u.id === profile.id);
+        const user = users?.find((u: AdminUser) => u.id === profile.id);
         return {
           ...profile,
           email: user?.email || profile.email,
