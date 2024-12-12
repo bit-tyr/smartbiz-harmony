@@ -10,9 +10,14 @@ import { PurchaseRequest } from "./types";
 interface PurchaseRequestListProps {
   requests: PurchaseRequest[];
   isLoading: boolean;
+  onSelectRequest?: (request: PurchaseRequest | null) => void;
 }
 
-export const PurchaseRequestList = ({ requests, isLoading }: PurchaseRequestListProps) => {
+export const PurchaseRequestList = ({ 
+  requests, 
+  isLoading,
+  onSelectRequest 
+}: PurchaseRequestListProps) => {
   const [visibleColumns, setVisibleColumns] = useState({
     number: true,
     laboratory: true,
