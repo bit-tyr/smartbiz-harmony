@@ -31,15 +31,6 @@ interface Profile {
   };
 }
 
-interface AdminUser {
-  id: string;
-  email?: string;
-  user_metadata?: {
-    first_name?: string;
-    last_name?: string;
-  };
-}
-
 interface UserListProps {
   searchQuery: string;
 }
@@ -65,27 +56,8 @@ export const UserList = ({ searchQuery }: UserListProps) => {
         throw profilesError;
       }
 
-      // Get all users from auth.users through the admin API
-      const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers();
-
-      if (usersError) {
-        console.error('Error fetching users:', usersError);
-        throw usersError;
-      }
-
-      // Combine profile data with user data
-      const combinedData = profilesData?.map(profile => {
-        const user = users?.find((u: AdminUser) => u.id === profile.id);
-        return {
-          ...profile,
-          email: user?.email || profile.email,
-          first_name: profile.first_name || user?.user_metadata?.first_name,
-          last_name: profile.last_name || user?.user_metadata?.last_name,
-        };
-      });
-
-      console.log("Combined profiles data:", combinedData);
-      setProfiles(combinedData || []);
+      console.log("Profiles data:", profilesData);
+      setProfiles(profilesData || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Error al cargar los datos');
