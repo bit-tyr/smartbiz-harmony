@@ -20,7 +20,7 @@ interface Profile {
   is_admin: boolean | null;
   is_blocked: boolean | null;
   role_id: string;
-  laboratory_id?: string | null;
+  laboratory_id: string | null;
   first_name: string | null;
   last_name: string | null;
   created_at: string;
@@ -41,15 +41,6 @@ export const UserList = ({ searchQuery }: UserListProps) => {
 
   const fetchData = async () => {
     try {
-      const { data: session } = await supabase.auth.getSession();
-      
-      if (!session?.session) {
-        setError("No session found");
-        toast.error("Por favor inicia sesión para ver esta información");
-        return;
-      }
-
-      // Get all profiles with their roles
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select(`
@@ -60,9 +51,12 @@ export const UserList = ({ searchQuery }: UserListProps) => {
         `)
         .order('created_at', { ascending: false });
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        throw profilesError;
+      }
 
-      console.log("Profiles data:", profilesData);
+      console.log("Fetched profiles:", profilesData);
       setProfiles(profilesData || []);
     } catch (error) {
       console.error('Error fetching data:', error);
