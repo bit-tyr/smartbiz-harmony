@@ -12,6 +12,7 @@ import { UserActions } from "./UserActions";
 import { UserRoleSelect } from "./UserRoleSelect";
 import { UserLaboratorySelect } from "./UserLaboratorySelect";
 import { toast } from "sonner";
+import { LoadingSpinner } from "@/components/ui/loading";
 
 interface Profile {
   id: string;
@@ -36,9 +37,18 @@ interface UserListProps {
 export const UserList = ({ searchQuery }: UserListProps) => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchData = async () => {
     try {
+      const { data: session } = await supabase.auth.getSession();
+      
+      if (!session?.session) {
+        setError("No session found");
+        toast.error("Por favor inicia sesión para ver esta información");
+        return;
+      }
+
       const { data: profilesData, error } = await supabase
         .from('profiles')
         .select(`
@@ -55,6 +65,7 @@ export const UserList = ({ searchQuery }: UserListProps) => {
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Error al cargar los datos');
+      setError('Error al cargar los datos');
     } finally {
       setLoading(false);
     }
@@ -69,7 +80,11 @@ export const UserList = ({ searchQuery }: UserListProps) => {
   );
 
   if (loading) {
-    return <div>Cargando...</div>;
+    return <div className="flex justify-center items-center h-64"><LoadingSpinner /></div>;
+  }
+
+  if (error) {
+    return <div className="text-center text-red-500">{error}</div>;
   }
 
   return (
