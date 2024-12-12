@@ -31,6 +31,15 @@ interface Profile {
   };
 }
 
+interface AuthUser {
+  id: string;
+  email?: string;
+  user_metadata?: {
+    first_name?: string;
+    last_name?: string;
+  };
+}
+
 interface UserListProps {
   searchQuery: string;
 }
@@ -49,8 +58,7 @@ export const UserList = ({ searchQuery }: UserListProps) => {
           roles (
             name
           )
-        `)
-        .order('created_at', { ascending: false });
+        `);
 
       if (profilesError) {
         console.error('Error fetching profiles:', profilesError);
@@ -58,7 +66,7 @@ export const UserList = ({ searchQuery }: UserListProps) => {
       }
 
       // Get all users from auth.users through the admin API
-      const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers();
+      const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers<AuthUser>();
 
       if (usersError) {
         console.error('Error fetching users:', usersError);
