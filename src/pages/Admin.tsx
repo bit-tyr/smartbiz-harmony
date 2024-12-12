@@ -1,26 +1,10 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { UserList } from "@/components/admin/UserList";
 import { CreateUserDialog } from "@/components/admin/CreateUserDialog";
+import { UserPlus } from "lucide-react";
 
 const Admin = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -29,20 +13,27 @@ const Admin = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Panel de Administración</h1>
-        <p className="text-gray-600 mt-2">Gestiona los usuarios y sus permisos</p>
+        <h1 className="text-3xl font-bold tracking-tight">Panel de Administración</h1>
+        <p className="text-muted-foreground mt-2">
+          Gestiona los usuarios, roles y permisos del sistema
+        </p>
       </div>
 
-      <div className="flex justify-between items-center mb-4">
-        <Input
-          placeholder="Buscar por email..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="max-w-sm"
-        />
+      <div className="flex justify-between items-center gap-4">
+        <div className="flex-1 max-w-sm">
+          <Input
+            placeholder="Buscar por email o nombre..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full"
+          />
+        </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button>Crear Usuario</Button>
+            <Button>
+              <UserPlus className="mr-2 h-4 w-4" />
+              Crear Usuario
+            </Button>
           </DialogTrigger>
           <CreateUserDialog onClose={() => setIsDialogOpen(false)} />
         </Dialog>

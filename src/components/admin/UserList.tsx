@@ -13,6 +13,7 @@ import { UserRoleSelect } from "./UserRoleSelect";
 import { UserLaboratorySelect } from "./UserLaboratorySelect";
 import { toast } from "sonner";
 import { LoadingSpinner } from "@/components/ui/loading";
+import { Badge } from "@/components/ui/badge";
 
 interface Profile {
   id: string;
@@ -72,7 +73,9 @@ export const UserList = ({ searchQuery }: UserListProps) => {
   }, []);
 
   const filteredProfiles = profiles.filter(profile => 
-    profile.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    profile.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    profile.first_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    profile.last_name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (loading) {
@@ -84,51 +87,77 @@ export const UserList = ({ searchQuery }: UserListProps) => {
   }
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Email</TableHead>
-          <TableHead>Rol</TableHead>
-          <TableHead>Laboratorio</TableHead>
-          <TableHead>Admin</TableHead>
-          <TableHead>Estado</TableHead>
-          <TableHead>Acciones</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {filteredProfiles.map((profile) => (
-          <TableRow key={profile.id}>
-            <TableCell>{profile.email}</TableCell>
-            <TableCell>
-              <UserRoleSelect
-                userId={profile.id}
-                currentRoleId={profile.role_id}
-                onUpdate={fetchData}
-              />
-            </TableCell>
-            <TableCell>
-              <UserLaboratorySelect
-                userId={profile.id}
-                currentLabId={profile.laboratory_id}
-                onUpdate={fetchData}
-              />
-            </TableCell>
-            <TableCell>{profile.is_admin ? 'Sí' : 'No'}</TableCell>
-            <TableCell>
-              {profile.is_blocked ? 'Bloqueado' : 'Activo'}
-            </TableCell>
-            <TableCell>
-              <div className="space-x-2">
-                <UserActions
-                  userId={profile.id}
-                  isBlocked={profile.is_blocked || false}
-                  onUpdate={fetchData}
-                />
-              </div>
-            </TableCell>
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[200px]">Usuario</TableHead>
+            <TableHead>Rol</TableHead>
+            <TableHead>Laboratorio</TableHead>
+            <TableHead>Admin</TableHead>
+            <TableHead>Estado</TableHead>
+            <TableHead className="text-right">Acciones</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {filteredProfiles.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center text-muted-foreground">
+                No se encontraron usuarios
+              </TableCell>
+            </TableRow>
+          ) : (
+            filteredProfiles.map((profile) => (
+              <TableRow key={profile.id}>
+                <TableCell>
+                  <div className="flex flex-col">
+                    <span className="font-medium">{profile.email}</span>
+                    {(profile.first_name || profile.last_name) && (
+                      <span className="text-sm text-muted-foreground">
+                        {[profile.first_name, profile.last_name].filter(Boolean).join(' ')}
+                      </span>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <UserRoleSelect
+                    userId={profile.id}
+                    currentRoleId={profile.role_id}
+                    onUpdate={fetchData}
+                  />
+                </TableCell>
+                <TableCell>
+                  <UserLaboratorySelect
+                    userId={profile.id}
+                    currentLabId={profile.laboratory_id}
+                    onUpdate={fetchData}
+                  />
+                </TableCell>
+                <TableCell>
+                  <Badge variant={profile.is_admin ? "default" : "secondary"}>
+                    {profile.is_admin ? 'Sí' : 'No'}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge 
+                    variant={profile.is_blocked ? "destructive" : "success"}
+                    className={profile.is_blocked ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}
+                  >
+                    {profile.is_blocked ? 'Bloqueado' : 'Activo'}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <UserActions
+                    userId={profile.id}
+                    isBlocked={profile.is_blocked || false}
+                    onUpdate={fetchData}
+                  />
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
