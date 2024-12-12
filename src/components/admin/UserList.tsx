@@ -49,18 +49,24 @@ export const UserList = ({ searchQuery }: UserListProps) => {
         return;
       }
 
-      const { data: profilesData, error } = await supabase
+      // Fetch all profiles with their associated roles
+      const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select(`
           *,
           roles (
             name
           )
-        `);
+        `)
+        .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (profilesError) {
+        throw profilesError;
+      }
+
       if (profilesData) {
-        setProfiles(profilesData as Profile[]);
+        console.log("Profiles fetched:", profilesData); // Para debugging
+        setProfiles(profilesData);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
