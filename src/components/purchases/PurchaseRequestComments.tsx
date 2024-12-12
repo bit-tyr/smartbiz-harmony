@@ -12,7 +12,7 @@ interface Comment {
   content: string;
   created_at: string;
   user: {
-    email: string;
+    email: string | null;
   } | null;
 }
 
@@ -33,7 +33,7 @@ export const PurchaseRequestComments = ({ purchaseRequestId }: PurchaseRequestCo
           id,
           content,
           created_at,
-          user:profiles(email)
+          user:profiles!purchase_request_comments_user_id_fkey(email)
         `)
         .eq('purchase_request_id', purchaseRequestId)
         .order('created_at', { ascending: false });
