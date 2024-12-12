@@ -13,7 +13,7 @@ import { UserRoleSelect } from "./UserRoleSelect";
 import { UserLaboratorySelect } from "./UserLaboratorySelect";
 import { toast } from "sonner";
 import { LoadingSpinner } from "@/components/ui/loading";
-import { AdminUserResponse, User } from "@supabase/supabase-js";
+import { UserResponse, User } from "@supabase/supabase-js";
 
 interface Profile {
   id: string;
@@ -55,7 +55,7 @@ export const UserList = ({ searchQuery }: UserListProps) => {
       
       if (authError) throw authError;
 
-      const authUsers = (authData as AdminUserResponse).users;
+      const authUsers = (authData as UserResponse).users;
 
       // Then get all profiles with their roles
       const { data: profilesData, error: profilesError } = await supabase
