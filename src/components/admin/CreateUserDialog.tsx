@@ -17,21 +17,41 @@ interface CreateUserDialogProps {
 export const CreateUserDialog = ({ onClose }: CreateUserDialogProps) => {
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserPassword, setNewUserPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const createUser = async () => {
+    if (!newUserEmail || !newUserPassword) {
+      toast.error("Por favor complete todos los campos");
+      return;
+    }
+
+    setIsLoading(true);
+
     try {
       const { data, error } = await supabase.auth.signUp({
         email: newUserEmail,
         password: newUserPassword,
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes("already registered") || error.message.includes("already exists")) {
+          toast.error("Este correo electrónico ya está registrado");
+        } else {
+          console.error('Error creating user:', error);
+          toast.error('Error al crear usuario');
+        }
+        return;
+      }
 
-      toast.success('Usuario creado exitosamente');
-      onClose();
+      if (data?.user) {
+        toast.success('Usuario creado exitosamente');
+        onClose();
+      }
     } catch (error) {
       console.error('Error creating user:', error);
       toast.error('Error al crear usuario');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -48,6 +68,7 @@ export const CreateUserDialog = ({ onClose }: CreateUserDialogProps) => {
             type="email"
             value={newUserEmail}
             onChange={(e) => setNewUserEmail(e.target.value)}
+            disabled={isLoading}
           />
         </div>
         <div className="space-y-2">
@@ -57,10 +78,15 @@ export const CreateUserDialog = ({ onClose }: CreateUserDialogProps) => {
             type="password"
             value={newUserPassword}
             onChange={(e) => setNewUserPassword(e.target.value)}
+            disabled={isLoading}
           />
         </div>
-        <Button onClick={createUser} className="w-full">
-          Crear Usuario
+        <Button 
+          onClick={createUser} 
+          className="w-full"
+          disabled={isLoading}
+        >
+          {isLoading ? "Creando..." : "Crear Usuario"}
         </Button>
       </div>
     </DialogContent>
