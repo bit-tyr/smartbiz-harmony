@@ -13,6 +13,7 @@ import { UserRoleSelect } from "./UserRoleSelect";
 import { UserLaboratorySelect } from "./UserLaboratorySelect";
 import { toast } from "sonner";
 import { LoadingSpinner } from "@/components/ui/loading";
+import { AdminUserResponse, User } from "@supabase/supabase-js";
 
 interface Profile {
   id: string;
@@ -50,9 +51,11 @@ export const UserList = ({ searchQuery }: UserListProps) => {
       }
 
       // First get all users from auth.users
-      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
       
       if (authError) throw authError;
+
+      const authUsers = (authData as AdminUserResponse).users;
 
       // Then get all profiles with their roles
       const { data: profilesData, error: profilesError } = await supabase
@@ -70,7 +73,7 @@ export const UserList = ({ searchQuery }: UserListProps) => {
       // Combine the data
       const combinedProfiles = profilesData.map(profile => ({
         ...profile,
-        email: authUsers.users.find(user => user.id === profile.id)?.email || null
+        email: authUsers.find(user => user.id === profile.id)?.email || null
       }));
 
       console.log("Combined profiles:", combinedProfiles);
