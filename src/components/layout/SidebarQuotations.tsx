@@ -17,12 +17,15 @@ export const SidebarQuotations = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Origin': window.location.origin,
         },
+        mode: 'cors',
         body: JSON.stringify({ "input": "I love Magic Loops!" }),
       });
 
       if (!response.ok) {
-        throw new Error(`Error de servidor: ${response.status}`);
+        throw new Error(`Error del servidor: ${response.status}`);
       }
 
       const data = await response.json();
@@ -30,7 +33,9 @@ export const SidebarQuotations = () => {
       setError(null);
     } catch (err) {
       console.error("Error fetching quotations:", err);
-      setError("Error al cargar las cotizaciones. Por favor, intente nuevamente.");
+      setError("El servicio de cotizaciones no está disponible en este momento. Por favor, intente más tarde.");
+      // Clear any stale data
+      setQuotations(null);
     } finally {
       setIsLoading(false);
     }
@@ -38,9 +43,35 @@ export const SidebarQuotations = () => {
 
   useEffect(() => {
     fetchQuotations();
-    const interval = setInterval(fetchQuotations, 300000); // Refresh every 5 minutes
+    // Set up polling interval
+    const interval = setInterval(fetchQuotations, 300000); // Every 5 minutes
+    
+    // Cleanup interval on component unmount
     return () => clearInterval(interval);
   }, []);
+
+  // If there's an error and no data, show error state
+  if (error && !quotations) {
+    return (
+      <div className="px-3 py-2">
+        <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
+          Cotizaciones
+        </h2>
+        <div className="flex flex-col items-center justify-center space-y-4 p-4">
+          <AlertCircle className="h-8 w-8 text-red-500" />
+          <p className="text-sm text-red-500 text-center">{error}</p>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={fetchQuotations}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Cargando...' : 'Reintentar'}
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="px-3 py-2">
@@ -48,20 +79,7 @@ export const SidebarQuotations = () => {
         Cotizaciones
       </h2>
       <ScrollArea className="h-[300px] px-4">
-        {error ? (
-          <div className="flex flex-col items-center justify-center space-y-4 p-4">
-            <AlertCircle className="h-8 w-8 text-red-500" />
-            <p className="text-sm text-red-500 text-center">{error}</p>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={fetchQuotations}
-              disabled={isLoading}
-            >
-              {isLoading ? 'Cargando...' : 'Reintentar'}
-            </Button>
-          </div>
-        ) : isLoading ? (
+        {isLoading && !quotations ? (
           <div className="flex items-center justify-center p-4">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
           </div>
