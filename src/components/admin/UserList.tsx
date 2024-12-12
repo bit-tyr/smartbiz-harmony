@@ -13,7 +13,6 @@ import { UserRoleSelect } from "./UserRoleSelect";
 import { UserLaboratorySelect } from "./UserLaboratorySelect";
 import { toast } from "sonner";
 import { LoadingSpinner } from "@/components/ui/loading";
-import { User } from "@supabase/supabase-js";
 
 interface Profile {
   id: string;
@@ -50,15 +49,7 @@ export const UserList = ({ searchQuery }: UserListProps) => {
         return;
       }
 
-      // First get all users from auth.users
-      const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
-      
-      if (authError) throw authError;
-
-      // Ensure authData exists and has users property
-      const authUsers = authData?.users || [];
-
-      // Then get all profiles with their roles
+      // Get all profiles with their roles
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select(`
@@ -71,14 +62,8 @@ export const UserList = ({ searchQuery }: UserListProps) => {
 
       if (profilesError) throw profilesError;
 
-      // Combine the data
-      const combinedProfiles = profilesData.map(profile => ({
-        ...profile,
-        email: authUsers.find(user => user.id === profile.id)?.email || null
-      }));
-
-      console.log("Combined profiles:", combinedProfiles);
-      setProfiles(combinedProfiles);
+      console.log("Profiles data:", profilesData);
+      setProfiles(profilesData || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Error al cargar los datos');
