@@ -49,7 +49,12 @@ export const UserList = ({ searchQuery }: UserListProps) => {
         return;
       }
 
-      // Fetch all profiles with their associated roles
+      // First get all users from auth.users
+      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      
+      if (authError) throw authError;
+
+      // Then get all profiles with their roles
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select(`
@@ -60,14 +65,16 @@ export const UserList = ({ searchQuery }: UserListProps) => {
         `)
         .order('created_at', { ascending: false });
 
-      if (profilesError) {
-        throw profilesError;
-      }
+      if (profilesError) throw profilesError;
 
-      if (profilesData) {
-        console.log("Profiles fetched:", profilesData); // Para debugging
-        setProfiles(profilesData);
-      }
+      // Combine the data
+      const combinedProfiles = profilesData.map(profile => ({
+        ...profile,
+        email: authUsers.users.find(user => user.id === profile.id)?.email || null
+      }));
+
+      console.log("Combined profiles:", combinedProfiles);
+      setProfiles(combinedProfiles);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Error al cargar los datos');
