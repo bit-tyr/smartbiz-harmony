@@ -36,10 +36,11 @@ export const PurchaseRequestComments = ({ purchaseRequestId }: PurchaseRequestCo
           user:profiles(email)
         `)
         .eq('purchase_request_id', purchaseRequestId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .returns<Comment[]>();
 
       if (error) throw error;
-      return data as Comment[];
+      return data;
     },
   });
 
