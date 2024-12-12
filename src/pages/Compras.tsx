@@ -9,11 +9,13 @@ import { Filter, Plus, Search, ShoppingCart, History } from "lucide-react";
 import { PurchaseRequestList } from "@/components/purchases/PurchaseRequestList";
 import { CreatePurchaseRequestDialog } from "@/components/purchases/CreatePurchaseRequestDialog";
 import { toast } from "sonner";
+import { PurchaseRequestView } from "@/components/purchases/PurchaseRequestView";
 
 const Compras = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentView, setCurrentView] = useState<'current' | 'history'>('current');
+  const [selectedRequest, setSelectedRequest] = useState(null);
 
   const { data: purchaseRequests, isLoading } = useQuery({
     queryKey: ['purchaseRequests', currentView],
@@ -126,6 +128,7 @@ const Compras = () => {
               <PurchaseRequestList 
                 requests={purchaseRequests || []} 
                 isLoading={isLoading} 
+                onSelectRequest={setSelectedRequest}
               />
             </CardContent>
           </Card>
@@ -190,6 +193,13 @@ const Compras = () => {
         open={isDialogOpen} 
         onOpenChange={setIsDialogOpen} 
       />
+
+      {selectedRequest && (
+        <PurchaseRequestView 
+          request={selectedRequest} 
+          onClose={() => setSelectedRequest(null)} 
+        />
+      )}
     </div>
   );
 };

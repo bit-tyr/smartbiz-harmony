@@ -3,34 +3,9 @@ import { useState } from "react";
 import { PurchaseRequestTableHeader } from "./table/PurchaseRequestTableHeader";
 import { PurchaseRequestTableRow } from "./table/PurchaseRequestTableRow";
 import { ColumnSelector } from "./table/ColumnSelector";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
-
-export interface PurchaseRequest {
-  id: string;
-  number: number;
-  status: string;
-  created_at: string;
-  laboratory: { name: string } | null;
-  budget_code: { code: string; description: string } | null;
-  observations: string | null;
-  purchase_request_items?: {
-    quantity: number;
-    unit_price: number | null;
-    currency: string | null;
-    product: {
-      name: string;
-      supplier: { name: string };
-    } | null;
-  }[];
-}
+import { PurchaseRequestDetails } from "./PurchaseRequestDetails";
+import { PurchaseRequest } from "./types";
 
 interface PurchaseRequestListProps {
   requests: PurchaseRequest[];
@@ -104,8 +79,10 @@ export const PurchaseRequestList = ({ requests, isLoading }: PurchaseRequestList
         >
           <option value="">Todos los estados</option>
           <option value="pending">Pendiente</option>
-          <option value="approved">Aprobado</option>
-          <option value="rejected">Rechazado</option>
+          <option value="in_process">En proceso</option>
+          <option value="purchased">Comprado</option>
+          <option value="ready_for_delivery">Listo para entrega</option>
+          <option value="delivered">Entregado</option>
         </select>
       </div>
 
@@ -128,83 +105,10 @@ export const PurchaseRequestList = ({ requests, isLoading }: PurchaseRequestList
         </TableBody>
       </Table>
 
-      <Dialog open={!!selectedRequest} onOpenChange={() => setSelectedRequest(null)}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Detalles de la Solicitud #{selectedRequest?.number}</DialogTitle>
-          </DialogHeader>
-          {selectedRequest && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-semibold mb-2">Información General</h3>
-                  <dl className="space-y-2">
-                    <div>
-                      <dt className="text-sm text-gray-500">Estado</dt>
-                      <dd>{selectedRequest.status}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm text-gray-500">Fecha</dt>
-                      <dd>{format(new Date(selectedRequest.created_at), "PPP", { locale: es })}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm text-gray-500">Laboratorio</dt>
-                      <dd>{selectedRequest.laboratory?.name || "-"}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm text-gray-500">Código Presupuestal</dt>
-                      <dd>
-                        {selectedRequest.budget_code ? (
-                          <>
-                            {selectedRequest.budget_code.code}
-                            <br />
-                            <span className="text-sm text-gray-500">
-                              {selectedRequest.budget_code.description}
-                            </span>
-                          </>
-                        ) : "-"}
-                      </dd>
-                    </div>
-                  </dl>
-                </div>
-                <div>
-                  <h3 className="font-semibold mb-2">Detalles del Producto</h3>
-                  {selectedRequest.purchase_request_items?.[0] && (
-                    <dl className="space-y-2">
-                      <div>
-                        <dt className="text-sm text-gray-500">Producto</dt>
-                        <dd>{selectedRequest.purchase_request_items[0].product?.name || "-"}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-sm text-gray-500">Proveedor</dt>
-                        <dd>{selectedRequest.purchase_request_items[0].product?.supplier?.name || "-"}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-sm text-gray-500">Cantidad</dt>
-                        <dd>{selectedRequest.purchase_request_items[0].quantity}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-sm text-gray-500">Precio Unitario</dt>
-                        <dd>
-                          {selectedRequest.purchase_request_items[0].unit_price
-                            ? `${selectedRequest.purchase_request_items[0].currency} ${selectedRequest.purchase_request_items[0].unit_price}`
-                            : "-"}
-                        </dd>
-                      </div>
-                    </dl>
-                  )}
-                </div>
-              </div>
-              {selectedRequest.observations && (
-                <div>
-                  <h3 className="font-semibold mb-2">Observaciones</h3>
-                  <p className="text-gray-700">{selectedRequest.observations}</p>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <PurchaseRequestDetails 
+        request={selectedRequest} 
+        onClose={() => setSelectedRequest(null)} 
+      />
     </div>
   );
 };
