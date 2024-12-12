@@ -31,15 +31,6 @@ interface Profile {
   };
 }
 
-interface AuthUser {
-  id: string;
-  email?: string;
-  user_metadata?: {
-    first_name?: string;
-    last_name?: string;
-  };
-}
-
 interface UserListProps {
   searchQuery: string;
 }
@@ -66,7 +57,7 @@ export const UserList = ({ searchQuery }: UserListProps) => {
       }
 
       // Get all users from auth.users through the admin API
-      const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers<AuthUser>();
+      const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers();
 
       if (usersError) {
         console.error('Error fetching users:', usersError);
