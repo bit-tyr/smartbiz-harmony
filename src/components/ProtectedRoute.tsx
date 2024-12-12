@@ -87,7 +87,7 @@ const useAuth = () => {
 
           setIsAdmin(profile?.is_admin || false);
         }
-      } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+      } else if (event === 'SIGNED_OUT') {
         setSession(null);
         setIsAdmin(false);
       }
