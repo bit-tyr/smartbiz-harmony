@@ -57,8 +57,27 @@ export const UserList = ({ searchQuery }: UserListProps) => {
         throw profilesError;
       }
 
-      console.log("Fetched profiles:", profilesData);
-      setProfiles(profilesData || []);
+      // Get all users from auth.users through the admin API
+      const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers();
+
+      if (usersError) {
+        console.error('Error fetching users:', usersError);
+        throw usersError;
+      }
+
+      // Combine profile data with user data
+      const combinedData = profilesData?.map(profile => {
+        const user = users?.find(u => u.id === profile.id);
+        return {
+          ...profile,
+          email: user?.email || profile.email,
+          first_name: profile.first_name || user?.user_metadata?.first_name,
+          last_name: profile.last_name || user?.user_metadata?.last_name,
+        };
+      });
+
+      console.log("Combined profiles data:", combinedData);
+      setProfiles(combinedData || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Error al cargar los datos');
@@ -140,7 +159,7 @@ export const UserList = ({ searchQuery }: UserListProps) => {
                 </TableCell>
                 <TableCell>
                   <Badge 
-                    variant={profile.is_blocked ? "destructive" : "success"}
+                    variant={profile.is_blocked ? "destructive" : "outline"}
                     className={profile.is_blocked ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}
                   >
                     {profile.is_blocked ? 'Bloqueado' : 'Activo'}
