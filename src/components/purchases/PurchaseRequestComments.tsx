@@ -33,7 +33,7 @@ export const PurchaseRequestComments = ({ purchaseRequestId }: PurchaseRequestCo
           id,
           content,
           created_at,
-          user:profiles!purchase_request_comments_user_id_fkey(email)
+          user:profiles!inner(email)
         `)
         .eq('purchase_request_id', purchaseRequestId)
         .order('created_at', { ascending: false });
