@@ -40,16 +40,16 @@ const useAuth = () => {
 
           if (profileError) {
             console.error('Error fetching profile:', profileError);
+            toast.error("Error al verificar permisos de administrador");
             return;
           }
 
-          console.log('Profile data:', profile); // Debug log
-          setIsAdmin(profile?.is_admin || false);
+          console.log('Profile data in ProtectedRoute:', profile); // Debug log
+          setIsAdmin(!!profile?.is_admin); // Convert to boolean explicitly
         }
       } catch (error) {
         console.error('Error checking session:', error);
-        await supabase.auth.signOut();
-        setSession(null);
+        toast.error("Error al verificar la sesión");
       } finally {
         setLoading(false);
       }
@@ -58,7 +58,7 @@ const useAuth = () => {
     checkSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event); // Debug log
+      console.log('Auth state changed:', event, 'Session:', session?.user?.id); // Debug log
       
       if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') {
         setSession(session);
@@ -71,12 +71,13 @@ const useAuth = () => {
             .single();
 
           if (profileError) {
-            console.error('Error fetching profile:', profileError);
+            console.error('Error fetching profile after auth change:', profileError);
+            toast.error("Error al verificar permisos de administrador");
             return;
           }
 
           console.log('Profile data after auth change:', profile); // Debug log
-          setIsAdmin(profile?.is_admin || false);
+          setIsAdmin(!!profile?.is_admin); // Convert to boolean explicitly
         }
       } else if (event === 'SIGNED_OUT') {
         setSession(null);
@@ -101,6 +102,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
   }
 
   if (!session) {
+    toast.error("Debes iniciar sesión para acceder a esta página");
     return <Navigate to="/login" replace />;
   }
 
