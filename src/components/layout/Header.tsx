@@ -27,64 +27,57 @@ export const Header = () => {
           setUserEmail(user.email);
           
           // Check if profile exists
-          const { data: profileExists, error: checkError } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
-            .select('id')
-            .eq('id', user.id);
+            .select('is_admin')
+            .eq('id', user.id)
+            .maybeSingle();
 
-          if (checkError) {
-            console.error('Error checking profile:', checkError);
+          if (profileError) {
+            console.error('Error checking profile:', profileError);
             return;
           }
 
           // If profile doesn't exist, create it
-          if (!profileExists || profileExists.length === 0) {
+          if (!profile) {
             // First get a default role
             const { data: roles, error: rolesError } = await supabase
               .from('roles')
               .select('id')
-              .limit(1);
+              .limit(1)
+              .single();
 
             if (rolesError) {
               console.error('Error fetching default role:', rolesError);
               return;
             }
 
-            const defaultRoleId = roles?.[0]?.id;
-            if (!defaultRoleId) {
-              console.error('No default role found');
-              return;
-            }
-
-            const { error: insertError } = await supabase
-              .from('profiles')
-              .insert([{ 
-                id: user.id,
-                email: user.email,
-                is_admin: false,
-                role_id: defaultRoleId
-              }]);
+            const { error: insertError } = await supabase.auth.updateUser({
+              data: { role_id: roles.id }
+            });
 
             if (insertError) {
-              console.error('Error creating profile:', insertError);
+              console.error('Error updating user metadata:', insertError);
+              return;
+            }
+
+            const { error: createProfileError } = await supabase
+              .from('profiles')
+              .insert({
+                id: user.id,
+                email: user.email,
+                role_id: roles.id,
+                is_admin: false
+              })
+              .single();
+
+            if (createProfileError) {
+              console.error('Error creating profile:', createProfileError);
               return;
             }
           }
 
-          // Now fetch the profile including admin status
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('is_admin')
-            .eq('id', user.id)
-            .maybeSingle();
-          
-          if (error) {
-            console.error('Error fetching profile:', error);
-            return;
-          }
-
-          console.log('Profile data in Header:', profile);
-          setIsAdmin(profile?.is_admin || false);
+          setIsAdmin(!!profile?.is_admin);
         }
       } catch (error) {
         console.error('Error getting user profile:', error);

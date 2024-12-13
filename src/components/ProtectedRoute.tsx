@@ -32,65 +32,57 @@ const useAuth = () => {
 
         if (session) {
           // First check if profile exists
-          const { data: profileExists, error: checkError } = await supabase
+          const { data: profileData, error: profileError } = await supabase
             .from('profiles')
-            .select('id')
-            .eq('id', session.user.id);
+            .select('is_admin')
+            .eq('id', session.user.id)
+            .maybeSingle();
 
-          if (checkError) {
-            console.error('Error checking profile:', checkError);
+          if (profileError) {
+            console.error('Error checking profile:', profileError);
             return;
           }
 
           // If profile doesn't exist, create it
-          if (!profileExists || profileExists.length === 0) {
+          if (!profileData) {
             // First get a default role
             const { data: roles, error: rolesError } = await supabase
               .from('roles')
               .select('id')
-              .limit(1);
+              .limit(1)
+              .single();
 
             if (rolesError) {
               console.error('Error fetching default role:', rolesError);
               return;
             }
 
-            const defaultRoleId = roles?.[0]?.id;
-            if (!defaultRoleId) {
-              console.error('No default role found');
-              return;
-            }
-
-            const { error: insertError } = await supabase
-              .from('profiles')
-              .insert([{ 
-                id: session.user.id,
-                email: session.user.email,
-                is_admin: false,
-                role_id: defaultRoleId
-              }]);
+            const { error: insertError } = await supabase.auth.updateUser({
+              data: { role_id: roles.id }
+            });
 
             if (insertError) {
-              console.error('Error creating profile:', insertError);
+              console.error('Error updating user metadata:', insertError);
+              return;
+            }
+
+            const { error: createProfileError } = await supabase
+              .from('profiles')
+              .insert({
+                id: session.user.id,
+                email: session.user.email,
+                role_id: roles.id,
+                is_admin: false
+              })
+              .single();
+
+            if (createProfileError) {
+              console.error('Error creating profile:', createProfileError);
               return;
             }
           }
 
-          // Now fetch the profile data including admin status
-          const { data: profiles, error: profileError } = await supabase
-            .from('profiles')
-            .select('is_admin')
-            .eq('id', session.user.id);
-
-          if (profileError) {
-            console.error('Error fetching profile:', profileError);
-            toast.error("Error al verificar permisos de administrador");
-            return;
-          }
-
-          const profile = profiles?.[0];
-          console.log('Profile data in ProtectedRoute:', profile);
-          setIsAdmin(!!profile?.is_admin);
+          setIsAdmin(!!profileData?.is_admin);
         }
       } catch (error) {
         console.error('Error checking session:', error);
@@ -112,7 +104,8 @@ const useAuth = () => {
           const { data: profiles, error: profileError } = await supabase
             .from('profiles')
             .select('is_admin')
-            .eq('id', session.user.id);
+            .eq('id', session.user.id)
+            .maybeSingle();
 
           if (profileError) {
             console.error('Error fetching profile after auth change:', profileError);
@@ -120,9 +113,7 @@ const useAuth = () => {
             return;
           }
 
-          const profile = profiles?.[0];
-          console.log('Profile data after auth change:', profile);
-          setIsAdmin(!!profile?.is_admin);
+          setIsAdmin(!!profiles?.is_admin);
         }
       } else if (event === 'SIGNED_OUT') {
         setSession(null);
