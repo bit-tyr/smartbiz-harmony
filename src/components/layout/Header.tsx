@@ -1,4 +1,4 @@
-import { Bell, User, Moon, Sun } from "lucide-react";
+import { Bell, User, Moon, Sun, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
@@ -21,18 +21,28 @@ export const Header = () => {
 
   useEffect(() => {
     const getProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUserEmail(user.email);
-        
-        // Check if user is admin
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', user.id)
-          .single();
-        
-        setIsAdmin(profile?.is_admin || false);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setUserEmail(user.email);
+          
+          // Check if user is admin
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('is_admin')
+            .eq('id', user.id)
+            .single();
+          
+          if (error) {
+            console.error('Error fetching profile:', error);
+            return;
+          }
+
+          console.log('Profile data in Header:', profile); // Debug log
+          setIsAdmin(profile?.is_admin || false);
+        }
+      } catch (error) {
+        console.error('Error getting user profile:', error);
       }
     };
 
@@ -46,6 +56,10 @@ export const Header = () => {
     toast.success("Sesión cerrada exitosamente");
   };
 
+  const handleAdminPanel = () => {
+    navigate("/admin");
+  };
+
   return (
     <header className="header">
       <div className="flex-1">
@@ -54,6 +68,18 @@ export const Header = () => {
         </span>
       </div>
       <div className="flex items-center gap-4">
+        {isAdmin && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleAdminPanel}
+            className="hidden md:flex"
+          >
+            <Settings className="mr-2 h-4 w-4" />
+            Panel Admin
+          </Button>
+        )}
+        
         <Button
           variant="ghost"
           size="icon"
@@ -82,7 +108,7 @@ export const Header = () => {
           <DropdownMenuContent align="end">
             <DropdownMenuItem>Perfil</DropdownMenuItem>
             {isAdmin && (
-              <DropdownMenuItem onClick={() => navigate("/admin")}>
+              <DropdownMenuItem onClick={handleAdminPanel}>
                 Panel de Admin
               </DropdownMenuItem>
             )}
