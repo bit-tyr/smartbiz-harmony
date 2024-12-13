@@ -31,9 +31,10 @@ const useAuth = () => {
         setSession(session);
 
         if (session) {
+          // Fetch profile data including admin status
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
-            .select('is_admin, is_blocked')
+            .select('is_admin')
             .eq('id', session.user.id)
             .single();
 
@@ -42,13 +43,7 @@ const useAuth = () => {
             return;
           }
 
-          if (profile?.is_blocked) {
-            await supabase.auth.signOut();
-            toast.error("Tu cuenta ha sido bloqueada. Contacta al administrador.");
-            setSession(null);
-            return;
-          }
-
+          console.log('Profile data:', profile); // Debug log
           setIsAdmin(profile?.is_admin || false);
         }
       } catch (error) {
@@ -63,13 +58,15 @@ const useAuth = () => {
     checkSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event); // Debug log
+      
       if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') {
         setSession(session);
         
         if (session) {
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
-            .select('is_admin, is_blocked')
+            .select('is_admin')
             .eq('id', session.user.id)
             .single();
 
@@ -78,13 +75,7 @@ const useAuth = () => {
             return;
           }
 
-          if (profile?.is_blocked) {
-            await supabase.auth.signOut();
-            toast.error("Tu cuenta ha sido bloqueada. Contacta al administrador.");
-            setSession(null);
-            return;
-          }
-
+          console.log('Profile data after auth change:', profile); // Debug log
           setIsAdmin(profile?.is_admin || false);
         }
       } else if (event === 'SIGNED_OUT') {
@@ -106,7 +97,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
   const { session, isAdmin, loading } = useAuth();
 
   if (loading) {
-    return <LoadingSpinner />;
+    return <div className="flex justify-center items-center h-screen"><LoadingSpinner /></div>;
   }
 
   if (!session) {
@@ -114,6 +105,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
   }
 
   if (requireAdmin && !isAdmin) {
+    console.log('Admin access denied. Is admin:', isAdmin); // Debug log
     toast.error("No tienes permisos de administrador");
     return <Navigate to="/" replace />;
   }
