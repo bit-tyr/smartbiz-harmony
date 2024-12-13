@@ -45,37 +45,35 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
 
-      if (error) {
-        console.error("Login error details:", error);
-        
-        if (error.message.includes("Invalid login credentials")) {
+      if (authError) {
+        if (authError.message.includes("Invalid login credentials")) {
           toast.error("Email o contraseña incorrectos");
-        } else if (error.message.includes("Email not confirmed")) {
+        } else if (authError.message.includes("Email not confirmed")) {
           toast.error("Por favor, verifica tu correo electrónico");
-        } else if (error.message.includes("404")) {
+        } else if (authError.message.includes("404")) {
           toast.error("Error de conexión. Por favor, intenta de nuevo más tarde.");
-          console.error("Connection error:", error);
         } else {
           toast.error("Error al iniciar sesión. Por favor, intenta de nuevo.");
         }
+        console.error("Login error details:", authError);
         return;
       }
 
-      if (!data?.user) {
+      if (!authData?.user) {
         toast.error("No se pudo obtener la información del usuario");
         return;
       }
 
-      // Check if user is admin
+      // Single query to get profile data
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('is_admin')
-        .eq('id', data.user.id)
+        .eq('id', authData.user.id)
         .single();
 
       if (profileError) {
