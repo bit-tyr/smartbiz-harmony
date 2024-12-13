@@ -31,7 +31,34 @@ const useAuth = () => {
         setSession(session);
 
         if (session) {
-          // Fetch profile data including admin status
+          // First check if profile exists
+          const { data: profileExists, error: checkError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('id', session.user.id);
+
+          if (checkError) {
+            console.error('Error checking profile:', checkError);
+            return;
+          }
+
+          // If profile doesn't exist, create it
+          if (!profileExists || profileExists.length === 0) {
+            const { error: insertError } = await supabase
+              .from('profiles')
+              .insert([{ 
+                id: session.user.id,
+                email: session.user.email,
+                is_admin: false
+              }]);
+
+            if (insertError) {
+              console.error('Error creating profile:', insertError);
+              return;
+            }
+          }
+
+          // Now fetch the profile data including admin status
           const { data: profiles, error: profileError } = await supabase
             .from('profiles')
             .select('is_admin')
@@ -43,7 +70,6 @@ const useAuth = () => {
             return;
           }
 
-          // Check if we have a profile and get the is_admin value
           const profile = profiles?.[0];
           console.log('Profile data in ProtectedRoute:', profile);
           setIsAdmin(!!profile?.is_admin);

@@ -26,19 +26,46 @@ export const Header = () => {
         if (user) {
           setUserEmail(user.email);
           
-          // Check if user is admin
+          // Check if profile exists
+          const { data: profileExists, error: checkError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('id', user.id);
+
+          if (checkError) {
+            console.error('Error checking profile:', checkError);
+            return;
+          }
+
+          // If profile doesn't exist, create it
+          if (!profileExists || profileExists.length === 0) {
+            const { error: insertError } = await supabase
+              .from('profiles')
+              .insert([{ 
+                id: user.id,
+                email: user.email,
+                is_admin: false
+              }]);
+
+            if (insertError) {
+              console.error('Error creating profile:', insertError);
+              return;
+            }
+          }
+
+          // Now fetch the profile including admin status
           const { data: profile, error } = await supabase
             .from('profiles')
             .select('is_admin')
             .eq('id', user.id)
-            .single();
+            .maybeSingle();
           
           if (error) {
             console.error('Error fetching profile:', error);
             return;
           }
 
-          console.log('Profile data in Header:', profile); // Debug log
+          console.log('Profile data in Header:', profile);
           setIsAdmin(profile?.is_admin || false);
         }
       } catch (error) {
