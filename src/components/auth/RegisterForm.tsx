@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { LoadingSpinner } from "../ui/loading";
 
 interface RegisterFormProps {
   onToggleRegister: () => void;
@@ -41,24 +42,49 @@ const RegisterForm = ({ onToggleRegister }: RegisterFormProps) => {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.signUp({
-        email,
+      // First get a default role
+      const { data: roles, error: rolesError } = await supabase
+        .from('roles')
+        .select('id')
+        .limit(1)
+        .single();
+
+      if (rolesError) {
+        console.error('Error fetching default role:', rolesError);
+        toast.error("Error al crear usuario");
+        return;
+      }
+
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email: email.trim(),
         password,
+        options: {
+          data: {
+            role_id: roles.id
+          }
+        }
       });
 
-      if (error) {
-        if (error.message.includes("already registered")) {
+      if (signUpError) {
+        if (signUpError.message.includes("already registered")) {
           toast.error("Este email ya está registrado. Por favor, inicia sesión.");
         } else {
           toast.error("Error al registrar usuario");
+          console.error("Register error:", signUpError);
         }
         return;
       }
 
+      if (!authData.user) {
+        toast.error("Error al crear usuario");
+        return;
+      }
+
       toast.success("Registro exitoso. Por favor verifica tu correo electrónico.");
+      onToggleRegister();
     } catch (error) {
+      console.error("Unexpected error during registration:", error);
       toast.error("Error al registrar usuario");
-      console.error("Register error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -97,12 +123,13 @@ const RegisterForm = ({ onToggleRegister }: RegisterFormProps) => {
         type="submit"
         disabled={isLoading}
       >
-        {isLoading ? "Registrando..." : "Registrarse"}
+        {isLoading ? <LoadingSpinner /> : "Registrarse"}
       </Button>
       <Button
         variant="outline"
         type="button"
         onClick={onToggleRegister}
+        disabled={isLoading}
       >
         ¿Ya tienes cuenta? Inicia sesión
       </Button>

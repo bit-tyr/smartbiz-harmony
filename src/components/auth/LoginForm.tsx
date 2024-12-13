@@ -69,10 +69,10 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
         return;
       }
 
-      // Single query to get profile data
+      // Get profile data with a single query
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('is_admin')
+        .select('is_admin, role_id, laboratory_id')
         .eq('id', authData.user.id)
         .single();
 
@@ -84,7 +84,7 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
 
       toast.success("Inicio de sesión exitoso");
       
-      // Redirect based on admin status
+      // Redirect based on profile data
       if (profile?.is_admin) {
         navigate("/admin");
       } else {

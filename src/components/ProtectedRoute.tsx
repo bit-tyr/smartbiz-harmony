@@ -31,7 +31,6 @@ const useAuth = () => {
         setSession(session);
 
         if (session) {
-          // First check if profile exists
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('is_admin')
@@ -40,46 +39,8 @@ const useAuth = () => {
 
           if (profileError) {
             console.error('Error checking profile:', profileError);
+            toast.error("Error al verificar permisos de usuario");
             return;
-          }
-
-          // If profile doesn't exist, create it
-          if (!profileData) {
-            // First get a default role
-            const { data: roles, error: rolesError } = await supabase
-              .from('roles')
-              .select('id')
-              .limit(1)
-              .single();
-
-            if (rolesError) {
-              console.error('Error fetching default role:', rolesError);
-              return;
-            }
-
-            const { error: insertError } = await supabase.auth.updateUser({
-              data: { role_id: roles.id }
-            });
-
-            if (insertError) {
-              console.error('Error updating user metadata:', insertError);
-              return;
-            }
-
-            const { error: createProfileError } = await supabase
-              .from('profiles')
-              .insert({
-                id: session.user.id,
-                email: session.user.email,
-                role_id: roles.id,
-                is_admin: false
-              })
-              .single();
-
-            if (createProfileError) {
-              console.error('Error creating profile:', createProfileError);
-              return;
-            }
           }
 
           setIsAdmin(!!profileData?.is_admin);
