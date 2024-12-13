@@ -32,11 +32,10 @@ const useAuth = () => {
 
         if (session) {
           // Fetch profile data including admin status
-          const { data: profile, error: profileError } = await supabase
+          const { data: profiles, error: profileError } = await supabase
             .from('profiles')
             .select('is_admin')
-            .eq('id', session.user.id)
-            .single();
+            .eq('id', session.user.id);
 
           if (profileError) {
             console.error('Error fetching profile:', profileError);
@@ -44,8 +43,10 @@ const useAuth = () => {
             return;
           }
 
-          console.log('Profile data in ProtectedRoute:', profile); // Debug log
-          setIsAdmin(!!profile?.is_admin); // Convert to boolean explicitly
+          // Check if we have a profile and get the is_admin value
+          const profile = profiles?.[0];
+          console.log('Profile data in ProtectedRoute:', profile);
+          setIsAdmin(!!profile?.is_admin);
         }
       } catch (error) {
         console.error('Error checking session:', error);
@@ -58,17 +59,16 @@ const useAuth = () => {
     checkSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, 'Session:', session?.user?.id); // Debug log
+      console.log('Auth state changed:', event, 'Session:', session?.user?.id);
       
       if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') {
         setSession(session);
         
         if (session) {
-          const { data: profile, error: profileError } = await supabase
+          const { data: profiles, error: profileError } = await supabase
             .from('profiles')
             .select('is_admin')
-            .eq('id', session.user.id)
-            .single();
+            .eq('id', session.user.id);
 
           if (profileError) {
             console.error('Error fetching profile after auth change:', profileError);
@@ -76,8 +76,9 @@ const useAuth = () => {
             return;
           }
 
-          console.log('Profile data after auth change:', profile); // Debug log
-          setIsAdmin(!!profile?.is_admin); // Convert to boolean explicitly
+          const profile = profiles?.[0];
+          console.log('Profile data after auth change:', profile);
+          setIsAdmin(!!profile?.is_admin);
         }
       } else if (event === 'SIGNED_OUT') {
         setSession(null);
@@ -107,7 +108,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
   }
 
   if (requireAdmin && !isAdmin) {
-    console.log('Admin access denied. Is admin:', isAdmin); // Debug log
+    console.log('Admin access denied. Is admin:', isAdmin);
     toast.error("No tienes permisos de administrador");
     return <Navigate to="/" replace />;
   }
