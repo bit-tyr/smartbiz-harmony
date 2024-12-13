@@ -45,22 +45,32 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
     setIsLoading(true);
 
     try {
+      // Check network connectivity first
+      const networkTest = await fetch('https://api.supabase.com/health-check')
+        .catch(() => null);
+
+      if (!networkTest) {
+        toast.error("Error de conexión. Por favor, verifica tu conexión a internet.");
+        return;
+      }
+
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
 
       if (authError) {
-        if (authError.message.includes("Invalid login credentials")) {
+        console.error("Auth error details:", authError);
+        
+        if (authError.message.includes("Failed to fetch")) {
+          toast.error("Error de conexión con el servidor. Por favor, intenta de nuevo.");
+        } else if (authError.message.includes("Invalid login credentials")) {
           toast.error("Email o contraseña incorrectos");
         } else if (authError.message.includes("Email not confirmed")) {
           toast.error("Por favor, verifica tu correo electrónico");
-        } else if (authError.message.includes("404")) {
-          toast.error("Error de conexión. Por favor, intenta de nuevo más tarde.");
         } else {
           toast.error("Error al iniciar sesión. Por favor, intenta de nuevo.");
         }
-        console.error("Login error details:", authError);
         return;
       }
 
