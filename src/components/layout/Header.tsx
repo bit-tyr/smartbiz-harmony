@@ -39,12 +39,30 @@ export const Header = () => {
 
           // If profile doesn't exist, create it
           if (!profileExists || profileExists.length === 0) {
+            // First get a default role
+            const { data: roles, error: rolesError } = await supabase
+              .from('roles')
+              .select('id')
+              .limit(1);
+
+            if (rolesError) {
+              console.error('Error fetching default role:', rolesError);
+              return;
+            }
+
+            const defaultRoleId = roles?.[0]?.id;
+            if (!defaultRoleId) {
+              console.error('No default role found');
+              return;
+            }
+
             const { error: insertError } = await supabase
               .from('profiles')
               .insert([{ 
                 id: user.id,
                 email: user.email,
-                is_admin: false
+                is_admin: false,
+                role_id: defaultRoleId
               }]);
 
             if (insertError) {
