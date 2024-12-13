@@ -71,8 +71,27 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
         return;
       }
 
+      // Check if user is admin
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profileError) {
+        console.error("Error fetching profile:", profileError);
+        toast.error("Error al verificar permisos de usuario");
+        return;
+      }
+
       toast.success("Inicio de sesión exitoso");
-      navigate("/select-area");
+      
+      // Redirect based on admin status
+      if (profile?.is_admin) {
+        navigate("/admin");
+      } else {
+        navigate("/select-area");
+      }
     } catch (error) {
       console.error("Unexpected error during login:", error);
       toast.error("Ha ocurrido un error inesperado. Por favor, intenta de nuevo.");
