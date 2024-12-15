@@ -57,7 +57,7 @@ const RegisterForm = ({ onToggleRegister }: RegisterFormProps) => {
         return;
       }
 
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+      const { error: signUpError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
@@ -70,17 +70,25 @@ const RegisterForm = ({ onToggleRegister }: RegisterFormProps) => {
       });
 
       if (signUpError) {
-        if (signUpError.message.includes("already registered")) {
-          toast.error("Este email ya está registrado. Por favor, inicia sesión.");
-        } else {
-          toast.error("Error al registrar usuario");
-          console.error("Register error:", signUpError);
+        console.error("Register error:", signUpError);
+        
+        // Parse the error message if it's in JSON format
+        try {
+          const errorBody = JSON.parse(signUpError.message);
+          if (errorBody.code === "user_already_exists") {
+            toast.error("Este email ya está registrado. Por favor, inicia sesión.");
+            onToggleRegister(); // Redirect to login
+            return;
+          }
+        } catch {
+          // If parsing fails, handle other error cases
+          if (signUpError.message.includes("already registered")) {
+            toast.error("Este email ya está registrado. Por favor, inicia sesión.");
+            onToggleRegister(); // Redirect to login
+          } else {
+            toast.error("Error al registrar usuario. Por favor, intenta de nuevo.");
+          }
         }
-        return;
-      }
-
-      if (!authData.user) {
-        toast.error("Error al crear usuario");
         return;
       }
 
