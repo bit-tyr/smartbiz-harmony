@@ -13,8 +13,8 @@ interface LoginFormProps {
 }
 
 const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("admin@example.com");
+  const [password, setPassword] = useState("admin123");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -38,18 +38,54 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
     return true;
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const createAdminUser = async () => {
+    setIsLoading(true);
+    try {
+      const { data: existingUsers, error: fetchError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('is_admin', true)
+        .limit(1);
+
+      if (fetchError) throw fetchError;
+
+      if (existingUsers && existingUsers.length > 0) {
+        toast.error("Ya existe un usuario administrador");
+        return;
+      }
+
+      const { data, error } = await supabase.auth.signUp({
+        email: "admin@example.com",
+        password: "admin123",
+      });
+
+      if (error) throw error;
+
+      if (data?.user) {
+        toast.success('Usuario administrador creado exitosamente');
+        // Intentamos iniciar sesión automáticamente
+        await handleLogin(null, true);
+      }
+    } catch (error) {
+      console.error('Error creating admin user:', error);
+      toast.error('Error al crear usuario administrador');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent | null, isAutoLogin = false) => {
+    if (e) e.preventDefault();
     
-    if (!validateForm()) return;
+    if (!isAutoLogin && !validateForm()) return;
     
     setIsLoading(true);
     console.log("Attempting login with email:", email.trim().toLowerCase());
 
     try {
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password,
+        email: isAutoLogin ? "admin@example.com" : email.trim().toLowerCase(),
+        password: isAutoLogin ? "admin123" : password,
       });
 
       if (authError) {
@@ -147,6 +183,15 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
         disabled={isLoading}
       >
         {isLoading ? <LoadingSpinner /> : "Iniciar Sesión"}
+      </Button>
+      <Button
+        variant="outline"
+        type="button"
+        onClick={createAdminUser}
+        disabled={isLoading}
+        className="w-full"
+      >
+        Crear Usuario Administrador
       </Button>
       <div className="flex flex-col gap-2">
         <Button
