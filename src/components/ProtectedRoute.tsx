@@ -43,7 +43,14 @@ const useAuth = () => {
             return;
           }
 
-          setIsAdmin(!!profileData?.is_admin);
+          if (!profileData) {
+            console.error('No profile found for user:', session.user.id);
+            toast.error("No se encontró el perfil del usuario");
+            await supabase.auth.signOut();
+            return;
+          }
+
+          setIsAdmin(!!profileData.is_admin);
         }
       } catch (error) {
         console.error('Error checking session:', error);
@@ -74,7 +81,14 @@ const useAuth = () => {
             return;
           }
 
-          setIsAdmin(!!profiles?.is_admin);
+          if (!profiles) {
+            console.error('No profile found for user after auth change:', session.user.id);
+            toast.error("No se encontró el perfil del usuario");
+            await supabase.auth.signOut();
+            return;
+          }
+
+          setIsAdmin(!!profiles.is_admin);
         }
       } else if (event === 'SIGNED_OUT') {
         setSession(null);

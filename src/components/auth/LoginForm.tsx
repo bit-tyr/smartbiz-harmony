@@ -74,11 +74,18 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
         .from('profiles')
         .select('is_admin, role_id, laboratory_id')
         .eq('id', authData.user.id)
-        .single();
+        .maybeSingle();
 
       if (profileError) {
         console.error("Error fetching profile:", profileError);
         toast.error("Error al verificar permisos de usuario");
+        return;
+      }
+
+      if (!profile) {
+        console.error("No profile found for user:", authData.user.id);
+        toast.error("No se encontró el perfil del usuario");
+        await supabase.auth.signOut();
         return;
       }
 
