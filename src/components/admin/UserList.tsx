@@ -42,6 +42,15 @@ export const UserList = ({ searchQuery }: UserListProps) => {
 
   const fetchData = async () => {
     try {
+      // First get all users from auth
+      const { data: { users }, error: authError } = await supabase.auth.admin.listUsers();
+      
+      if (authError) {
+        console.error('Error fetching users:', authError);
+        throw authError;
+      }
+
+      // Then get their profiles
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select(`
@@ -56,8 +65,18 @@ export const UserList = ({ searchQuery }: UserListProps) => {
         throw profilesError;
       }
 
-      console.log("Profiles data:", profilesData);
-      setProfiles(profilesData || []);
+      // Combine the data
+      const combinedData = users.map(user => {
+        const profile = profilesData?.find(p => p.id === user.id) || {};
+        return {
+          ...profile,
+          email: user.email,
+          created_at: user.created_at,
+        };
+      });
+
+      console.log("Combined user data:", combinedData);
+      setProfiles(combinedData || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Error al cargar los datos');
