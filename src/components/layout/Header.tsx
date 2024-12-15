@@ -24,7 +24,6 @@ export const Header = () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          // Fetch profile data including first_name and last_name
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('first_name, last_name, is_admin')
@@ -43,6 +42,11 @@ export const Header = () => {
           
           setUserFullName(fullName || 'Usuario');
           setIsAdmin(!!profile?.is_admin);
+
+          // If user is admin and not already on admin page, redirect to admin
+          if (profile?.is_admin && window.location.pathname !== '/admin') {
+            navigate('/admin');
+          }
         }
       } catch (error) {
         console.error('Error getting user profile:', error);
@@ -50,7 +54,7 @@ export const Header = () => {
     };
 
     getProfile();
-  }, []);
+  }, [navigate]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
