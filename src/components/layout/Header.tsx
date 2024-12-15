@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 export const Header = () => {
   const navigate = useNavigate();
   const selectedArea = localStorage.getItem("selectedArea") || "No seleccionada";
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userFullName, setUserFullName] = useState<string>("");
   const [isAdmin, setIsAdmin] = useState(false);
   const { theme, setTheme } = useTheme();
 
@@ -24,59 +24,24 @@ export const Header = () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          setUserEmail(user.email);
-          
-          // Check if profile exists
+          // Fetch profile data including first_name and last_name
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
-            .select('is_admin')
+            .select('first_name, last_name, is_admin')
             .eq('id', user.id)
-            .maybeSingle();
+            .single();
 
           if (profileError) {
             console.error('Error checking profile:', profileError);
             return;
           }
 
-          // If profile doesn't exist, create it
-          if (!profile) {
-            // First get a default role
-            const { data: roles, error: rolesError } = await supabase
-              .from('roles')
-              .select('id')
-              .limit(1)
-              .single();
-
-            if (rolesError) {
-              console.error('Error fetching default role:', rolesError);
-              return;
-            }
-
-            const { error: insertError } = await supabase.auth.updateUser({
-              data: { role_id: roles.id }
-            });
-
-            if (insertError) {
-              console.error('Error updating user metadata:', insertError);
-              return;
-            }
-
-            const { error: createProfileError } = await supabase
-              .from('profiles')
-              .insert({
-                id: user.id,
-                email: user.email,
-                role_id: roles.id,
-                is_admin: false
-              })
-              .single();
-
-            if (createProfileError) {
-              console.error('Error creating profile:', createProfileError);
-              return;
-            }
-          }
-
+          // Set user's full name, fallback to email if no name is set
+          const fullName = profile?.first_name && profile?.last_name
+            ? `${profile.first_name} ${profile.last_name}`
+            : user.email;
+          
+          setUserFullName(fullName || 'Usuario');
           setIsAdmin(!!profile?.is_admin);
         }
       } catch (error) {
@@ -138,7 +103,7 @@ export const Header = () => {
             <button className="flex items-center gap-2 p-2 hover:bg-accent rounded-lg">
               <User className="h-5 w-5 text-foreground" />
               <span className="text-sm font-medium">
-                {userEmail || 'Usuario'}
+                {userFullName}
                 {isAdmin && ' (Admin)'}
               </span>
             </button>

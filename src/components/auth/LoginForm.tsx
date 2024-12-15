@@ -72,7 +72,7 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
 
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('is_admin, role_id, laboratory_id')
+        .select('is_admin, role_id, laboratory_id, first_name, last_name')
         .eq('id', authData.user.id)
         .maybeSingle();
 
