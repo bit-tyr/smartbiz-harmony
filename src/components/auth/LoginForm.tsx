@@ -45,15 +45,6 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
     setIsLoading(true);
 
     try {
-      // Check network connectivity first
-      const networkTest = await fetch('https://api.supabase.com/health-check')
-        .catch(() => null);
-
-      if (!networkTest) {
-        toast.error("Error de conexión. Por favor, verifica tu conexión a internet.");
-        return;
-      }
-
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
@@ -62,8 +53,8 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
       if (authError) {
         console.error("Auth error details:", authError);
         
-        if (authError.message.includes("Failed to fetch")) {
-          toast.error("Error de conexión con el servidor. Por favor, intenta de nuevo.");
+        if (authError.message.includes("Failed to fetch") || authError.message.includes("NetworkError")) {
+          toast.error("Error de conexión. Por favor, verifica tu conexión a internet e intenta de nuevo.");
         } else if (authError.message.includes("Invalid login credentials")) {
           toast.error("Email o contraseña incorrectos");
         } else if (authError.message.includes("Email not confirmed")) {
@@ -79,7 +70,6 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
         return;
       }
 
-      // Get profile data with a single query
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('is_admin, role_id, laboratory_id')
@@ -94,7 +84,6 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
 
       toast.success("Inicio de sesión exitoso");
       
-      // Redirect based on profile data
       if (profile?.is_admin) {
         navigate("/admin");
       } else {
