@@ -65,9 +65,21 @@ export const UserList = ({ searchQuery }: UserListProps) => {
         throw profilesError;
       }
 
+      // Create a default profile object with all required properties
+      const defaultProfile: Omit<Profile, 'id' | 'email' | 'created_at'> = {
+        updated_at: '',
+        is_admin: false,
+        is_blocked: false,
+        role_id: '',
+        laboratory_id: null,
+        first_name: null,
+        last_name: null,
+        roles: undefined
+      };
+
       // Combine the data ensuring all required Profile properties are present
       const combinedData = users.map(user => {
-        const profile = profilesData?.find(p => p.id === user.id) || {};
+        const profile = profilesData?.find(p => p.id === user.id) || defaultProfile;
         return {
           id: user.id,
           email: user.email,
