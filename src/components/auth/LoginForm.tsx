@@ -24,7 +24,8 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
       return false;
     }
     
-    if (!email.includes("@")) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
       toast.error("Por favor, ingresa un email válido");
       return false;
     }
@@ -43,6 +44,7 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
     if (!validateForm()) return;
     
     setIsLoading(true);
+    console.log("Attempting login with email:", email.trim().toLowerCase());
 
     try {
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
@@ -55,20 +57,26 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
         
         if (authError.message.includes("Invalid login credentials")) {
           toast.error("Email o contraseña incorrectos");
+          console.log("Invalid credentials error for email:", email.trim().toLowerCase());
         } else if (authError.message.includes("Email not confirmed")) {
           toast.error("Por favor, verifica tu correo electrónico");
         } else if (authError.message.includes("Failed to fetch") || authError.message.includes("NetworkError")) {
           toast.error("Error de conexión. Por favor, verifica tu conexión a internet e intenta de nuevo.");
+          console.error("Network error during login:", authError);
         } else {
           toast.error("Error al iniciar sesión. Por favor, intenta de nuevo.");
+          console.error("Unexpected auth error:", authError);
         }
         return;
       }
 
       if (!authData?.user) {
+        console.error("No user data received after successful auth");
         toast.error("No se pudo obtener la información del usuario");
         return;
       }
+
+      console.log("Auth successful, fetching profile for user:", authData.user.id);
 
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -90,6 +98,7 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
       }
 
       toast.success("Inicio de sesión exitoso");
+      console.log("Login successful, redirecting user. Is admin:", profile?.is_admin);
       
       if (profile?.is_admin) {
         navigate("/admin");
