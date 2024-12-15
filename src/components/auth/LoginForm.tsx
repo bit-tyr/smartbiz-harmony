@@ -41,6 +41,7 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
   const createAdminUser = async () => {
     setIsLoading(true);
     try {
+      // Primero verificamos si ya existe un usuario administrador
       const { data: existingUsers, error: fetchError } = await supabase
         .from('profiles')
         .select('id')
@@ -50,20 +51,30 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
       if (fetchError) throw fetchError;
 
       if (existingUsers && existingUsers.length > 0) {
-        toast.error("Ya existe un usuario administrador");
+        // Si existe, intentamos iniciar sesión directamente
+        toast.info("El usuario administrador ya existe, intentando iniciar sesión...");
+        await handleLogin(null, true);
         return;
       }
 
+      // Si no existe, intentamos crearlo
       const { data, error } = await supabase.auth.signUp({
         email: "admin@example.com",
         password: "admin123",
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes("User already registered")) {
+          // Si el usuario existe en auth pero no en profiles, intentamos iniciar sesión
+          toast.info("El usuario ya existe, intentando iniciar sesión...");
+          await handleLogin(null, true);
+          return;
+        }
+        throw error;
+      }
 
       if (data?.user) {
         toast.success('Usuario administrador creado exitosamente');
-        // Intentamos iniciar sesión automáticamente
         await handleLogin(null, true);
       }
     } catch (error) {
@@ -80,7 +91,7 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
     if (!isAutoLogin && !validateForm()) return;
     
     setIsLoading(true);
-    console.log("Attempting login with email:", email.trim().toLowerCase());
+    console.log("Attempting login with email:", isAutoLogin ? "admin@example.com" : email.trim().toLowerCase());
 
     try {
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
