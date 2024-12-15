@@ -13,10 +13,12 @@ interface RegisterFormProps {
 const RegisterForm = ({ onToggleRegister }: RegisterFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const validateForm = () => {
-    if (!email || !password) {
+    if (!email || !password || !firstName || !lastName) {
       toast.error("Por favor, completa todos los campos");
       return false;
     }
@@ -60,6 +62,8 @@ const RegisterForm = ({ onToggleRegister }: RegisterFormProps) => {
         password,
         options: {
           data: {
+            first_name: firstName,
+            last_name: lastName,
             role_id: roles.id
           }
         }
@@ -92,6 +96,30 @@ const RegisterForm = ({ onToggleRegister }: RegisterFormProps) => {
 
   return (
     <form onSubmit={handleRegister} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="firstName">Nombre</Label>
+        <Input
+          id="firstName"
+          placeholder="Ingresa tu nombre"
+          type="text"
+          value={firstName}
+          onChange={(e) => setFirstName(e.target.value)}
+          required
+          disabled={isLoading}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="lastName">Apellido</Label>
+        <Input
+          id="lastName"
+          placeholder="Ingresa tu apellido"
+          type="text"
+          value={lastName}
+          onChange={(e) => setLastName(e.target.value)}
+          required
+          disabled={isLoading}
+        />
+      </div>
       <div className="space-y-2">
         <Label htmlFor="email">Correo electrónico</Label>
         <Input
