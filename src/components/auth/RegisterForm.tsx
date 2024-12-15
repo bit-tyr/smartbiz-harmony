@@ -72,23 +72,17 @@ const RegisterForm = ({ onToggleRegister }: RegisterFormProps) => {
       if (signUpError) {
         console.error("Register error:", signUpError);
         
-        // Parse the error message if it's in JSON format
-        try {
-          const errorBody = JSON.parse(signUpError.message);
-          if (errorBody.code === "user_already_exists") {
-            toast.error("Este email ya está registrado. Por favor, inicia sesión.");
-            onToggleRegister(); // Redirect to login
-            return;
-          }
-        } catch {
-          // If parsing fails, handle other error cases
-          if (signUpError.message.includes("already registered")) {
-            toast.error("Este email ya está registrado. Por favor, inicia sesión.");
-            onToggleRegister(); // Redirect to login
-          } else {
-            toast.error("Error al registrar usuario. Por favor, intenta de nuevo.");
-          }
+        // Check if error message contains user_already_exists
+        if (signUpError.message.includes("user_already_exists") || 
+            (typeof signUpError === 'object' && 
+             signUpError.message && 
+             signUpError.message.includes("User already registered"))) {
+          toast.error("Este email ya está registrado. Por favor, inicia sesión.");
+          onToggleRegister(); // Redirect to login
+          return;
         }
+
+        toast.error("Error al registrar usuario. Por favor, intenta de nuevo.");
         return;
       }
 
