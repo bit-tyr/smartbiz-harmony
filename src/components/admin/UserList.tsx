@@ -65,18 +65,26 @@ export const UserList = ({ searchQuery }: UserListProps) => {
         throw profilesError;
       }
 
-      // Combine the data
+      // Combine the data ensuring all required Profile properties are present
       const combinedData = users.map(user => {
         const profile = profilesData?.find(p => p.id === user.id) || {};
         return {
-          ...profile,
+          id: user.id,
           email: user.email,
           created_at: user.created_at,
-        };
+          updated_at: profile.updated_at || user.created_at,
+          is_admin: profile.is_admin || false,
+          is_blocked: profile.is_blocked || false,
+          role_id: profile.role_id || '',
+          laboratory_id: profile.laboratory_id || null,
+          first_name: profile.first_name || null,
+          last_name: profile.last_name || null,
+          roles: profile.roles,
+        } as Profile;
       });
 
       console.log("Combined user data:", combinedData);
-      setProfiles(combinedData || []);
+      setProfiles(combinedData);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Error al cargar los datos');
