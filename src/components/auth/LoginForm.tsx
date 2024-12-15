@@ -46,19 +46,19 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
 
     try {
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email: email.trim().toLowerCase(),
         password,
       });
 
       if (authError) {
         console.error("Auth error details:", authError);
         
-        if (authError.message.includes("Failed to fetch") || authError.message.includes("NetworkError")) {
-          toast.error("Error de conexión. Por favor, verifica tu conexión a internet e intenta de nuevo.");
-        } else if (authError.message.includes("Invalid login credentials")) {
+        if (authError.message.includes("Invalid login credentials")) {
           toast.error("Email o contraseña incorrectos");
         } else if (authError.message.includes("Email not confirmed")) {
           toast.error("Por favor, verifica tu correo electrónico");
+        } else if (authError.message.includes("Failed to fetch") || authError.message.includes("NetworkError")) {
+          toast.error("Error de conexión. Por favor, verifica tu conexión a internet e intenta de nuevo.");
         } else {
           toast.error("Error al iniciar sesión. Por favor, intenta de nuevo.");
         }
