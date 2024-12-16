@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { LoadingSpinner } from "../ui/loading";
 import { createAdminProfile, handleAuthError, checkExistingAdmin } from "@/utils/auth";
+import { loginUser, fetchUserProfile } from "@/utils/auth-api";
+import { validateLoginForm } from "./LoginFormValidation";
 
 interface LoginFormProps {
   onToggleRegister: () => void;
@@ -19,26 +20,6 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const validateForm = () => {
-    if (!email || !password) {
-      toast.error("Por favor, completa todos los campos");
-      return false;
-    }
-    
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      toast.error("Por favor, ingresa un email válido");
-      return false;
-    }
-
-    if (password.length < 6) {
-      toast.error("La contraseña debe tener al menos 6 caracteres");
-      return false;
-    }
-
-    return true;
-  };
-
   const createAdminUser = async () => {
     setIsLoading(true);
     try {
@@ -50,27 +31,12 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
         return;
       }
 
-      const { data, error } = await supabase.auth.signUp({
-        email: "admin@example.com",
-        password: "admin123",
-      });
-
-      if (error) {
-        // If user exists, try to log in
-        if (error.message.includes("User already registered")) {
-          toast.info("El usuario ya existe, intentando iniciar sesión...");
-          await handleLogin(null, true);
-          return;
-        }
-        throw error;
-      }
+      const { data, error } = await loginUser("admin@example.com", "admin123");
+      if (error) throw error;
 
       if (data?.user) {
         const result = await createAdminProfile(data.user.id);
-        
-        if (!result.success) {
-          throw result.error;
-        }
+        if (!result.success) throw result.error;
 
         toast.success('Usuario administrador creado exitosamente');
         await handleLogin(null, true);
@@ -86,64 +52,40 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
   const handleLogin = async (e: React.FormEvent | null, isAutoLogin = false) => {
     if (e) e.preventDefault();
     
-    if (!isAutoLogin && !validateForm()) return;
+    const loginEmail = isAutoLogin ? "admin@example.com" : email;
+    const loginPassword = isAutoLogin ? "admin123" : password;
+    
+    if (!isAutoLogin && !validateLoginForm(loginEmail, loginPassword)) return;
     
     setIsLoading(true);
-    console.log("Attempting login with email:", isAutoLogin ? "admin@example.com" : email.trim().toLowerCase());
+    console.log("Attempting login with email:", loginEmail);
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: isAutoLogin ? "admin@example.com" : email.trim().toLowerCase(),
-        password: isAutoLogin ? "admin123" : password,
-      });
-
-      if (authError) {
-        handleAuthError(authError);
-        return;
-      }
-
-      if (!authData?.user) {
-        console.error("No user data received after successful auth");
-        toast.error("No se pudo obtener la información del usuario");
-        return;
-      }
-
+      const authData = await loginUser(loginEmail, loginPassword);
       console.log("Auth successful, fetching profile for user:", authData.user.id);
 
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('is_admin, role_id, laboratory_id, first_name, last_name')
-        .eq('id', authData.user.id)
-        .single();
-
-      if (profileError) {
-        console.error("Error fetching profile:", profileError);
-        toast.error("Error al verificar permisos de usuario");
-        return;
-      }
-
-      if (!profile) {
-        console.error("No profile found for user:", authData.user.id);
-        toast.error("No se encontró el perfil del usuario");
-        await supabase.auth.signOut();
-        return;
-      }
-
+      const profile = await fetchUserProfile(authData.user.id);
+      
       const successMessage = profile.is_admin 
         ? "Inicio de sesión exitoso como administrador"
         : "Inicio de sesión exitoso";
       
       toast.success(successMessage);
-      console.log("Login successful, redirecting user. Is admin:", profile?.is_admin);
+      console.log("Login successful, redirecting user. Is admin:", profile.is_admin);
       
-      if (profile?.is_admin) {
+      if (profile.is_admin) {
         navigate("/admin");
       } else {
         navigate("/select-area");
       }
-    } catch (error) {
-      console.error("Unexpected error during login:", error);
-      toast.error("Ha ocurrido un error inesperado. Por favor, intenta de nuevo.");
+    } catch (error: any) {
+      console.error("Login error:", error);
+      if (error.message.includes("No profile found")) {
+        toast.error("No se encontró el perfil del usuario");
+        await supabase.auth.signOut();
+      } else {
+        handleAuthError(error);
+      }
     } finally {
       setIsLoading(false);
     }
