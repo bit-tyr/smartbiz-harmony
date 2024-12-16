@@ -11,12 +11,22 @@ interface UserActionsProps {
 export const UserActions = ({ userId, isBlocked, onUpdate }: UserActionsProps) => {
   const toggleBlockStatus = async () => {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .update({ is_blocked: !isBlocked })
-        .eq('id', userId);
+        .eq('id', userId)
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error details:', error);
+        if (error.code === '42501') {
+          toast.error('No tienes permisos para realizar esta acción');
+        } else {
+          toast.error('Error al actualizar el estado del usuario');
+        }
+        return;
+      }
       
       toast.success(`Usuario ${isBlocked ? 'desbloqueado' : 'bloqueado'} exitosamente`);
       onUpdate();

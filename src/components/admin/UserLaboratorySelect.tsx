@@ -18,7 +18,12 @@ export const UserLaboratorySelect = ({ userId, currentLabId, onUpdate }: UserLab
 
   useEffect(() => {
     const fetchLaboratories = async () => {
-      const { data } = await supabase.from('laboratories').select('*');
+      const { data, error } = await supabase.from('laboratories').select('*');
+      if (error) {
+        console.error('Error fetching laboratories:', error);
+        toast.error('Error al cargar los laboratorios');
+        return;
+      }
       if (data) setLaboratories(data);
     };
     fetchLaboratories();
@@ -29,9 +34,18 @@ export const UserLaboratorySelect = ({ userId, currentLabId, onUpdate }: UserLab
       const { error } = await supabase
         .from('profiles')
         .update({ laboratory_id: labId })
-        .eq('id', userId);
+        .eq('id', userId)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error details:', error);
+        if (error.code === '42501') {
+          toast.error('No tienes permisos para realizar esta acción');
+        } else {
+          toast.error('Error al actualizar el laboratorio');
+        }
+        return;
+      }
       
       toast.success('Laboratorio actualizado exitosamente');
       onUpdate();

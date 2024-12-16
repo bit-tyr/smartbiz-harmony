@@ -18,7 +18,12 @@ export const UserRoleSelect = ({ userId, currentRoleId, onUpdate }: UserRoleSele
 
   useEffect(() => {
     const fetchRoles = async () => {
-      const { data } = await supabase.from('roles').select('*');
+      const { data, error } = await supabase.from('roles').select('*');
+      if (error) {
+        console.error('Error fetching roles:', error);
+        toast.error('Error al cargar los roles');
+        return;
+      }
       if (data) setRoles(data);
     };
     fetchRoles();
@@ -29,9 +34,18 @@ export const UserRoleSelect = ({ userId, currentRoleId, onUpdate }: UserRoleSele
       const { error } = await supabase
         .from('profiles')
         .update({ role_id: roleId })
-        .eq('id', userId);
+        .eq('id', userId)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error details:', error);
+        if (error.code === '42501') {
+          toast.error('No tienes permisos para realizar esta acción');
+        } else {
+          toast.error('Error al actualizar el rol');
+        }
+        return;
+      }
       
       toast.success('Rol actualizado exitosamente');
       onUpdate();
