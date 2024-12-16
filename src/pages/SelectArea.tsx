@@ -1,7 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, FileText, Wrench } from "lucide-react";
+import { ShoppingCart, FileText, Wrench, Settings } from "lucide-react";
 import { toast } from "sonner";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const AreaButton = ({ 
   icon: Icon, 
@@ -31,6 +33,26 @@ const AreaButton = ({
 };
 
 const SelectArea = () => {
+  const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', session.user.id)
+          .single();
+        
+        setIsAdmin(profile?.is_admin || false);
+      }
+    };
+
+    checkAdminStatus();
+  }, []);
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-4xl p-8">
@@ -55,6 +77,19 @@ const SelectArea = () => {
             path="/mantenimiento"
           />
         </div>
+
+        {isAdmin && (
+          <div className="mt-8 flex justify-center">
+            <Button
+              variant="outline"
+              onClick={() => navigate("/admin")}
+              className="gap-2"
+            >
+              <Settings className="h-5 w-5" />
+              Panel de Administrador
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
