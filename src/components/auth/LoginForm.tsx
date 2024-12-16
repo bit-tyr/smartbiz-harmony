@@ -8,6 +8,7 @@ import { LoadingSpinner } from "../ui/loading";
 import { createAdminProfile, handleAuthError, checkExistingAdmin } from "@/utils/auth";
 import { loginUser, fetchUserProfile } from "@/utils/auth-api";
 import { validateLoginForm } from "./LoginFormValidation";
+import { supabase } from "@/integrations/supabase/client";
 
 interface LoginFormProps {
   onToggleRegister: () => void;
@@ -31,16 +32,14 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
         return;
       }
 
-      const { data, error } = await loginUser("admin@example.com", "admin123");
-      if (error) throw error;
+      const authResponse = await loginUser("admin@example.com", "admin123");
+      if (!authResponse.user) throw new Error("No user data received");
 
-      if (data?.user) {
-        const result = await createAdminProfile(data.user.id);
-        if (!result.success) throw result.error;
+      const result = await createAdminProfile(authResponse.user.id);
+      if (!result.success) throw result.error;
 
-        toast.success('Usuario administrador creado exitosamente');
-        await handleLogin(null, true);
-      }
+      toast.success('Usuario administrador creado exitosamente');
+      await handleLogin(null, true);
     } catch (error) {
       console.error('Error creating admin user:', error);
       toast.error('Error al crear usuario administrador');
@@ -62,6 +61,8 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
 
     try {
       const authData = await loginUser(loginEmail, loginPassword);
+      if (!authData.user) throw new Error("No user data received");
+      
       console.log("Auth successful, fetching profile for user:", authData.user.id);
 
       const profile = await fetchUserProfile(authData.user.id);
