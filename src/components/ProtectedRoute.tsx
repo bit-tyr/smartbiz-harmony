@@ -16,47 +16,58 @@ const useAuth = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     const checkSession = async () => {
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        // Get initial session
+        const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
           console.error('Session error:', sessionError);
-          await supabase.auth.signOut();
-          setSession(null);
-          setLoading(false);
+          if (mounted) {
+            await supabase.auth.signOut();
+            setSession(null);
+            setLoading(false);
+          }
           return;
         }
 
-        setSession(session);
+        if (mounted) {
+          setSession(initialSession);
 
-        if (session) {
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('is_admin')
-            .eq('id', session.user.id)
-            .maybeSingle();
+          if (initialSession?.user) {
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('is_admin')
+              .eq('id', initialSession.user.id)
+              .maybeSingle();
 
-          if (profileError) {
-            console.error('Error checking profile:', profileError);
-            toast.error("Error al verificar permisos de usuario");
-            return;
+            if (profileError) {
+              console.error('Error checking profile:', profileError);
+              toast.error("Error al verificar permisos de usuario");
+              return;
+            }
+
+            if (!profileData) {
+              console.error('No profile found for user:', initialSession.user.id);
+              toast.error("No se encontró el perfil del usuario");
+              await supabase.auth.signOut();
+              return;
+            }
+
+            if (mounted) {
+              setIsAdmin(!!profileData.is_admin);
+            }
           }
-
-          if (!profileData) {
-            console.error('No profile found for user:', session.user.id);
-            toast.error("No se encontró el perfil del usuario");
-            await supabase.auth.signOut();
-            return;
-          }
-
-          setIsAdmin(!!profileData.is_admin);
         }
       } catch (error) {
         console.error('Error checking session:', error);
         toast.error("Error al verificar la sesión");
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
@@ -65,10 +76,12 @@ const useAuth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, 'Session:', session?.user?.id);
       
+      if (!mounted) return;
+
       if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') {
         setSession(session);
         
-        if (session) {
+        if (session?.user) {
           const { data: profiles, error: profileError } = await supabase
             .from('profiles')
             .select('is_admin')
@@ -98,6 +111,7 @@ const useAuth = () => {
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
