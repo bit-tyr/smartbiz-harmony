@@ -1,9 +1,48 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, FileText, Wrench, Home, Users } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
-export const SidebarNav = ({ isAdmin }: { isAdmin: boolean }) => {
+interface SidebarNavProps {
+  isAdmin: boolean;
+}
+
+export const SidebarNav = ({ isAdmin }: SidebarNavProps) => {
   const location = useLocation();
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getUserRole = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select(`
+            roles (
+              name
+            )
+          `)
+          .eq('id', user.id)
+          .single();
+
+        if (error) {
+          console.error('Error fetching user role:', error);
+          return;
+        }
+
+        if (profile?.roles) {
+          setUserRole(profile.roles.name);
+        }
+      }
+    };
+
+    getUserRole();
+  }, []);
+
+  const showPurchasesLink = isAdmin || userRole === 'Purchases';
+  const showMaintenanceLink = isAdmin || userRole === 'Maintenance';
+  const showSecretaryLink = isAdmin || userRole === 'Secretary';
 
   return (
     <div className="px-3 py-2">
@@ -20,6 +59,7 @@ export const SidebarNav = ({ isAdmin }: { isAdmin: boolean }) => {
             Dashboard
           </Button>
         </Link>
+        
         {isAdmin && (
           <Link to="/admin">
             <Button
@@ -31,33 +71,42 @@ export const SidebarNav = ({ isAdmin }: { isAdmin: boolean }) => {
             </Button>
           </Link>
         )}
-        <Link to="/compras">
-          <Button
-            variant={location.pathname === "/compras" ? "secondary" : "ghost"}
-            className="w-full justify-start"
-          >
-            <ShoppingCart className="mr-2 h-4 w-4" />
-            Compras
-          </Button>
-        </Link>
-        <Link to="/secretaria">
-          <Button
-            variant={location.pathname === "/secretaria" ? "secondary" : "ghost"}
-            className="w-full justify-start"
-          >
-            <FileText className="mr-2 h-4 w-4" />
-            Secretaría
-          </Button>
-        </Link>
-        <Link to="/mantenimiento">
-          <Button
-            variant={location.pathname === "/mantenimiento" ? "secondary" : "ghost"}
-            className="w-full justify-start"
-          >
-            <Wrench className="mr-2 h-4 w-4" />
-            Mantenimiento
-          </Button>
-        </Link>
+
+        {showPurchasesLink && (
+          <Link to="/compras">
+            <Button
+              variant={location.pathname === "/compras" ? "secondary" : "ghost"}
+              className="w-full justify-start"
+            >
+              <ShoppingCart className="mr-2 h-4 w-4" />
+              Compras
+            </Button>
+          </Link>
+        )}
+
+        {showSecretaryLink && (
+          <Link to="/secretaria">
+            <Button
+              variant={location.pathname === "/secretaria" ? "secondary" : "ghost"}
+              className="w-full justify-start"
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              Secretaría
+            </Button>
+          </Link>
+        )}
+
+        {showMaintenanceLink && (
+          <Link to="/mantenimiento">
+            <Button
+              variant={location.pathname === "/mantenimiento" ? "secondary" : "ghost"}
+              className="w-full justify-start"
+            >
+              <Wrench className="mr-2 h-4 w-4" />
+              Mantenimiento
+            </Button>
+          </Link>
+        )}
       </div>
     </div>
   );
