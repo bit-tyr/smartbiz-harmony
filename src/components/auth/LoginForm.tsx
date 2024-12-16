@@ -41,7 +41,7 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
   const createAdminUser = async () => {
     setIsLoading(true);
     try {
-      // Primero verificamos si ya existe un usuario administrador
+      // First check if admin user exists
       const { data: existingUsers, error: fetchError } = await supabase
         .from('profiles')
         .select('id')
@@ -51,13 +51,12 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
       if (fetchError) throw fetchError;
 
       if (existingUsers && existingUsers.length > 0) {
-        // Si existe, intentamos iniciar sesión directamente
         toast.info("El usuario administrador ya existe, intentando iniciar sesión...");
         await handleLogin(null, true);
         return;
       }
 
-      // Si no existe, intentamos crearlo
+      // If no admin exists, create one
       const { data, error } = await supabase.auth.signUp({
         email: "admin@example.com",
         password: "admin123",
@@ -65,7 +64,6 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
 
       if (error) {
         if (error.message.includes("User already registered")) {
-          // Si el usuario existe en auth pero no en profiles, intentamos iniciar sesión
           toast.info("El usuario ya existe, intentando iniciar sesión...");
           await handleLogin(null, true);
           return;
@@ -74,6 +72,28 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
       }
 
       if (data?.user) {
+        // Get the Administrator role
+        const { data: roleData, error: roleError } = await supabase
+          .from('roles')
+          .select('id')
+          .eq('name', 'Administrator')
+          .single();
+
+        if (roleError) throw roleError;
+
+        // Update profile with admin rights and role
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            is_admin: true,
+            role_id: roleData.id,
+            first_name: 'Admin',
+            last_name: 'User'
+          })
+          .eq('id', data.user.id);
+
+        if (profileError) throw profileError;
+
         toast.success('Usuario administrador creado exitosamente');
         await handleLogin(null, true);
       }
@@ -104,15 +124,10 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
         
         if (authError.message.includes("Invalid login credentials")) {
           toast.error("Email o contraseña incorrectos");
-          console.log("Invalid credentials error for email:", email.trim().toLowerCase());
         } else if (authError.message.includes("Email not confirmed")) {
           toast.error("Por favor, verifica tu correo electrónico");
-        } else if (authError.message.includes("Failed to fetch") || authError.message.includes("NetworkError")) {
-          toast.error("Error de conexión. Por favor, verifica tu conexión a internet e intenta de nuevo.");
-          console.error("Network error during login:", authError);
         } else {
           toast.error("Error al iniciar sesión. Por favor, intenta de nuevo.");
-          console.error("Unexpected auth error:", authError);
         }
         return;
       }
@@ -129,7 +144,7 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
         .from('profiles')
         .select('is_admin, role_id, laboratory_id, first_name, last_name')
         .eq('id', authData.user.id)
-        .maybeSingle();
+        .single();
 
       if (profileError) {
         console.error("Error fetching profile:", profileError);
@@ -144,7 +159,11 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
         return;
       }
 
-      toast.success("Inicio de sesión exitoso");
+      const successMessage = profile.is_admin 
+        ? "Inicio de sesión exitoso como administrador"
+        : "Inicio de sesión exitoso";
+      
+      toast.success(successMessage);
       console.log("Login successful, redirecting user. Is admin:", profile?.is_admin);
       
       if (profile?.is_admin) {
