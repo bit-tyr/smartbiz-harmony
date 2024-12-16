@@ -42,15 +42,6 @@ export const UserList = ({ searchQuery }: UserListProps) => {
 
   const fetchData = async () => {
     try {
-      // First get all users from auth
-      const { data: { users }, error: authError } = await supabase.auth.admin.listUsers();
-      
-      if (authError) {
-        console.error('Error fetching users:', authError);
-        throw authError;
-      }
-
-      // Then get their profiles
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select(`
@@ -65,38 +56,12 @@ export const UserList = ({ searchQuery }: UserListProps) => {
         throw profilesError;
       }
 
-      // Create a default profile object with all required properties
-      const defaultProfile: Omit<Profile, 'id' | 'email' | 'created_at'> = {
-        updated_at: '',
-        is_admin: false,
-        is_blocked: false,
-        role_id: '',
-        laboratory_id: null,
-        first_name: null,
-        last_name: null,
-        roles: undefined
-      };
+      if (!profilesData) {
+        throw new Error('No profiles data received');
+      }
 
-      // Combine the data ensuring all required Profile properties are present
-      const combinedData = users.map(user => {
-        const profile = profilesData?.find(p => p.id === user.id) || defaultProfile;
-        return {
-          id: user.id,
-          email: user.email,
-          created_at: user.created_at,
-          updated_at: profile.updated_at || user.created_at,
-          is_admin: profile.is_admin || false,
-          is_blocked: profile.is_blocked || false,
-          role_id: profile.role_id || '',
-          laboratory_id: profile.laboratory_id || null,
-          first_name: profile.first_name || null,
-          last_name: profile.last_name || null,
-          roles: profile.roles,
-        } as Profile;
-      });
-
-      console.log("Combined user data:", combinedData);
-      setProfiles(combinedData);
+      console.log("Fetched profiles data:", profilesData);
+      setProfiles(profilesData);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Error al cargar los datos');
