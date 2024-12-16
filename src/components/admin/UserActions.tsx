@@ -20,6 +20,8 @@ export function UserActions({ userId, isBlocked, onUpdate }: UserActionsProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const toggleBlockStatus = async () => {
+    if (isLoading) return;
+    
     try {
       setIsLoading(true);
       
@@ -27,13 +29,14 @@ export function UserActions({ userId, isBlocked, onUpdate }: UserActionsProps) {
         .from('profiles')
         .update({ is_blocked: !isBlocked })
         .eq('id', userId)
-        .select()
-        .maybeSingle();
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
-      if (!data) {
-        throw new Error('No profile found');
+      if (!data || data.length === 0) {
+        throw new Error('Usuario no encontrado');
       }
 
       toast.success(`Usuario ${isBlocked ? 'desbloqueado' : 'bloqueado'} exitosamente`);
