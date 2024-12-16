@@ -13,6 +13,7 @@ interface ProtectedRouteProps {
 const useAuth = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [isBlocked, setIsBlocked] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,7 +40,7 @@ const useAuth = () => {
           if (initialSession?.user) {
             const { data: profileData, error: profileError } = await supabase
               .from('profiles')
-              .select('is_admin')
+              .select('is_admin, is_blocked')
               .eq('id', initialSession.user.id)
               .maybeSingle();
 
@@ -56,8 +57,15 @@ const useAuth = () => {
               return;
             }
 
+            if (profileData.is_blocked) {
+              toast.error("Tu cuenta ha sido bloqueada");
+              await supabase.auth.signOut();
+              return;
+            }
+
             if (mounted) {
               setIsAdmin(!!profileData.is_admin);
+              setIsBlocked(!!profileData.is_blocked);
             }
           }
         }
@@ -84,7 +92,7 @@ const useAuth = () => {
         if (session?.user) {
           const { data: profiles, error: profileError } = await supabase
             .from('profiles')
-            .select('is_admin')
+            .select('is_admin, is_blocked')
             .eq('id', session.user.id)
             .maybeSingle();
 
@@ -101,11 +109,19 @@ const useAuth = () => {
             return;
           }
 
+          if (profiles.is_blocked) {
+            toast.error("Tu cuenta ha sido bloqueada");
+            await supabase.auth.signOut();
+            return;
+          }
+
           setIsAdmin(!!profiles.is_admin);
+          setIsBlocked(!!profiles.is_blocked);
         }
       } else if (event === 'SIGNED_OUT') {
         setSession(null);
         setIsAdmin(false);
+        setIsBlocked(false);
       }
       setLoading(false);
     });
@@ -116,11 +132,11 @@ const useAuth = () => {
     };
   }, []);
 
-  return { session, isAdmin, loading };
+  return { session, isAdmin, isBlocked, loading };
 };
 
 const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
-  const { session, isAdmin, loading } = useAuth();
+  const { session, isAdmin, isBlocked, loading } = useAuth();
 
   if (loading) {
     return <div className="flex justify-center items-center h-screen"><LoadingSpinner /></div>;
@@ -128,6 +144,11 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
 
   if (!session) {
     toast.error("Debes iniciar sesión para acceder a esta página");
+    return <Navigate to="/login" replace />;
+  }
+
+  if (isBlocked) {
+    toast.error("Tu cuenta ha sido bloqueada");
     return <Navigate to="/login" replace />;
   }
 

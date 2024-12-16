@@ -153,6 +153,7 @@ export const UserList = ({ searchQuery }: UserListProps) => {
                   <UserActions
                     userId={profile.id}
                     isBlocked={profile.is_blocked || false}
+                    isAdmin={profile.is_admin || false}
                     onUpdate={fetchData}
                   />
                 </TableCell>
