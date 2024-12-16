@@ -35,17 +35,14 @@ export const Header = () => {
             return;
           }
 
-          // Set user's full name, fallback to email if no name is set
-          const fullName = profile?.first_name && profile?.last_name
-            ? `${profile.first_name} ${profile.last_name}`
-            : user.email;
-          
-          setUserFullName(fullName || 'Usuario');
-          setIsAdmin(!!profile?.is_admin);
-
-          // If user is admin and not already on admin page, redirect to admin
-          if (profile?.is_admin && window.location.pathname !== '/admin') {
-            navigate('/admin');
+          if (profile) {
+            const fullName = profile.first_name && profile.last_name
+              ? `${profile.first_name} ${profile.last_name}`
+              : user.email;
+            
+            setUserFullName(fullName || 'Usuario');
+            setIsAdmin(!!profile.is_admin);
+            console.log('Is admin:', profile.is_admin); // Debug log
           }
         }
       } catch (error) {
@@ -54,7 +51,7 @@ export const Header = () => {
     };
 
     getProfile();
-  }, [navigate]);
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

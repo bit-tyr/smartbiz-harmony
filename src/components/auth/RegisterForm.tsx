@@ -48,7 +48,7 @@ const RegisterForm = ({ onToggleRegister }: RegisterFormProps) => {
       const { data: roles, error: rolesError } = await supabase
         .from('roles')
         .select('id')
-        .limit(1)
+        .eq('name', 'Administrator')
         .single();
 
       if (rolesError) {
@@ -62,8 +62,8 @@ const RegisterForm = ({ onToggleRegister }: RegisterFormProps) => {
         password,
         options: {
           data: {
-            first_name: firstName,
-            last_name: lastName,
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
             role_id: roles.id
           }
         }
@@ -72,17 +72,32 @@ const RegisterForm = ({ onToggleRegister }: RegisterFormProps) => {
       if (signUpError) {
         console.error("Register error:", signUpError);
         
-        // Check if error message contains user_already_exists
         if (signUpError.message.includes("user_already_exists") || 
             (typeof signUpError === 'object' && 
              signUpError.message && 
              signUpError.message.includes("User already registered"))) {
           toast.error("Este email ya está registrado. Por favor, inicia sesión.");
-          onToggleRegister(); // Redirect to login
+          onToggleRegister();
           return;
         }
 
         toast.error("Error al registrar usuario. Por favor, intenta de nuevo.");
+        return;
+      }
+
+      // Insert into profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+          is_admin: true // Set as admin for testing purposes
+        })
+        .eq('email', email.trim());
+
+      if (profileError) {
+        console.error('Error updating profile:', profileError);
+        toast.error("Error al actualizar perfil de usuario");
         return;
       }
 
