@@ -29,13 +29,18 @@ export const fetchUserProfile = async (userId: string) => {
 };
 
 export const loginUser = async (email: string, password: string) => {
-  const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-    email: email.trim().toLowerCase(),
-    password,
-  });
+  try {
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password,
+    });
 
-  if (authError) throw authError;
-  if (!authData?.user) throw new Error("No user data received");
+    if (authError) throw authError;
+    if (!authData?.user) throw new Error("No user data received");
 
-  return authData;
+    return authData;
+  } catch (error) {
+    console.error("Login error:", error);
+    throw error;
+  }
 };
