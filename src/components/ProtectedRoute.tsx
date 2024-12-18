@@ -152,7 +152,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
     return <Navigate to="/login" replace />;
   }
 
-  if (requireAdmin && !isAdmin) {
+  if (requireAdmin && (!isAdmin || (session?.user?.role === 'Purchases'))) {
     console.log('Admin access denied. Is admin:', isAdmin);
     toast.error("No tienes permisos de administrador");
     return <Navigate to="/" replace />;

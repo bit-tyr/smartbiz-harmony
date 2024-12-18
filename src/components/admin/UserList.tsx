@@ -14,6 +14,7 @@ import { UserLaboratorySelect } from "./UserLaboratorySelect";
 import { toast } from "sonner";
 import { LoadingSpinner } from "@/components/ui/loading";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 interface Profile {
   id: string;
@@ -80,6 +81,25 @@ export const UserList = ({ searchQuery }: UserListProps) => {
     profile.first_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     profile.last_name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const deleteUser = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success('Usuario eliminado con éxito');
+      fetchData(); // Refresca la lista de usuarios
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast.error('Error al eliminar el usuario');
+    }
+  };
 
   if (loading) {
     return <div className="flex justify-center items-center h-64"><LoadingSpinner /></div>;
@@ -156,6 +176,9 @@ export const UserList = ({ searchQuery }: UserListProps) => {
                     isAdmin={profile.is_admin || false}
                     onUpdate={fetchData}
                   />
+                  <Button onClick={() => deleteUser(profile.id)} variant="destructive">
+                    Eliminar
+                  </Button>
                 </TableCell>
               </TableRow>
             ))
