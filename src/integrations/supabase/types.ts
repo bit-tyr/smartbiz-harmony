@@ -9,6 +9,21 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_users: {
+        Row: {
+          created_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       budget_codes: {
         Row: {
           code: string
@@ -247,6 +262,8 @@ export type Database = {
           last_name: string | null
           role_id: string
           updated_at: string
+          user_id: string | null
+          username: string | null
         }
         Insert: {
           created_at?: string
@@ -260,6 +277,8 @@ export type Database = {
           last_name?: string | null
           role_id: string
           updated_at?: string
+          user_id?: string | null
+          username?: string | null
         }
         Update: {
           created_at?: string
@@ -273,6 +292,8 @@ export type Database = {
           last_name?: string | null
           role_id?: string
           updated_at?: string
+          user_id?: string | null
+          username?: string | null
         }
         Relationships: [
           {
@@ -421,8 +442,10 @@ export type Database = {
       }
       purchase_requests: {
         Row: {
+          actions: string | null
           budget_code_id: string | null
           created_at: string
+          creator_id: string | null
           id: string
           laboratory_id: string | null
           number: number
@@ -432,8 +455,10 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          actions?: string | null
           budget_code_id?: string | null
           created_at?: string
+          creator_id?: string | null
           id?: string
           laboratory_id?: string | null
           number?: number
@@ -443,8 +468,10 @@ export type Database = {
           user_id: string
         }
         Update: {
+          actions?: string | null
           budget_code_id?: string | null
           created_at?: string
+          creator_id?: string | null
           id?: string
           laboratory_id?: string | null
           number?: number
@@ -459,6 +486,13 @@ export type Database = {
             columns: ["budget_code_id"]
             isOneToOne: false
             referencedRelation: "budget_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_requests_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -555,7 +589,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      delete_user: {
+        Args: {
+          user_id: string
+        }
+        Returns: undefined
+      }
+      update_purchase_request_status: {
+        Args: {
+          request_id: string
+          new_status: string
+        }
+        Returns: undefined
+      }
+      update_user_role: {
+        Args: {
+          target_user_id: string
+          new_role: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
