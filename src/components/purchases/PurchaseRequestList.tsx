@@ -1,5 +1,5 @@
 import { Table, TableBody } from "@/components/ui/table";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PurchaseRequestTableHeader } from "./table/PurchaseRequestTableHeader";
 import { PurchaseRequestTableRow } from "./table/PurchaseRequestTableRow";
 import { ColumnSelector } from "./table/ColumnSelector";
@@ -10,6 +10,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { toast } from "react-hot-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
 
 interface PurchaseRequestListProps {
   requests: PurchaseRequest[];
@@ -31,8 +34,8 @@ interface UpdateStatusParams {
 }
 
 export const PurchaseRequestList = ({ 
-  requests, 
-  isLoading,
+  requests: initialRequests, 
+  isLoading: initialLoading,
   onSelectRequest 
 }: PurchaseRequestListProps) => {
   const [visibleColumns, setVisibleColumns] = useState({
@@ -55,6 +58,53 @@ export const PurchaseRequestList = ({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  const { data: requests, isLoading } = useQuery({
+    queryKey: ['purchaseRequests'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('purchase_requests')
+        .select(`
+          *,
+          laboratory:laboratories(*),
+          budget_code:budget_codes(*),
+          purchase_request_items(
+            quantity,
+            unit_price,
+            currency,
+            product:products(
+              name,
+              supplier:suppliers(name)
+            )
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  useEffect(() => {
+    const getUserRole = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select(`
+            role_id,
+            roles:roles(name)
+          `)
+          .eq('id', session.user.id)
+          .single();
+        
+        setUserRole(profile?.roles?.name);
+      }
+    };
+    
+    getUserRole();
+  }, []);
 
   if (isLoading) {
     return <div className="p-8 text-center text-gray-500">Cargando solicitudes...</div>;
@@ -97,6 +147,15 @@ export const PurchaseRequestList = ({
     if (!selectedRequestId) return;
 
     try {
+      // Primero eliminar los items asociados
+      const { error: itemsError } = await supabase
+        .from('purchase_request_items')
+        .delete()
+        .eq('purchase_request_id', selectedRequestId);
+
+      if (itemsError) throw itemsError;
+
+      // Luego eliminar la solicitud principal
       const { error } = await supabase
         .from('purchase_requests')
         .delete()
@@ -181,6 +240,7 @@ export const PurchaseRequestList = ({
               onClick={() => setSelectedRequest(request)}
               onDelete={handleDeleteClick}
               onStatusChange={handleStatusChange}
+              userRole={userRole}
             />
           ))}
         </TableBody>

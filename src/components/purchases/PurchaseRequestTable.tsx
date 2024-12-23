@@ -37,7 +37,25 @@ interface PurchaseRequest {
   user_id: string;
   laboratory: { name: string };
   budget_code: { code: string; description: string };
+  purchase_request_items: Array<{
+    quantity: number;
+    unit_price: number;
+    currency: string;
+    product: {
+      name: string;
+      supplier: {
+        name: string;
+      };
+    };
+  }>;
 }
+
+const formatCurrency = (amount: number, currency: string) => {
+  return new Intl.NumberFormat('es-PE', {
+    style: 'currency',
+    currency: currency,
+  }).format(amount);
+};
 
 export const PurchaseRequestTable = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -52,7 +70,16 @@ export const PurchaseRequestTable = () => {
         .select(`
           *,
           laboratory:laboratories(name),
-          budget_code:budget_codes(code, description)
+          budget_code:budget_codes(code, description),
+          purchase_request_items(
+            quantity,
+            unit_price,
+            currency,
+            product:products(
+              name,
+              supplier:suppliers(name)
+            )
+          )
         `);
       if (error) throw error;
       return data;
@@ -111,11 +138,25 @@ export const PurchaseRequestTable = () => {
               <TableCell>#{request.number}</TableCell>
               <TableCell>{request.laboratory?.name}</TableCell>
               <TableCell>{`${request.budget_code?.code} - ${request.budget_code?.description}`}</TableCell>
-              <TableCell>-</TableCell>
-              <TableCell>-</TableCell>
-              <TableCell>-</TableCell>
-              <TableCell>-</TableCell>
-              <TableCell>-</TableCell>
+              <TableCell>
+                {request.purchase_request_items?.map(item => item.product?.name).join(', ') || '-'}
+              </TableCell>
+              <TableCell>
+                {request.purchase_request_items?.map(item => item.product?.supplier?.name).join(', ') || '-'}
+              </TableCell>
+              <TableCell>
+                {request.purchase_request_items?.map(item => item.quantity).join(', ') || '-'}
+              </TableCell>
+              <TableCell>
+                {request.purchase_request_items?.map(item => 
+                  item.unit_price && item.currency ? 
+                    formatCurrency(item.unit_price, item.currency) : 
+                    '-'
+                ).join(', ') || '-'}
+              </TableCell>
+              <TableCell>
+                {request.purchase_request_items?.map(item => item.currency).join(', ') || '-'}
+              </TableCell>
               <TableCell>{request.status}</TableCell>
               <TableCell>{request.created_at}</TableCell>
               <TableCell>{request.observations}</TableCell>

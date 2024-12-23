@@ -7,69 +7,87 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { PurchaseRequestForm } from "./PurchaseRequestForm";
 import { toast } from "sonner";
+import { FormValues } from "./PurchaseRequestForm";
+import { Button } from "@/components/ui/button";
 
-interface CreatePurchaseRequestDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
-
-export const CreatePurchaseRequestDialog = ({
-  open,
-  onOpenChange,
-}: CreatePurchaseRequestDialogProps) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export const CreatePurchaseRequestDialog = () => {
   const queryClient = useQueryClient();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [open, setOpen] = useState(false);
 
-  const onSubmit = async (values: any) => {
+  const onClose = () => setOpen(false);
+
+  const handleSubmit = async (values: FormValues) => {
     try {
       setIsSubmitting(true);
-
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      if (sessionError) throw sessionError;
+      const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
-        toast.error("Usuario no autenticado");
+        toast.error("No hay sesión de usuario");
         return;
       }
 
-      const { error } = await supabase
+      // Insertar la solicitud principal
+      const { data: purchaseRequest, error: purchaseError } = await supabase
         .from('purchase_requests')
         .insert({
           laboratory_id: values.laboratoryId,
           budget_code_id: values.budgetCodeId,
-          observations: values.observations,
-          user_id: session.user.id,
+          observations: values.observations || '',
+          status: 'pending',
+          user_id: session.user.id
+        })
+        .select()
+        .single();
+
+      if (purchaseError) {
+        toast.error("Error al crear la solicitud");
+        throw purchaseError;
+      }
+
+      // Insertar el item de la solicitud con precio y moneda
+      const { error: itemError } = await supabase
+        .from('purchase_request_items')
+        .insert({
+          purchase_request_id: purchaseRequest.id,
+          product_id: values.productId,
+          quantity: Number(values.quantity),
+          unit_price: Number(values.unitPrice),
+          currency: values.currency
         });
 
-      if (error) throw error;
+      if (itemError) {
+        toast.error("Error al crear el item de la solicitud");
+        throw itemError;
+      }
 
       toast.success("Solicitud creada exitosamente");
-      queryClient.invalidateQueries({ queryKey: ['purchaseRequests'] });
-      onOpenChange(false);
+      await queryClient.invalidateQueries({ queryKey: ['purchaseRequests'] });
+      onClose();
     } catch (error) {
-      console.error('Error creating purchase request:', error);
-      toast.error("Error al crear la solicitud");
+      console.error('Error al crear la solicitud:', error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px]">
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>Nueva Solicitud</Button>
+      </DialogTrigger>
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Nueva Solicitud de Compra</DialogTitle>
-          <DialogDescription>
-            Complete los campos para crear una nueva solicitud de compra
-          </DialogDescription>
         </DialogHeader>
         <PurchaseRequestForm
-          onSubmit={onSubmit}
+          onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
-          onCancel={() => onOpenChange(false)}
+          onCancel={onClose}
         />
       </DialogContent>
     </Dialog>

@@ -31,6 +31,7 @@ interface PurchaseRequestTableRowProps {
   onClick?: () => void;
   onDelete?: (id: string) => void;
   onStatusChange?: (id: string, newStatus: string) => void;
+  userRole?: string | null;
 }
 
 const statusConfig = {
@@ -53,9 +54,13 @@ export const PurchaseRequestTableRow = ({
   visibleColumns,
   onClick,
   onDelete,
-  onStatusChange
+  onStatusChange,
+  userRole
 }: PurchaseRequestTableRowProps) => {
   const firstItem = request.purchase_request_items?.[0];
+
+  console.log('Request:', request);
+  console.log('First Item:', firstItem);
 
   const handleStatusChange = (newStatus: string) => {
     if (onStatusChange) {
@@ -98,7 +103,7 @@ export const PurchaseRequestTableRow = ({
       )}
       {visibleColumns.unitPrice && (
         <TableCell>
-          {firstItem?.unit_price && firstItem.currency ? 
+          {firstItem?.unit_price && firstItem?.currency ? 
             formatCurrency(firstItem.unit_price, firstItem.currency) : 
             "-"
           }
@@ -150,18 +155,20 @@ export const PurchaseRequestTableRow = ({
       )}
       <TableCell>
         <div className="flex gap-2">
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete?.(request.id);
-            }}
-            className="flex items-center gap-2"
-          >
-            <Trash2 className="h-4 w-4" />
-            <span>Eliminar</span>
-          </Button>
+          {userRole !== 'user' && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete?.(request.id);
+              }}
+              className="flex items-center gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span>Eliminar</span>
+            </Button>
+          )}
         </div>
       </TableCell>
     </TableRow>

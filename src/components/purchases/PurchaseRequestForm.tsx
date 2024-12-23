@@ -23,7 +23,7 @@ import { FormSection } from "./form-sections/FormSection";
 import { RequestDetails } from "./form-sections/RequestDetails";
 import { ProductDetails } from "./form-sections/ProductDetails";
 
-interface FormValues {
+export interface FormValues {
   laboratoryId: string;
   budgetCodeId: string;
   supplierId: string;
