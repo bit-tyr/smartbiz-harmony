@@ -15,22 +15,10 @@ import {
 
 interface PurchaseRequestTableRowProps {
   request: PurchaseRequest;
-  visibleColumns: {
-    number: boolean;
-    laboratory: boolean;
-    budgetCode: boolean;
-    product: boolean;
-    supplier: boolean;
-    quantity: boolean;
-    unitPrice: boolean;
-    currency: boolean;
-    status: boolean;
-    date: boolean;
-    observations: boolean;
-  };
+  visibleColumns: Record<string, boolean>;
   onClick?: () => void;
   onDelete?: (id: string) => void;
-  onStatusChange?: (id: string, newStatus: string) => void;
+  onStatusChange?: (id: string, status: string) => void;
   userRole?: string | null;
 }
 
@@ -152,6 +140,11 @@ export const PurchaseRequestTableRow = ({
       )}
       {visibleColumns.observations && (
         <TableCell>{request.observations || "-"}</TableCell>
+      )}
+      {visibleColumns.creator && (
+        <TableCell>
+          {request.user ? `${request.user.first_name} ${request.user.last_name}` : "-"}
+        </TableCell>
       )}
       <TableCell>
         <div className="flex gap-2">

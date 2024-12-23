@@ -28,14 +28,10 @@ export interface FormValues {
   budgetCodeId: string;
   supplierId: string;
   productId: string;
-  quantity: string;
-  unitPrice: string;
+  quantity: number;
+  unitPrice: number;
   currency: string;
   observations?: string;
-  product: {
-    name: string;
-    quantity: string;
-  };
 }
 
 interface PurchaseRequestFormProps {
@@ -49,22 +45,7 @@ export const PurchaseRequestForm = ({
   isSubmitting,
   onCancel,
 }: PurchaseRequestFormProps) => {
-  const form = useForm<FormValues>({
-    defaultValues: {
-      laboratoryId: '',
-      budgetCodeId: '',
-      supplierId: '',
-      productId: '',
-      quantity: '',
-      unitPrice: '',
-      currency: '',
-      observations: '',
-      product: {
-        name: '',
-        quantity: ''
-      }
-    }
-  });
+  const form = useForm<FormValues>();
 
   const { data: laboratories } = useQuery({
     queryKey: ['laboratories'],
