@@ -40,11 +40,15 @@ const Compras = () => {
           .eq('id', session.user.id)
           .single();
 
+        // Fixed query to correctly join with groups table
         const { data: purchasesGroup } = await supabase
           .from('user_groups')
-          .select('group_id')
+          .select(`
+            group_id,
+            groups!inner(name)
+          `)
           .eq('user_id', session.user.id)
-          .eq('group:groups(name)', 'purchases')
+          .eq('groups.name', 'purchases')
           .single();
 
         // Build the query based on user permissions
