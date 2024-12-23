@@ -90,6 +90,7 @@ export const ProductDetails = ({ form, suppliers, products }: ProductDetailsProp
                   step="0.01" 
                   placeholder="Ingrese cantidad"
                   {...field} 
+                  value={field.value || ''}
                 />
               </FormControl>
               <FormMessage />
@@ -132,6 +133,7 @@ export const ProductDetails = ({ form, suppliers, products }: ProductDetailsProp
                   step="0.01" 
                   placeholder="Ingrese precio"
                   {...field} 
+                  value={field.value || ''}
                 />
               </FormControl>
               <FormMessage />
