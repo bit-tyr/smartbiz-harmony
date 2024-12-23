@@ -20,45 +20,70 @@ const Compras = () => {
   const { data: purchaseRequests, isLoading } = useQuery({
     queryKey: ['purchaseRequests', currentView],
     queryFn: async () => {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        toast.error("Error al verificar la sesión");
-        throw sessionError;
-      }
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          toast.error("Error al verificar la sesión");
+          throw sessionError;
+        }
 
-      if (!session?.user) {
-        toast.error("Usuario no autenticado");
-        throw new Error("No authenticated user");
-      }
+        if (!session?.user) {
+          toast.error("Usuario no autenticado");
+          throw new Error("No authenticated user");
+        }
 
-      const query = supabase
-        .from('purchase_requests')
-        .select(`
-          *,
-          laboratory:laboratories(name),
-          budget_code:budget_codes(code, description),
-          purchase_request_items(
-            quantity,
-            unit_price,
-            currency,
-            product:products(
-              name,
-              supplier:suppliers(name)
+        // First, check if user is in purchases group or is admin
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', session.user.id)
+          .single();
+
+        const { data: purchasesGroup } = await supabase
+          .from('user_groups')
+          .select('group_id')
+          .eq('user_id', session.user.id)
+          .eq('group:groups(name)', 'purchases')
+          .single();
+
+        // Build the query based on user permissions
+        let query = supabase
+          .from('purchase_requests')
+          .select(`
+            *,
+            laboratory:laboratories(name),
+            budget_code:budget_codes(code, description),
+            purchase_request_items(
+              quantity,
+              unit_price,
+              currency,
+              product:products(
+                name,
+                supplier:suppliers(name)
+              )
             )
-          )
-        `)
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false });
+          `)
+          .order('created_at', { ascending: false });
 
-      const { data, error } = await query;
+        // If user is not admin or in purchases group, only show their requests
+        if (!userProfile?.is_admin && !purchasesGroup) {
+          query = query.eq('user_id', session.user.id);
+        }
 
-      if (error) {
+        const { data, error } = await query;
+
+        if (error) {
+          toast.error("Error al cargar las solicitudes");
+          throw error;
+        }
+
+        return data || [];
+      } catch (error) {
+        console.error('Error fetching purchase requests:', error);
         toast.error("Error al cargar las solicitudes");
         throw error;
       }
-
-      return data;
     },
   });
 
