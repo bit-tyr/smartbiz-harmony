@@ -33,11 +33,7 @@ interface UpdateStatusParams {
   new_status: string;
 }
 
-export const PurchaseRequestList = ({ 
-  requests: initialRequests, 
-  isLoading: initialLoading,
-  onSelectRequest 
-}: PurchaseRequestListProps) => {
+export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProps) => {
   const [visibleColumns, setVisibleColumns] = useState({
     number: true,
     laboratory: true,
@@ -50,6 +46,7 @@ export const PurchaseRequestList = ({
     status: true,
     date: true,
     observations: true,
+    creator: true
   });
 
   const [selectedRequest, setSelectedRequest] = useState<PurchaseRequest | null>(null);
@@ -59,11 +56,36 @@ export const PurchaseRequestList = ({
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
+
+  useEffect(() => {
+    const getUserRole = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select(`
+            role_id,
+            roles:roles(name)
+          `)
+          .eq('id', session.user.id)
+          .single();
+        
+        setUserRole(profile?.roles?.name);
+        setInitialLoadDone(true);
+      }
+    };
+    
+    getUserRole();
+  }, []);
 
   const { data: requests, isLoading } = useQuery({
-    queryKey: ['purchaseRequests'],
+    queryKey: ['purchaseRequests', userRole],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) throw new Error("No authenticated user");
+
+      let query = supabase
         .from('purchase_requests')
         .select(`
           *,
@@ -81,32 +103,18 @@ export const PurchaseRequestList = ({
         `)
         .order('created_at', { ascending: false });
 
+      if (userRole === 'user') {
+        query = query.eq('user_id', session.user.id);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
-      return data;
-    }
+      return data || [];
+    },
+    enabled: initialLoadDone
   });
 
-  useEffect(() => {
-    const getUserRole = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select(`
-            role_id,
-            roles:roles(name)
-          `)
-          .eq('id', session.user.id)
-          .single();
-        
-        setUserRole(profile?.roles?.name);
-      }
-    };
-    
-    getUserRole();
-  }, []);
-
-  if (isLoading) {
+  if (!initialLoadDone || isLoading) {
     return <div className="p-8 text-center text-gray-500">Cargando solicitudes...</div>;
   }
 
