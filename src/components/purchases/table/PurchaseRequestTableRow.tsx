@@ -3,6 +3,15 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { PurchaseRequest } from "../types";
+import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface PurchaseRequestTableRowProps {
   request: PurchaseRequest;
@@ -20,19 +29,16 @@ interface PurchaseRequestTableRowProps {
     observations: boolean;
   };
   onClick?: () => void;
+  onDelete?: (id: string) => void;
+  onStatusChange?: (id: string, newStatus: string) => void;
 }
 
-const getStatusBadge = (status: string) => {
-  const statusConfig = {
-    pending: { label: "Pendiente", className: "bg-yellow-100 text-yellow-800" },
-    approved: { label: "Aprobado", className: "bg-green-100 text-green-800" },
-    rejected: { label: "Rechazado", className: "bg-red-100 text-red-800" },
-  };
-
-  return statusConfig[status as keyof typeof statusConfig] || { 
-    label: status, 
-    className: "bg-gray-100 text-gray-800" 
-  };
+const statusConfig = {
+  pending: { label: "Pendiente", className: "bg-yellow-100 text-yellow-800 border-yellow-200" },
+  in_process: { label: "En Proceso", className: "bg-blue-100 text-blue-800 border-blue-200" },
+  purchased: { label: "Comprado", className: "bg-green-100 text-green-800 border-green-200" },
+  ready_for_delivery: { label: "Listo para Entrega", className: "bg-purple-100 text-purple-800 border-purple-200" },
+  delivered: { label: "Entregado", className: "bg-gray-100 text-gray-800 border-gray-200" }
 };
 
 const formatCurrency = (amount: number, currency: string) => {
@@ -45,10 +51,17 @@ const formatCurrency = (amount: number, currency: string) => {
 export const PurchaseRequestTableRow = ({ 
   request, 
   visibleColumns,
-  onClick
+  onClick,
+  onDelete,
+  onStatusChange
 }: PurchaseRequestTableRowProps) => {
-  const status = getStatusBadge(request.status);
   const firstItem = request.purchase_request_items?.[0];
+
+  const handleStatusChange = (newStatus: string) => {
+    if (onStatusChange) {
+      onStatusChange(request.id, newStatus);
+    }
+  };
 
   return (
     <TableRow 
@@ -95,10 +108,36 @@ export const PurchaseRequestTableRow = ({
         <TableCell>{firstItem?.currency || "-"}</TableCell>
       )}
       {visibleColumns.status && (
-        <TableCell>
-          <Badge variant="secondary" className={status.className}>
-            {status.label}
-          </Badge>
+        <TableCell onClick={(e) => e.stopPropagation()}>
+          <Select
+            value={request.status}
+            onValueChange={(value) => {
+              onStatusChange?.(request.id, value);
+            }}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue>
+                <Badge 
+                  variant="outline" 
+                  className={statusConfig[request.status as keyof typeof statusConfig]?.className || ""}
+                >
+                  {statusConfig[request.status as keyof typeof statusConfig]?.label || request.status}
+                </Badge>
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(statusConfig).map(([value, { label }]) => (
+                <SelectItem key={value} value={value}>
+                  <Badge 
+                    variant="outline" 
+                    className={statusConfig[value as keyof typeof statusConfig]?.className}
+                  >
+                    {label}
+                  </Badge>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </TableCell>
       )}
       {visibleColumns.date && (
@@ -109,6 +148,22 @@ export const PurchaseRequestTableRow = ({
       {visibleColumns.observations && (
         <TableCell>{request.observations || "-"}</TableCell>
       )}
+      <TableCell>
+        <div className="flex gap-2">
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete?.(request.id);
+            }}
+            className="flex items-center gap-2"
+          >
+            <Trash2 className="h-4 w-4" />
+            <span>Eliminar</span>
+          </Button>
+        </div>
+      </TableCell>
     </TableRow>
   );
 };
