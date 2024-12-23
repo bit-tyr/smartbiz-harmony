@@ -8,7 +8,7 @@ import { PurchaseRequestDetails } from "./PurchaseRequestDetails";
 import { PurchaseRequest } from "./types";
 import { useQueryClient } from "@tanstack/react-query";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
-import { toast } from "react-hot-toast";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 interface PurchaseRequestListProps {

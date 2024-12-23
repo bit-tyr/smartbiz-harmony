@@ -595,12 +595,27 @@ export type Database = {
         }
         Returns: undefined
       }
-      update_purchase_request_status: {
+      update_purchase_request_status:
+        | {
+            Args: {
+              request_id: number
+              new_status: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              request_id: string
+              new_status: string
+            }
+            Returns: Json
+          }
+      update_purchase_request_status_json: {
         Args: {
           request_id: string
           new_status: string
         }
-        Returns: undefined
+        Returns: Json
       }
       update_user_role: {
         Args: {
