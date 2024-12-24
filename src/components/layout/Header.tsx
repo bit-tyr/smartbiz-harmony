@@ -43,7 +43,6 @@ export const Header = () => {
             setUserFullName(fullName || 'Usuario');
             setIsAdmin(!!profile.is_admin);
             
-            // Log role information for debugging
             console.log('User role:', profile.roles?.name);
             console.log('Is admin:', profile.is_admin);
           }
@@ -57,10 +56,32 @@ export const Header = () => {
   }, []);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    localStorage.removeItem("selectedArea");
-    navigate("/login");
-    toast.success("Sesión cerrada exitosamente");
+    try {
+      // First clear local storage
+      localStorage.removeItem("selectedArea");
+      
+      // Attempt to sign out
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        // If there's an error but it's just about the session not being found,
+        // we can still proceed with the local cleanup
+        if (error.message.includes("session_not_found")) {
+          console.warn("Session not found during logout, proceeding with cleanup");
+        } else {
+          throw error;
+        }
+      }
+
+      // Always navigate to login page, even if there was a session_not_found error
+      navigate("/login");
+      toast.success("Sesión cerrada exitosamente");
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still navigate to login and clear state, even if there was an error
+      navigate("/login");
+      toast.error("Hubo un problema al cerrar sesión, pero has sido desconectado");
+    }
   };
 
   const handleAdminPanel = () => {

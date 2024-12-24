@@ -2,21 +2,26 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Filter, Plus, Search, ShoppingCart, History } from "lucide-react";
+import { Plus, ShoppingCart } from "lucide-react";
 import { PurchaseRequestList } from "@/components/purchases/PurchaseRequestList";
 import { PurchaseRequestForm, FormValues } from "@/components/purchases/PurchaseRequestForm";
 import { toast } from "sonner";
+import { CreatePurchaseRequestDialog } from "@/components/purchases/CreatePurchaseRequestDialog";
 import { PurchaseRequestView } from "@/components/purchases/PurchaseRequestView";
+import { FormsTab } from "@/components/purchases/tabs/FormsTab";
+import { FaqTab } from "@/components/purchases/tabs/FaqTab";
+import { usePurchaseRequests } from "@/hooks/usePurchaseRequests";
+import { PurchaseRequest } from "@/components/purchases/types";
 
 const Compras = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentView, setCurrentView] = useState<'current' | 'history'>('current');
-  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [selectedRequest, setSelectedRequest] = useState<PurchaseRequest | null>(null);
   const [showPurchaseForm, setShowPurchaseForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: purchaseRequests, isLoading } = useQuery({
@@ -140,45 +145,12 @@ const Compras = () => {
         <TabsContent value="inbox">
           <Card>
             <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Solicitudes de Compra</CardTitle>
-                <div className="flex gap-2">
-                  <div className="relative">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Buscar solicitud..."
-                      className="pl-8"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </div>
-                  <Button variant="outline">
-                    <Filter className="h-4 w-4 mr-2" />
-                    Filtros
-                  </Button>
-                </div>
-              </div>
+              <CardTitle>Solicitudes de Compra</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="mb-4 flex gap-2">
-                <Button 
-                  variant={currentView === 'current' ? "default" : "outline"}
-                  onClick={() => setCurrentView('current')}
-                >
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  Solicitudes Actuales
-                </Button>
-                <Button 
-                  variant={currentView === 'history' ? "default" : "outline"}
-                  onClick={() => setCurrentView('history')}
-                >
-                  <History className="h-4 w-4 mr-2" />
-                  Histórico
-                </Button>
-              </div>
               <PurchaseRequestList 
                 requests={purchaseRequests || []} 
-                isLoading={isLoading} 
+                isLoading={isLoading}
                 onSelectRequest={setSelectedRequest}
               />
             </CardContent>
@@ -234,25 +206,7 @@ const Compras = () => {
         </TabsContent>
 
         <TabsContent value="faq">
-          <Card>
-            <CardHeader>
-              <CardTitle>Preguntas Frecuentes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar pregunta..."
-                  className="pl-8 mb-4"
-                />
-              </div>
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  No hay preguntas frecuentes disponibles en este momento.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <FaqTab />
         </TabsContent>
       </Tabs>
 
