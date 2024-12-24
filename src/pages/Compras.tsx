@@ -3,8 +3,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, ShoppingCart } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Plus, ShoppingCart, FileText, Plane, BookOpen, CreditCard } from "lucide-react";
 import { PurchaseRequestList } from "@/components/purchases/PurchaseRequestList";
 import { PurchaseRequestForm, FormValues } from "@/components/purchases/PurchaseRequestForm";
 import { toast } from "sonner";
@@ -43,15 +43,21 @@ const Compras = () => {
         .from('purchase_requests')
         .select(`
           *,
-          laboratory:laboratories(name),
-          budget_code:budget_codes(code, description),
+          laboratory:laboratories(id, name),
+          budget_code:budget_codes(id, code, description),
+          profiles:profiles(id, first_name, last_name),
           purchase_request_items(
+            id,
             quantity,
             unit_price,
             currency,
             product:products(
+              id,
               name,
-              supplier:suppliers(name)
+              supplier:suppliers(
+                id,
+                name
+              )
             )
           )
         `)
@@ -79,7 +85,6 @@ const Compras = () => {
         return;
       }
 
-      // Insertar la solicitud principal
       const { data: purchaseRequest, error: purchaseError } = await supabase
         .from('purchase_requests')
         .insert({
@@ -97,7 +102,6 @@ const Compras = () => {
         throw purchaseError;
       }
 
-      // Insertar el item de la solicitud
       const { error: itemError } = await supabase
         .from('purchase_request_items')
         .insert({
@@ -125,29 +129,48 @@ const Compras = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center bg-gradient-to-r from-primary/10 via-primary/5 to-background p-6 rounded-lg">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Compras</h1>
-          <p className="text-muted-foreground mt-2">Gestión de solicitudes de compra</p>
+          <h1 className="text-3xl font-bold text-primary">Sistema de Compras</h1>
+          <p className="text-muted-foreground mt-2">Gestión integral de solicitudes y procesos de compra</p>
         </div>
+        <Button 
+          onClick={() => setShowPurchaseForm(true)}
+          className="bg-primary hover:bg-primary/90"
+        >
+          <Plus className="h-5 w-5 mr-2" />
+          Nueva Solicitud
+        </Button>
       </div>
 
       <Tabs defaultValue="inbox" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="inbox">
+        <TabsList className="mb-4 bg-muted/50 p-1 rounded-lg">
+          <TabsTrigger value="inbox" className="data-[state=active]:bg-background">
             <ShoppingCart className="h-4 w-4 mr-2" />
             Bandeja de Entrada
           </TabsTrigger>
-          <TabsTrigger value="forms">Formularios</TabsTrigger>
-          <TabsTrigger value="faq">Preguntas Frecuentes</TabsTrigger>
+          <TabsTrigger value="forms" className="data-[state=active]:bg-background">
+            <FileText className="h-4 w-4 mr-2" />
+            Formularios
+          </TabsTrigger>
+          <TabsTrigger value="faq" className="data-[state=active]:bg-background">
+            <BookOpen className="h-4 w-4 mr-2" />
+            Ayuda
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="inbox">
-          <Card>
-            <CardHeader>
-              <CardTitle>Solicitudes de Compra</CardTitle>
+          <Card className="border-none shadow-md">
+            <CardHeader className="bg-muted/30 rounded-t-lg">
+              <CardTitle className="text-xl flex items-center">
+                <ShoppingCart className="h-5 w-5 mr-2 text-primary" />
+                Solicitudes de Compra
+              </CardTitle>
+              <CardDescription>
+                Gestiona y monitorea todas tus solicitudes de compra
+              </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <PurchaseRequestList 
                 requests={purchaseRequests || []} 
                 isLoading={isLoading}
@@ -158,15 +181,21 @@ const Compras = () => {
         </TabsContent>
 
         <TabsContent value="forms">
-          <Card>
-            <CardHeader>
-              <CardTitle>Formularios de Solicitudes</CardTitle>
+          <Card className="border-none shadow-md">
+            <CardHeader className="bg-muted/30 rounded-t-lg">
+              <CardTitle className="text-xl flex items-center">
+                <FileText className="h-5 w-5 mr-2 text-primary" />
+                Formularios de Solicitudes
+              </CardTitle>
+              <CardDescription>
+                Selecciona el tipo de solicitud que deseas realizar
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="pt-6">
               {showPurchaseForm ? (
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-semibold">Nueva Solicitud de Compra</h2>
+                    <h2 className="text-2xl font-semibold text-primary">Nueva Solicitud de Compra</h2>
                     <Button variant="outline" onClick={() => setShowPurchaseForm(false)}>
                       Volver
                     </Button>
@@ -181,22 +210,38 @@ const Compras = () => {
                 <div className="grid gap-4">
                   <Button 
                     variant="outline" 
-                    className="justify-start"
+                    className="justify-start hover:bg-primary/5 hover:text-primary transition-colors"
                     onClick={() => setShowPurchaseForm(true)}
                   >
-                    <ShoppingCart className="h-4 w-4 mr-2" />
-                    Compras
+                    <ShoppingCart className="h-5 w-5 mr-2" />
+                    Solicitud de Compra
                   </Button>
-                  <Button variant="outline" className="justify-start">
-                    Inscripción
+                  <Button 
+                    variant="outline" 
+                    className="justify-start hover:bg-primary/5 hover:text-primary transition-colors"
+                  >
+                    <CreditCard className="h-5 w-5 mr-2" />
+                    Inscripción a Evento/Curso
                   </Button>
-                  <Button variant="outline" className="justify-start">
+                  <Button 
+                    variant="outline" 
+                    className="justify-start hover:bg-primary/5 hover:text-primary transition-colors"
+                  >
+                    <Plane className="h-5 w-5 mr-2" />
                     Pasajes/Viáticos/Alojamiento
                   </Button>
-                  <Button variant="outline" className="justify-start">
-                    Publicación
+                  <Button 
+                    variant="outline" 
+                    className="justify-start hover:bg-primary/5 hover:text-primary transition-colors"
+                  >
+                    <FileText className="h-5 w-5 mr-2" />
+                    Publicación Académica
                   </Button>
-                  <Button variant="outline" className="justify-start">
+                  <Button 
+                    variant="outline" 
+                    className="justify-start hover:bg-primary/5 hover:text-primary transition-colors"
+                  >
+                    <BookOpen className="h-5 w-5 mr-2" />
                     Suscripción
                   </Button>
                 </div>
@@ -206,7 +251,20 @@ const Compras = () => {
         </TabsContent>
 
         <TabsContent value="faq">
-          <FaqTab />
+          <Card className="border-none shadow-md">
+            <CardHeader className="bg-muted/30 rounded-t-lg">
+              <CardTitle className="text-xl flex items-center">
+                <BookOpen className="h-5 w-5 mr-2 text-primary" />
+                Preguntas Frecuentes
+              </CardTitle>
+              <CardDescription>
+                Encuentra respuestas a las preguntas más comunes
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <FaqTab />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
@@ -218,6 +276,6 @@ const Compras = () => {
       )}
     </div>
   );
-};
+}
 
 export default Compras;

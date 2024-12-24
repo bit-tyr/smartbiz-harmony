@@ -12,7 +12,14 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Search, Filter, Loader2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface PurchaseRequestListProps {
   requests: PurchaseRequest[];
@@ -126,13 +133,23 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
   });
 
   if (isLoading) {
-    return <div className="p-8 text-center text-gray-500">Cargando solicitudes...</div>;
+    return (
+      <div className="flex flex-col items-center justify-center h-[400px] bg-muted/10 rounded-lg">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+        <p className="text-muted-foreground">Cargando solicitudes...</p>
+      </div>
+    );
   }
 
   if (!requests?.length) {
     return (
-      <div className="p-8 text-center text-gray-500">
-        No hay solicitudes de compra registradas
+      <div className="flex flex-col items-center justify-center h-[400px] bg-muted/10 rounded-lg">
+        <div className="text-center space-y-4">
+          <p className="text-2xl font-semibold text-primary">No hay solicitudes</p>
+          <p className="text-muted-foreground">
+            No se encontraron solicitudes de compra registradas
+          </p>
+        </div>
       </div>
     );
   }
@@ -145,16 +162,28 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
   };
 
   const filteredRequests = requests.filter(request => {
-    const matchesSearch = 
-      request.number.toString().includes(searchQuery) ||
-      request.laboratory?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      request.budget_code?.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      request.purchase_request_items?.[0]?.product?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      request.purchase_request_items?.[0]?.product?.supplier?.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const searchTerms = searchQuery.toLowerCase().trim();
+    
+    if (!searchTerms) return true;
 
-    const matchesStatus = !statusFilter || request.status === statusFilter;
+    const searchableFields = [
+      request.number?.toString(),
+      request.laboratory?.name,
+      request.budget_code?.code,
+      request.budget_code?.description,
+      request.purchase_request_items?.[0]?.product?.name,
+      request.purchase_request_items?.[0]?.product?.supplier?.name,
+      request.observations,
+      request.profiles?.first_name,
+      request.profiles?.last_name,
+      statusConfig[request.status]?.label
+    ];
 
-    return matchesSearch && matchesStatus;
+    return searchableFields.some(field => 
+      field?.toLowerCase().includes(searchTerms)
+    );
+  }).filter(request => {
+    return statusFilter === "all" || !statusFilter || request.status === statusFilter;
   });
 
   const handleDeleteClick = (requestId: string) => {
@@ -166,7 +195,6 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
     if (!selectedRequestId) return;
 
     try {
-      // Primero eliminar los items asociados
       const { error: itemsError } = await supabase
         .from('purchase_request_items')
         .delete()
@@ -174,7 +202,6 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
 
       if (itemsError) throw itemsError;
 
-      // Luego eliminar la solicitud principal
       const { error } = await supabase
         .from('purchase_requests')
         .delete()
@@ -195,8 +222,6 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
 
   const handleStatusChange = async (requestId: string, newStatus: string) => {
     try {
-      console.log('Actualizando estado:', { requestId, newStatus });
-
       const { data, error } = await supabase
         .from('purchase_requests')
         .update({ status: newStatus })
@@ -209,10 +234,7 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
         return;
       }
 
-      console.log('Respuesta:', data);
       toast.success(`Estado actualizado a: ${statusConfig[newStatus].label}`);
-      
-      // Recargar los datos
       await queryClient.invalidateQueries({ queryKey: ['purchaseRequests'] });
     } catch (error) {
       console.error('Error:', error);
@@ -221,49 +243,56 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex gap-4">
-        <Input
-          placeholder="Buscar solicitud..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="max-w-sm"
-        />
-        <select
-          className="border rounded p-2"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="">Todos los estados</option>
-          <option value="pending">Pendiente</option>
-          <option value="in_process">En proceso</option>
-          <option value="purchased">Comprado</option>
-          <option value="ready_for_delivery">Listo para entrega</option>
-          <option value="delivered">Entregado</option>
-        </select>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row gap-4 bg-muted/30 p-4 rounded-lg">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar solicitud..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 bg-background"
+          />
+        </div>
+        <div className="flex gap-4">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[200px] bg-background">
+              <SelectValue placeholder="Filtrar por estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los estados</SelectItem>
+              <SelectItem value="pending">Pendiente</SelectItem>
+              <SelectItem value="in_process">En proceso</SelectItem>
+              <SelectItem value="purchased">Comprado</SelectItem>
+              <SelectItem value="ready_for_delivery">Listo para entrega</SelectItem>
+              <SelectItem value="delivered">Entregado</SelectItem>
+            </SelectContent>
+          </Select>
+          <ColumnSelector 
+            visibleColumns={visibleColumns} 
+            onColumnChange={handleColumnChange}
+          />
+        </div>
       </div>
 
-      <ColumnSelector 
-        visibleColumns={visibleColumns} 
-        onColumnChange={handleColumnChange} 
-      />
-
-      <Table>
-        <PurchaseRequestTableHeader visibleColumns={visibleColumns} />
-        <TableBody>
-          {filteredRequests.map((request) => (
-            <PurchaseRequestTableRow
-              key={request.id}
-              request={request}
-              visibleColumns={visibleColumns}
-              onClick={() => setSelectedRequest(request)}
-              onDelete={handleDeleteClick}
-              onStatusChange={handleStatusChange}
-              userRole={userRole}
-            />
-          ))}
-        </TableBody>
-      </Table>
+      <div className="rounded-lg border bg-card">
+        <Table>
+          <PurchaseRequestTableHeader visibleColumns={visibleColumns} />
+          <TableBody>
+            {filteredRequests.map((request) => (
+              <PurchaseRequestTableRow
+                key={request.id}
+                request={request}
+                visibleColumns={visibleColumns}
+                onClick={() => setSelectedRequest(request)}
+                onDelete={handleDeleteClick}
+                onStatusChange={handleStatusChange}
+                userRole={userRole}
+              />
+            ))}
+          </TableBody>
+        </Table>
+      </div>
 
       <PurchaseRequestDetails 
         request={selectedRequest} 
@@ -280,7 +309,10 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm}>
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Eliminar
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -288,4 +320,4 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
       </AlertDialog>
     </div>
   );
-};
+}

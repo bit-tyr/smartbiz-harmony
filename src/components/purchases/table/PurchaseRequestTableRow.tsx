@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { PurchaseRequest } from "../types";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Eye, Trash2, MoreVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -14,6 +14,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface PurchaseRequestTableRowProps {
   request: PurchaseRequest;
@@ -25,194 +31,193 @@ interface PurchaseRequestTableRowProps {
 }
 
 const statusConfig = {
-  pending: { label: "Pendiente", className: "bg-yellow-100 text-yellow-800 border-yellow-200" },
-  in_process: { label: "En Proceso", className: "bg-blue-100 text-blue-800 border-blue-200" },
-  purchased: { label: "Comprado", className: "bg-green-100 text-green-800 border-green-200" },
-  ready_for_delivery: { label: "Listo para Entrega", className: "bg-purple-100 text-purple-800 border-purple-200" },
-  delivered: { label: "Entregado", className: "bg-gray-100 text-gray-800 border-gray-200" }
+  pending: { 
+    label: "Pendiente", 
+    className: "bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200" 
+  },
+  in_process: { 
+    label: "En Proceso", 
+    className: "bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200" 
+  },
+  purchased: { 
+    label: "Comprado", 
+    className: "bg-green-100 text-green-800 border-green-200 hover:bg-green-200" 
+  },
+  ready_for_delivery: { 
+    label: "Listo para Entrega", 
+    className: "bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-200" 
+  },
+  delivered: { 
+    label: "Entregado", 
+    className: "bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200" 
+  }
 };
 
 const formatCurrency = (amount: number, currency: string) => {
-  return new Intl.NumberFormat('es-PE', {
+  return new Intl.NumberFormat('es-UY', {
     style: 'currency',
     currency: currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
   }).format(amount);
 };
 
-export const PurchaseRequestTableRow = ({ 
-  request, 
+export const PurchaseRequestTableRow = ({
+  request,
   visibleColumns,
   onClick,
   onDelete,
   onStatusChange,
   userRole
 }: PurchaseRequestTableRowProps) => {
-  const firstItem = request.purchase_request_items?.[0];
-
-  console.log('Request:', request);
-  console.log('First Item:', firstItem);
-
-  const handleStatusChange = async (newStatus: string) => {
-    if (onStatusChange) {
-      try {
-        // Obtener la sesión del usuario actual
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user) throw new Error("No hay sesión de usuario");
-
-        // Obtener el nombre del usuario que realiza el cambio
-        const { data: userProfile, error: userError } = await supabase
-          .from('profiles')
-          .select('first_name, last_name')
-          .eq('id', session.user.id)
-          .single();
-
-        if (userError) throw userError;
-
-        const userName = `${userProfile.first_name} ${userProfile.last_name}`;
-        const oldStatus = statusConfig[request.status as keyof typeof statusConfig]?.label;
-        const newStatusLabel = statusConfig[newStatus as keyof typeof statusConfig]?.label;
-
-        // Crear notificación si el usuario actual no es el creador
-        if (session.user.id !== request.user_id) {
-          const { error: notificationError } = await supabase
-            .from('notifications')
-            .insert({
-              user_id: request.user_id,
-              purchase_request_id: request.id,
-              title: `Estado de solicitud #${request.number} actualizado`,
-              message: `${userName} ha cambiado el estado de tu solicitud de "${oldStatus}" a "${newStatusLabel}"`,
-              read: false
-            });
-
-          if (notificationError) {
-            console.error('Error creating notification:', notificationError);
-          }
-        }
-
-        onStatusChange(request.id, newStatus);
-      } catch (error) {
-        console.error('Error handling status change:', error);
-        toast.error("Error al actualizar el estado");
-      }
-    }
-  };
+  const canChangeStatus = userRole === 'admin' || userRole === 'manager';
+  const canDelete = userRole === 'admin';
 
   return (
     <TableRow 
-      key={request.id} 
-      className="cursor-pointer hover:bg-gray-50"
+      className="hover:bg-muted/50 transition-colors cursor-pointer"
       onClick={onClick}
     >
       {visibleColumns.number && (
-        <TableCell className="font-medium">#{request.number}</TableCell>
+        <TableCell className="font-medium">
+          #{request.number}
+        </TableCell>
       )}
       {visibleColumns.laboratory && (
-        <TableCell>{request.laboratory?.name || "-"}</TableCell>
+        <TableCell>
+          <span className="font-medium text-primary">
+            {request.laboratory?.name || "-"}
+          </span>
+        </TableCell>
       )}
       {visibleColumns.budgetCode && (
         <TableCell>
-          {request.budget_code ? (
-            <div>
-              <div className="font-medium">{request.budget_code.code}</div>
-              <div className="text-sm text-gray-500">
-                {request.budget_code.description}
-              </div>
+          <div className="space-y-1">
+            <div className="font-medium">{request.budget_code?.code || "-"}</div>
+            <div className="text-xs text-muted-foreground">
+              {request.budget_code?.description}
             </div>
-          ) : "-"}
+          </div>
         </TableCell>
       )}
       {visibleColumns.product && (
-        <TableCell>{firstItem?.product?.name || "-"}</TableCell>
+        <TableCell>
+          <div className="font-medium">
+            {request.purchase_request_items?.[0]?.product?.name || "-"}
+          </div>
+        </TableCell>
       )}
       {visibleColumns.supplier && (
-        <TableCell>{firstItem?.product?.supplier?.name || "-"}</TableCell>
+        <TableCell>
+          <div className="text-muted-foreground">
+            {request.purchase_request_items?.[0]?.product?.supplier?.name || "-"}
+          </div>
+        </TableCell>
       )}
       {visibleColumns.quantity && (
-        <TableCell>{firstItem?.quantity || "-"}</TableCell>
+        <TableCell className="text-center font-medium">
+          {request.purchase_request_items?.[0]?.quantity || "-"}
+        </TableCell>
       )}
       {visibleColumns.unitPrice && (
-        <TableCell>
-          {firstItem?.unit_price && firstItem?.currency ? 
-            formatCurrency(firstItem.unit_price, firstItem.currency) : 
-            "-"
-          }
+        <TableCell className="text-right">
+          <div className="font-medium">
+            {request.purchase_request_items?.[0]?.unit_price
+              ? formatCurrency(
+                  request.purchase_request_items[0].unit_price,
+                  request.purchase_request_items[0].currency
+                )
+              : "-"}
+          </div>
         </TableCell>
       )}
       {visibleColumns.currency && (
-        <TableCell>{firstItem?.currency || "-"}</TableCell>
+        <TableCell className="text-center">
+          <Badge variant="outline">
+            {request.purchase_request_items?.[0]?.currency || "-"}
+          </Badge>
+        </TableCell>
       )}
       {visibleColumns.status && (
-        <TableCell onClick={(e) => e.stopPropagation()}>
-          {userRole === 'user' ? (
-            <Badge 
-              variant="outline" 
-              className={statusConfig[request.status as keyof typeof statusConfig]?.className || ""}
-            >
-              {statusConfig[request.status as keyof typeof statusConfig]?.label || request.status}
-            </Badge>
-          ) : (
+        <TableCell>
+          {canChangeStatus ? (
             <Select
               value={request.status}
-              onValueChange={(value) => handleStatusChange(value)}
+              onValueChange={(value) => {
+                onStatusChange?.(request.id, value);
+                event?.stopPropagation();
+              }}
             >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue>
-                  <Badge 
-                    variant="outline" 
-                    className={statusConfig[request.status as keyof typeof statusConfig]?.className || ""}
-                  >
-                    {statusConfig[request.status as keyof typeof statusConfig]?.label || request.status}
-                  </Badge>
-                </SelectValue>
+              <SelectTrigger className={`w-[180px] ${statusConfig[request.status]?.className}`}>
+                <SelectValue>{statusConfig[request.status]?.label}</SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {Object.entries(statusConfig).map(([value, { label }]) => (
                   <SelectItem key={value} value={value}>
-                    <Badge 
-                      variant="outline" 
-                      className={statusConfig[value as keyof typeof statusConfig]?.className}
-                    >
-                      {label}
-                    </Badge>
+                    {label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+          ) : (
+            <Badge className={statusConfig[request.status]?.className}>
+              {statusConfig[request.status]?.label}
+            </Badge>
           )}
         </TableCell>
       )}
       {visibleColumns.date && (
         <TableCell>
-          {format(new Date(request.created_at), "PPP", { locale: es })}
+          <div className="space-y-1">
+            <div className="text-sm">
+              {format(new Date(request.created_at), "PPP", { locale: es })}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {format(new Date(request.created_at), "p", { locale: es })}
+            </div>
+          </div>
         </TableCell>
       )}
       {visibleColumns.observations && (
-        <TableCell>{request.observations || "-"}</TableCell>
+        <TableCell>
+          <div className="max-w-[200px] truncate text-muted-foreground">
+            {request.observations || "-"}
+          </div>
+        </TableCell>
       )}
       {visibleColumns.creator && (
         <TableCell>
-          {request.profiles?.first_name && request.profiles?.last_name ? 
-            `${request.profiles.first_name} ${request.profiles.last_name}` : 
-            "-"
-          }
+          <div className="font-medium">
+            {request.profiles?.first_name && request.profiles?.last_name
+              ? `${request.profiles.first_name} ${request.profiles.last_name}`
+              : "-"}
+          </div>
         </TableCell>
       )}
       <TableCell>
-        <div className="flex gap-2">
-          {userRole !== 'user' && (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete?.(request.id);
-              }}
-              className="flex items-center gap-2"
-            >
-              <Trash2 className="h-4 w-4" />
-              <span>Eliminar</span>
-            </Button>
-          )}
+        <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={onClick}>
+                <Eye className="h-4 w-4 mr-2" />
+                Ver detalles
+              </DropdownMenuItem>
+              {canDelete && (
+                <DropdownMenuItem 
+                  className="text-destructive"
+                  onClick={() => onDelete?.(request.id)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Eliminar
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </TableCell>
     </TableRow>
