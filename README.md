@@ -1,18 +1,9 @@
-# Welcome to your Lovable project
-
-## Project info
-
-**URL**: https://lovable.dev/projects/db7ff4d6-1cf2-4d9d-8b70-48f3928d74d6
+# Projecto de Gestion de Compras  
 
 ## How can I edit this code?
 
 There are several ways of editing your application.
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/db7ff4d6-1cf2-4d9d-8b70-48f3928d74d6) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
 
 **Use your preferred IDE**
 
