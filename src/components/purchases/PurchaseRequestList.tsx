@@ -41,7 +41,7 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
     status: true,
     date: true,
     observations: true,
-    creator: true
+    creator: true,
   });
 
   const [selectedRequest, setSelectedRequest] = useState<PurchaseRequest | null>(null);
@@ -104,13 +104,16 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
       }
 
       const { data, error } = await query;
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching purchase requests:', error);
+        throw error;
+      }
       return data || [];
     },
-    enabled: initialLoadDone
+    enabled: true
   });
 
-  if (!initialLoadDone || isLoading) {
+  if (isLoading) {
     return <div className="p-8 text-center text-gray-500">Cargando solicitudes...</div>;
   }
 
