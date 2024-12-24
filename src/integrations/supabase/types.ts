@@ -446,8 +446,10 @@ export type Database = {
           budget_code_id: string | null
           created_at: string
           creator_id: string | null
+          first_name: string | null
           id: string
           laboratory_id: string | null
+          last_name: string | null
           number: number
           observations: string | null
           status: string | null
@@ -459,8 +461,10 @@ export type Database = {
           budget_code_id?: string | null
           created_at?: string
           creator_id?: string | null
+          first_name?: string | null
           id?: string
           laboratory_id?: string | null
+          last_name?: string | null
           number?: number
           observations?: string | null
           status?: string | null
@@ -472,8 +476,10 @@ export type Database = {
           budget_code_id?: string | null
           created_at?: string
           creator_id?: string | null
+          first_name?: string | null
           id?: string
           laboratory_id?: string | null
+          last_name?: string | null
           number?: number
           observations?: string | null
           status?: string | null
@@ -481,6 +487,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_user_id"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "purchase_requests_budget_code_id_fkey"
             columns: ["budget_code_id"]
