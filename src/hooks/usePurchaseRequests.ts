@@ -44,7 +44,7 @@ export const usePurchaseRequests = () => {
           throw error;
         }
 
-        return data as PurchaseRequest[];
+        return data as unknown as PurchaseRequest[];
       } catch (error) {
         console.error('Error fetching purchase requests:', error);
         throw error;
