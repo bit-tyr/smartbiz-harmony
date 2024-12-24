@@ -22,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { FormSection } from "./form-sections/FormSection";
 import { RequestDetails } from "./form-sections/RequestDetails";
 import { ProductDetails } from "./form-sections/ProductDetails";
+import { Loader2 } from "lucide-react";
 
 export interface FormValues {
   laboratoryId: string;
@@ -103,7 +104,7 @@ export const PurchaseRequestForm = ({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <RequestDetails 
           form={form}
           laboratories={laboratories}
@@ -133,16 +134,24 @@ export const PurchaseRequestForm = ({
           )}
         />
 
-        <div className="flex justify-end gap-3">
-          <Button 
-            type="button" 
-            variant="outline" 
+        <div className="flex justify-end gap-4">
+          <Button
+            type="button"
+            variant="outline"
             onClick={onCancel}
+            disabled={isSubmitting}
           >
             Cancelar
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? (isEditing ? "Actualizando..." : "Creando...") : (isEditing ? "Actualizar Solicitud" : "Crear Solicitud")}
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Guardando...
+              </>
+            ) : (
+              'Guardar'
+            )}
           </Button>
         </div>
       </form>
