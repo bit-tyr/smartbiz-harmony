@@ -91,6 +91,7 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
           *,
           laboratory:laboratories(*),
           budget_code:budget_codes(*),
+          user:profiles!inner(first_name, last_name),
           purchase_request_items(
             quantity,
             unit_price,
