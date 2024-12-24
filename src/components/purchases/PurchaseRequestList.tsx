@@ -28,11 +28,6 @@ const statusConfig = {
   delivered: { label: "Entregado", className: "bg-gray-100 text-gray-800 border-gray-200" }
 };
 
-interface UpdateStatusParams {
-  request_id: string;
-  new_status: string;
-}
-
 export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProps) => {
   const [visibleColumns, setVisibleColumns] = useState({
     number: true,
@@ -79,7 +74,7 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
     getUserRole();
   }, []);
 
-  const { data: requests, isLoading } = useQuery({
+  const { data: requests = [], isLoading } = useQuery({
     queryKey: ['purchaseRequests', userRole],
     queryFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -119,7 +114,7 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
     return <div className="p-8 text-center text-gray-500">Cargando solicitudes...</div>;
   }
 
-  if (!requests.length) {
+  if (!requests?.length) {
     return (
       <div className="p-8 text-center text-gray-500">
         No hay solicitudes de compra registradas
