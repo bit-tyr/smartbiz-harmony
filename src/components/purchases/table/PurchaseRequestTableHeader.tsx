@@ -13,6 +13,7 @@ interface PurchaseRequestTableHeaderProps {
     status: boolean;
     date: boolean;
     observations: boolean;
+    creator: boolean;
   };
 }
 
@@ -33,6 +34,7 @@ export const PurchaseRequestTableHeader = ({
         {visibleColumns.status && <TableHead>Estado</TableHead>}
         {visibleColumns.date && <TableHead>Fecha</TableHead>}
         {visibleColumns.observations && <TableHead>Observaciones</TableHead>}
+        {visibleColumns.creator && <TableHead>Creado por</TableHead>}
       </TableRow>
     </TableHeader>
   );

@@ -100,22 +100,19 @@ export const ProductDetails = ({ form, suppliers, products }: ProductDetailsProp
 
         <FormField
           control={form.control}
-          name="currency"
+          name="unitPrice"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Moneda</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value || "USD"}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccione moneda" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="USD">USD</SelectItem>
-                  <SelectItem value="PEN">PEN</SelectItem>
-                  <SelectItem value="EUR">EUR</SelectItem>
-                </SelectContent>
-              </Select>
+              <FormLabel>Precio Unitario *</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number" 
+                  step="0.01" 
+                  placeholder="Ingrese precio unitario"
+                  {...field}
+                  value={field.value || ''}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -123,19 +120,22 @@ export const ProductDetails = ({ form, suppliers, products }: ProductDetailsProp
 
         <FormField
           control={form.control}
-          name="unitPrice"
+          name="currency"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Precio Unitario</FormLabel>
-              <FormControl>
-                <Input 
-                  type="number" 
-                  step="0.01" 
-                  placeholder="Ingrese precio"
-                  {...field} 
-                  value={field.value || ''}
-                />
-              </FormControl>
+              <FormLabel>Moneda *</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value || "PEN"}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione moneda" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="PEN">PEN</SelectItem>
+                  <SelectItem value="USD">USD</SelectItem>
+                  <SelectItem value="EUR">EUR</SelectItem>
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
