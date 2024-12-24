@@ -5,6 +5,8 @@ import { es } from "date-fns/locale";
 import { PurchaseRequest } from "../types";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -50,9 +52,35 @@ export const PurchaseRequestTableRow = ({
   console.log('Request:', request);
   console.log('First Item:', firstItem);
 
-  const handleStatusChange = (newStatus: string) => {
+  const handleStatusChange = async (newStatus: string) => {
     if (onStatusChange) {
-      onStatusChange(request.id, newStatus);
+      try {
+        // Obtener la sesión del usuario actual
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) throw new Error("No hay sesión de usuario");
+
+        // Crear notificación si el usuario actual no es el creador
+        if (session.user.id !== request.user_id) {
+          const { error: notificationError } = await supabase
+            .from('notifications')
+            .insert({
+              user_id: request.user_id,
+              purchase_request_id: request.id,
+              title: "Estado de solicitud actualizado",
+              message: `El estado de tu solicitud de compra #${request.number} ha sido actualizado a "${statusConfig[newStatus as keyof typeof statusConfig]?.label}"`,
+              read: false
+            });
+
+          if (notificationError) {
+            console.error('Error creating notification:', notificationError);
+          }
+        }
+
+        onStatusChange(request.id, newStatus);
+      } catch (error) {
+        console.error('Error handling status change:', error);
+        toast.error("Error al actualizar el estado");
+      }
     }
   };
 

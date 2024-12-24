@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
+import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
 
 export const Header = () => {
   const navigate = useNavigate();
@@ -118,10 +119,7 @@ export const Header = () => {
           <span className="sr-only">Cambiar tema</span>
         </Button>
         
-        <button className="p-2 hover:bg-accent rounded-full relative">
-          <Bell className="h-5 w-5 text-foreground" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-        </button>
+        <NotificationDropdown />
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

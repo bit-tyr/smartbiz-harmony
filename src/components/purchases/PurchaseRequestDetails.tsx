@@ -58,6 +58,27 @@ export const PurchaseRequestDetails = ({ request, onClose }: PurchaseRequestDeta
         if (itemError) throw itemError;
       }
 
+      // Obtener la sesión del usuario actual
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) throw new Error("No hay sesión de usuario");
+
+      // Crear notificación para el creador de la solicitud
+      if (session.user.id !== request.user_id) {
+        const { error: notificationError } = await supabase
+          .from('notifications')
+          .insert({
+            user_id: request.user_id,
+            purchase_request_id: request.id,
+            title: "Solicitud de compra modificada",
+            message: `Tu solicitud de compra #${request.number} ha sido modificada`,
+            read: false
+          });
+
+        if (notificationError) {
+          console.error('Error creating notification:', notificationError);
+        }
+      }
+
       toast.success("Solicitud actualizada exitosamente");
       queryClient.invalidateQueries({ queryKey: ['purchaseRequests'] });
       setIsEditing(false);
