@@ -38,14 +38,20 @@ interface PurchaseRequestFormProps {
   onSubmit: (values: FormValues) => Promise<void>;
   isSubmitting: boolean;
   onCancel: () => void;
+  initialValues?: FormValues;
+  isEditing?: boolean;
 }
 
 export const PurchaseRequestForm = ({
   onSubmit,
   isSubmitting,
   onCancel,
+  initialValues,
+  isEditing = false
 }: PurchaseRequestFormProps) => {
-  const form = useForm<FormValues>();
+  const form = useForm<FormValues>({
+    defaultValues: initialValues
+  });
 
   const { data: laboratories } = useQuery({
     queryKey: ['laboratories'],
@@ -136,7 +142,7 @@ export const PurchaseRequestForm = ({
             Cancelar
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Creando..." : "Crear Solicitud"}
+            {isSubmitting ? (isEditing ? "Actualizando..." : "Creando...") : (isEditing ? "Actualizar Solicitud" : "Crear Solicitud")}
           </Button>
         </div>
       </form>

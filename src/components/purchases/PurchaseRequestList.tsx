@@ -84,16 +84,28 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
         .from('purchase_requests')
         .select(`
           *,
-          laboratory:laboratories(*),
-          budget_code:budget_codes(*),
+          laboratory:laboratories(
+            id,
+            name
+          ),
+          budget_code:budget_codes(
+            id,
+            code,
+            description
+          ),
           profiles!fk_user_id(first_name, last_name),
           purchase_request_items(
+            id,
             quantity,
             unit_price,
             currency,
             product:products(
+              id,
               name,
-              supplier:suppliers(name)
+              supplier:suppliers(
+                id,
+                name
+              )
             )
           )
         `)
