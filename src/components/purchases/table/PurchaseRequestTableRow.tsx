@@ -143,7 +143,10 @@ export const PurchaseRequestTableRow = ({
       )}
       {visibleColumns.creator && (
         <TableCell>
-          {request.user?.[0] ? `${request.user[0].first_name} ${request.user[0].last_name}` : "-"}
+          {request.first_name && request.last_name ? 
+            `${request.first_name} ${request.last_name}` : 
+            "-"
+          }
         </TableCell>
       )}
       <TableCell>
