@@ -59,6 +59,19 @@ export const PurchaseRequestTableRow = ({
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) throw new Error("No hay sesión de usuario");
 
+        // Obtener el nombre del usuario que realiza el cambio
+        const { data: userProfile, error: userError } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('id', session.user.id)
+          .single();
+
+        if (userError) throw userError;
+
+        const userName = `${userProfile.first_name} ${userProfile.last_name}`;
+        const oldStatus = statusConfig[request.status as keyof typeof statusConfig]?.label;
+        const newStatusLabel = statusConfig[newStatus as keyof typeof statusConfig]?.label;
+
         // Crear notificación si el usuario actual no es el creador
         if (session.user.id !== request.user_id) {
           const { error: notificationError } = await supabase
@@ -66,8 +79,8 @@ export const PurchaseRequestTableRow = ({
             .insert({
               user_id: request.user_id,
               purchase_request_id: request.id,
-              title: "Estado de solicitud actualizado",
-              message: `El estado de tu solicitud de compra #${request.number} ha sido actualizado a "${statusConfig[newStatus as keyof typeof statusConfig]?.label}"`,
+              title: `Estado de solicitud #${request.number} actualizado`,
+              message: `${userName} ha cambiado el estado de tu solicitud de "${oldStatus}" a "${newStatusLabel}"`,
               read: false
             });
 
@@ -130,35 +143,42 @@ export const PurchaseRequestTableRow = ({
       )}
       {visibleColumns.status && (
         <TableCell onClick={(e) => e.stopPropagation()}>
-          <Select
-            value={request.status}
-            onValueChange={(value) => {
-              onStatusChange?.(request.id, value);
-            }}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue>
-                <Badge 
-                  variant="outline" 
-                  className={statusConfig[request.status as keyof typeof statusConfig]?.className || ""}
-                >
-                  {statusConfig[request.status as keyof typeof statusConfig]?.label || request.status}
-                </Badge>
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(statusConfig).map(([value, { label }]) => (
-                <SelectItem key={value} value={value}>
+          {userRole === 'user' ? (
+            <Badge 
+              variant="outline" 
+              className={statusConfig[request.status as keyof typeof statusConfig]?.className || ""}
+            >
+              {statusConfig[request.status as keyof typeof statusConfig]?.label || request.status}
+            </Badge>
+          ) : (
+            <Select
+              value={request.status}
+              onValueChange={(value) => handleStatusChange(value)}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue>
                   <Badge 
                     variant="outline" 
-                    className={statusConfig[value as keyof typeof statusConfig]?.className}
+                    className={statusConfig[request.status as keyof typeof statusConfig]?.className || ""}
                   >
-                    {label}
+                    {statusConfig[request.status as keyof typeof statusConfig]?.label || request.status}
                   </Badge>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(statusConfig).map(([value, { label }]) => (
+                  <SelectItem key={value} value={value}>
+                    <Badge 
+                      variant="outline" 
+                      className={statusConfig[value as keyof typeof statusConfig]?.className}
+                    >
+                      {label}
+                    </Badge>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </TableCell>
       )}
       {visibleColumns.date && (

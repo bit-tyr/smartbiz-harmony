@@ -31,6 +31,33 @@ export const PurchaseRequestDetails = ({ request, onClose }: PurchaseRequestDeta
     try {
       setIsSubmitting(true);
 
+      // Obtener la sesión del usuario actual y su perfil
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session?.user) throw new Error("No hay sesión de usuario");
+
+      // Obtener el nombre del usuario que realiza el cambio
+      const { data: userProfile, error: userError } = await supabase
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('id', sessionData.session.user.id)
+        .single();
+
+      if (userError) throw userError;
+
+      const userName = `${userProfile.first_name} ${userProfile.last_name}`;
+
+      // Identificar qué campos han cambiado
+      const changedFields = [];
+      if (values.laboratoryId !== request.laboratory?.id) changedFields.push('laboratorio');
+      if (values.budgetCodeId !== request.budget_code?.id) changedFields.push('código presupuestal');
+      if (values.observations !== request.observations) changedFields.push('observaciones');
+      if (request.purchase_request_items?.[0]) {
+        if (values.productId !== request.purchase_request_items[0].product?.id) changedFields.push('producto');
+        if (Number(values.quantity) !== request.purchase_request_items[0].quantity) changedFields.push('cantidad');
+        if (Number(values.unitPrice) !== request.purchase_request_items[0].unit_price) changedFields.push('precio unitario');
+        if (values.currency !== request.purchase_request_items[0].currency) changedFields.push('moneda');
+      }
+
       // Actualizar la solicitud principal
       const { error: requestError } = await supabase
         .from('purchase_requests')
@@ -58,19 +85,16 @@ export const PurchaseRequestDetails = ({ request, onClose }: PurchaseRequestDeta
         if (itemError) throw itemError;
       }
 
-      // Obtener la sesión del usuario actual
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) throw new Error("No hay sesión de usuario");
-
-      // Crear notificación para el creador de la solicitud
-      if (session.user.id !== request.user_id) {
+      // Crear notificación para el creador de la solicitud si hubo cambios
+      if (sessionData.session.user.id !== request.user_id && changedFields.length > 0) {
+        const changedFieldsText = changedFields.join(', ');
         const { error: notificationError } = await supabase
           .from('notifications')
           .insert({
             user_id: request.user_id,
             purchase_request_id: request.id,
-            title: "Solicitud de compra modificada",
-            message: `Tu solicitud de compra #${request.number} ha sido modificada`,
+            title: `Solicitud #${request.number} modificada`,
+            message: `${userName} ha modificado los siguientes campos de tu solicitud: ${changedFieldsText}`,
             read: false
           });
 
