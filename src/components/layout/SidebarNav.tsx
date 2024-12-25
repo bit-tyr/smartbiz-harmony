@@ -40,9 +40,9 @@ export const SidebarNav = ({ isAdmin }: SidebarNavProps) => {
     getUserRole();
   }, []);
 
-  const showPurchasesLink = isAdmin || userRole === 'Purchases';
-  const showMaintenanceLink = isAdmin || userRole === 'Maintenance';
-  const showSecretaryLink = isAdmin || userRole === 'Secretary';
+  const showPurchasesLink = isAdmin || userRole?.toLowerCase() === 'purchases';
+  const showMaintenanceLink = isAdmin || userRole?.toLowerCase() === 'maintenance';
+  const showSecretaryLink = isAdmin || userRole?.toLowerCase() === 'secretary';
 
   return (
     <div className="px-3 py-2">

@@ -71,7 +71,7 @@ export const PurchaseRequestTableRow = ({
   userRole
 }: PurchaseRequestTableRowProps) => {
   const canChangeStatus = userRole === 'admin' || userRole === 'manager';
-  const canDelete = userRole === 'admin';
+  const canDelete = userRole === 'purchases';
 
   return (
     <TableRow 

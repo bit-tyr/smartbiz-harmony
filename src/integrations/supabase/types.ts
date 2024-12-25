@@ -455,6 +455,7 @@ export type Database = {
           status: string | null
           updated_at: string
           user_id: string
+          deleted_at: string | null
         }
         Insert: {
           actions?: string | null
@@ -470,6 +471,7 @@ export type Database = {
           status?: string | null
           updated_at?: string
           user_id: string
+          deleted_at?: string | null
         }
         Update: {
           actions?: string | null
@@ -485,6 +487,7 @@ export type Database = {
           status?: string | null
           updated_at?: string
           user_id?: string
+          deleted_at?: string | null
         }
         Relationships: [
           {

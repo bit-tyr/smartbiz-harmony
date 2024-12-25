@@ -3,6 +3,7 @@ export interface PurchaseRequest {
   number: number;
   status: string;
   created_at: string;
+  deleted_at?: string | null;
   laboratory: { 
     id: string;
     name: string;

@@ -51,6 +51,7 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
     creator: true,
   });
 
+  const [currentView, setCurrentView] = useState<'current' | 'history'>('current');
   const [selectedRequest, setSelectedRequest] = useState<PurchaseRequest | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -73,7 +74,7 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
           .eq('id', session.user.id)
           .single();
         
-        setUserRole(profile?.roles?.name);
+        setUserRole(profile?.roles?.name?.toLowerCase());
         setInitialLoadDone(true);
       }
     };
@@ -82,7 +83,7 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
   }, []);
 
   const { data: requests = [], isLoading } = useQuery({
-    queryKey: ['purchaseRequests', userRole],
+    queryKey: ['purchaseRequests', userRole, currentView],
     queryFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) throw new Error("No authenticated user");
@@ -117,6 +118,12 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
           )
         `)
         .order('created_at', { ascending: false });
+
+      if (currentView === 'current') {
+        query = query.is('deleted_at', null);
+      } else if (currentView === 'history') {
+        query = query.not('deleted_at', 'is', null);
+      }
 
       if (userRole === 'user') {
         query = query.eq('user_id', session.user.id);
@@ -195,25 +202,18 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
     if (!selectedRequestId) return;
 
     try {
-      const { error: itemsError } = await supabase
-        .from('purchase_request_items')
-        .delete()
-        .eq('purchase_request_id', selectedRequestId);
-
-      if (itemsError) throw itemsError;
-
       const { error } = await supabase
         .from('purchase_requests')
-        .delete()
+        .update({ deleted_at: new Date().toISOString() })
         .eq('id', selectedRequestId);
 
       if (error) throw error;
 
-      toast.success("Solicitud eliminada exitosamente");
+      toast.success("Solicitud movida al histórico exitosamente");
       queryClient.invalidateQueries({ queryKey: ['purchaseRequests'] });
     } catch (error) {
-      console.error('Error deleting purchase request:', error);
-      toast.error("Error al eliminar la solicitud");
+      console.error('Error moving purchase request to history:', error);
+      toast.error("Error al mover la solicitud al histórico");
     } finally {
       setIsDeleteDialogOpen(false);
       setSelectedRequestId(null);
@@ -244,6 +244,23 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div className="flex gap-2">
+          <Button
+            variant={currentView === 'current' ? "secondary" : "ghost"}
+            onClick={() => setCurrentView('current')}
+          >
+            Solicitudes Actuales
+          </Button>
+          <Button
+            variant={currentView === 'history' ? "secondary" : "ghost"}
+            onClick={() => setCurrentView('history')}
+          >
+            Histórico
+          </Button>
+        </div>
+      </div>
+
       <div className="flex flex-col sm:flex-row gap-4 bg-muted/30 p-4 rounded-lg">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -304,7 +321,7 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
           <AlertDialogHeader>
             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminará permanentemente la solicitud de compra.
+              Esta acción moverá la solicitud de compra al histórico. Podrás consultarla en la pestaña de histórico.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -313,7 +330,7 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
               onClick={handleDeleteConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Eliminar
+              Mover al histórico
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
