@@ -34,6 +34,7 @@ interface PurchaseRequest {
   status: string;
   created_at: string;
   updated_at: string;
+  deleted_at?: string | null;
   user_id: string;
   laboratory: { name: string };
   budget_code: { code: string; description: string };
@@ -162,15 +163,17 @@ export const PurchaseRequestTable = () => {
               <TableCell>{request.observations}</TableCell>
               <TableCell>
                 <div className="flex gap-2">
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDeleteClick(request.id)}
-                    className="flex items-center gap-2"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    <span>Eliminar</span>
-                  </Button>
+                  {!request.deleted_at && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteClick(request.id)}
+                      className="flex items-center gap-2"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span>Eliminar</span>
+                    </Button>
+                  )}
                 </div>
               </TableCell>
             </TableRow>

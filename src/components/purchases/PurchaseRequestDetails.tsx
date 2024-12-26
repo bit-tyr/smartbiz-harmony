@@ -64,7 +64,7 @@ export const PurchaseRequestDetails = ({ request, onClose }: PurchaseRequestDeta
         .update({
           laboratory_id: values.laboratoryId,
           budget_code_id: values.budgetCodeId,
-          observations: values.observations || '',
+          observations: values.observations || null,
         })
         .eq('id', request.id);
 
@@ -132,15 +132,17 @@ export const PurchaseRequestDetails = ({ request, onClose }: PurchaseRequestDeta
         <DialogHeader>
           <div className="flex justify-between items-center">
             <DialogTitle>Detalles de la Solicitud #{request.number}</DialogTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsEditing(true)}
-              className="flex items-center gap-2"
-            >
-              <Edit2 className="h-4 w-4" />
-              <span>Editar</span>
-            </Button>
+            {!request.deleted_at && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditing(true)}
+                className="flex items-center gap-2"
+              >
+                <Edit2 className="h-4 w-4" />
+                <span>Editar</span>
+              </Button>
+            )}
           </div>
         </DialogHeader>
 

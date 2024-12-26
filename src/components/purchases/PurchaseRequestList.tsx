@@ -85,58 +85,76 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ['purchaseRequests', userRole, currentView],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) throw new Error("No authenticated user");
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) {
+          console.error('No hay sesión de usuario');
+          toast.error("No hay sesión de usuario");
+          throw new Error("No authenticated user");
+        }
 
-      let query = supabase
-        .from('purchase_requests')
-        .select(`
-          *,
-          laboratory:laboratories(
-            id,
-            name
-          ),
-          budget_code:budget_codes(
-            id,
-            code,
-            description
-          ),
-          profiles!fk_user_id(first_name, last_name),
-          purchase_request_items(
-            id,
-            quantity,
-            unit_price,
-            currency,
-            product:products(
+        let query = supabase
+          .from('purchase_requests')
+          .select(`
+            *,
+            laboratory:laboratories(
               id,
-              name,
-              supplier:suppliers(
+              name
+            ),
+            budget_code:budget_codes(
+              id,
+              code,
+              description
+            ),
+            profiles!fk_user_id(first_name, last_name),
+            purchase_request_items(
+              id,
+              quantity,
+              unit_price,
+              currency,
+              product:products(
                 id,
-                name
+                name,
+                supplier:suppliers(
+                  id,
+                  name
+                )
               )
             )
-          )
-        `)
-        .order('created_at', { ascending: false });
+          `)
+          .order('created_at', { ascending: false });
 
-      if (currentView === 'current') {
-        query = query.is('deleted_at', null);
-      } else if (currentView === 'history') {
-        query = query.not('deleted_at', 'is', null);
-      }
+        if (currentView === 'current') {
+          query = query.is('deleted_at', null);
+        } else if (currentView === 'history') {
+          query = query.not('deleted_at', 'is', null);
+        }
 
-      if (userRole === 'user') {
-        query = query.eq('user_id', session.user.id);
-      }
+        if (userRole === 'user') {
+          query = query.eq('user_id', session.user.id);
+        }
 
-      const { data, error } = await query;
-      if (error) {
-        console.error('Error fetching purchase requests:', error);
+        const { data, error } = await query;
+        if (error) {
+          console.error('Error detallado al cargar solicitudes:', error);
+          toast.error(`Error al cargar las solicitudes: ${error.message}`);
+          throw error;
+        }
+
+        if (!data) {
+          return [];
+        }
+
+        return data;
+      } catch (error) {
+        console.error('Error inesperado al cargar solicitudes:', error);
+        toast.error("Error inesperado al cargar las solicitudes");
         throw error;
       }
-      return data || [];
     },
-    enabled: true
+    retry: 1,
+    retryDelay: 1000,
+    enabled: initialLoadDone
   });
 
   if (isLoading) {

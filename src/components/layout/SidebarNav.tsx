@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, FileText, Wrench, Home, Users } from "lucide-react";
+import { ShoppingCart, FileText, Wrench, Home, Users, Database } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -43,6 +43,7 @@ export const SidebarNav = ({ isAdmin }: SidebarNavProps) => {
   const showPurchasesLink = isAdmin || userRole?.toLowerCase() === 'purchases';
   const showMaintenanceLink = isAdmin || userRole?.toLowerCase() === 'maintenance';
   const showSecretaryLink = isAdmin || userRole?.toLowerCase() === 'secretary';
+  const showMasterDataLink = isAdmin || userRole?.toLowerCase() === 'purchases';
 
   return (
     <div className="px-3 py-2">
@@ -104,6 +105,18 @@ export const SidebarNav = ({ isAdmin }: SidebarNavProps) => {
             >
               <Wrench className="mr-2 h-4 w-4" />
               Mantenimiento
+            </Button>
+          </Link>
+        )}
+
+        {showMasterDataLink && (
+          <Link to="/datos-maestros">
+            <Button
+              variant={location.pathname === "/datos-maestros" ? "secondary" : "ghost"}
+              className="w-full justify-start"
+            >
+              <Database className="mr-2 h-4 w-4" />
+              Datos Maestros
             </Button>
           </Link>
         )}

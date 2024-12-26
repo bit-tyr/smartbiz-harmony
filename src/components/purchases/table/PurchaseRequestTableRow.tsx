@@ -70,7 +70,7 @@ export const PurchaseRequestTableRow = ({
   onStatusChange,
   userRole
 }: PurchaseRequestTableRowProps) => {
-  const canChangeStatus = userRole === 'admin' || userRole === 'manager';
+  const canChangeStatus = userRole === 'admin' || userRole === 'manager' || userRole === 'purchases';
   const canDelete = userRole === 'purchases';
 
   return (
@@ -140,7 +140,7 @@ export const PurchaseRequestTableRow = ({
       )}
       {visibleColumns.status && (
         <TableCell>
-          {canChangeStatus ? (
+          {canChangeStatus && !request.deleted_at ? (
             <Select
               value={request.status}
               onValueChange={(value) => {
@@ -207,7 +207,7 @@ export const PurchaseRequestTableRow = ({
                 <Eye className="h-4 w-4 mr-2" />
                 Ver detalles
               </DropdownMenuItem>
-              {canDelete && (
+              {canDelete && !request.deleted_at && (
                 <DropdownMenuItem 
                   className="text-destructive"
                   onClick={() => onDelete?.(request.id)}

@@ -13,6 +13,7 @@ import Compras from "./pages/Compras";
 import Secretaria from "./pages/Secretaria";
 import Mantenimiento from "./pages/Mantenimiento";
 import Admin from "./pages/Admin";
+import DatosMaestros from "./pages/DatosMaestros";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,13 @@ const App = () => (
               <ProtectedRoute>
                 <Layout>
                   <Compras />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/datos-maestros" element={
+              <ProtectedRoute>
+                <Layout>
+                  <DatosMaestros />
                 </Layout>
               </ProtectedRoute>
             } />

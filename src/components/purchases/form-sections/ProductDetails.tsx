@@ -89,7 +89,8 @@ export const ProductDetails = ({ form, suppliers, products }: ProductDetailsProp
                   type="number" 
                   step="0.01" 
                   placeholder="Ingrese cantidad"
-                  {...field} 
+                  {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
                   value={field.value || ''}
                 />
               </FormControl>
@@ -110,6 +111,7 @@ export const ProductDetails = ({ form, suppliers, products }: ProductDetailsProp
                   step="0.01" 
                   placeholder="Ingrese precio unitario"
                   {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
                   value={field.value || ''}
                 />
               </FormControl>

@@ -27,52 +27,66 @@ const Compras = () => {
   const { data: purchaseRequests, isLoading } = useQuery({
     queryKey: ['purchaseRequests', currentView],
     queryFn: async () => {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        toast.error("Error al verificar la sesión");
-        throw sessionError;
-      }
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Error de sesión:', sessionError);
+          toast.error("Error al verificar la sesión");
+          throw sessionError;
+        }
 
-      if (!session?.user) {
-        toast.error("Usuario no autenticado");
-        throw new Error("No authenticated user");
-      }
+        if (!session?.user) {
+          toast.error("Usuario no autenticado");
+          throw new Error("No authenticated user");
+        }
 
-      const query = supabase
-        .from('purchase_requests')
-        .select(`
-          *,
-          laboratory:laboratories(id, name),
-          budget_code:budget_codes(id, code, description),
-          profiles:profiles(id, first_name, last_name),
-          purchase_request_items(
-            id,
-            quantity,
-            unit_price,
-            currency,
-            product:products(
+        const query = supabase
+          .from('purchase_requests')
+          .select(`
+            *,
+            laboratory:laboratories(id, name),
+            budget_code:budget_codes(id, code, description),
+            profiles!purchase_requests_creator_id_fkey(first_name, last_name),
+            purchase_request_items(
               id,
-              name,
-              supplier:suppliers(
+              quantity,
+              unit_price,
+              currency,
+              product:products(
                 id,
-                name
+                name,
+                supplier:suppliers(
+                  id,
+                  name
+                )
               )
             )
-          )
-        `)
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false });
+          `)
+          .eq('user_id', session.user.id)
+          .order('created_at', { ascending: false });
 
-      const { data, error } = await query;
+        const { data, error } = await query;
 
-      if (error) {
-        toast.error("Error al cargar las solicitudes");
+        if (error) {
+          console.error('Error al cargar las solicitudes:', error);
+          toast.error(`Error al cargar las solicitudes: ${error.message}`);
+          throw error;
+        }
+
+        if (!data) {
+          return [];
+        }
+
+        return data;
+      } catch (error) {
+        console.error('Error inesperado:', error);
+        toast.error("Error inesperado al cargar las solicitudes");
         throw error;
       }
-
-      return data;
     },
+    retry: 1,
+    retryDelay: 1000,
   });
 
   const handleSubmit = async (values: FormValues) => {
@@ -90,7 +104,7 @@ const Compras = () => {
         .insert({
           laboratory_id: values.laboratoryId,
           budget_code_id: values.budgetCodeId,
-          observations: values.observations || '',
+          observations: values.observations || null,
           status: 'pending',
           user_id: session.user.id
         })
@@ -107,8 +121,8 @@ const Compras = () => {
         .insert({
           purchase_request_id: purchaseRequest.id,
           product_id: values.productId,
-          quantity: Number(values.quantity),
-          unit_price: Number(values.unitPrice),
+          quantity: parseInt(values.quantity.toString()),
+          unit_price: parseFloat(values.unitPrice.toString()),
           currency: values.currency
         });
 

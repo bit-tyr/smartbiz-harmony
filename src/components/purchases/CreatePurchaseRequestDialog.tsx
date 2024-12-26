@@ -29,29 +29,75 @@ export const CreatePurchaseRequestDialog = ({
 
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      if (sessionError) throw sessionError;
+      if (sessionError) {
+        console.error('Error de sesión:', sessionError);
+        toast.error("Error al verificar la sesión");
+        throw sessionError;
+      }
+
       if (!session?.user) {
         toast.error("Usuario no autenticado");
         return;
       }
 
-      const { error } = await supabase
+      // Crear la solicitud principal
+      const { data: purchaseRequest, error: purchaseError } = await supabase
         .from('purchase_requests')
         .insert({
           laboratory_id: values.laboratoryId,
           budget_code_id: values.budgetCodeId,
-          observations: values.observations,
+          observations: values.observations || null,
           user_id: session.user.id,
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (purchaseError) {
+        console.error('Error al crear la solicitud:', purchaseError);
+        if (purchaseError.code === '42501') {
+          toast.error("No tienes permisos para crear solicitudes");
+        } else if (purchaseError.code === '23503') {
+          toast.error("Error de referencia: Verifica que el laboratorio y código presupuestal existan");
+        } else {
+          toast.error(`Error al crear la solicitud: ${purchaseError.message}`);
+        }
+        return;
+      }
+
+      // Crear el item de la solicitud
+      const { error: itemError } = await supabase
+        .from('purchase_request_items')
+        .insert({
+          purchase_request_id: purchaseRequest.id,
+          product_id: values.productId,
+          quantity: Number(values.quantity),
+          unit_price: Number(values.unitPrice),
+          currency: values.currency
         });
 
-      if (error) throw error;
+      if (itemError) {
+        console.error('Error al crear el item de la solicitud:', itemError);
+        // Eliminar la solicitud principal si falla la creación del item
+        await supabase
+          .from('purchase_requests')
+          .delete()
+          .eq('id', purchaseRequest.id);
+        
+        if (itemError.code === '23503') {
+          toast.error("Error de referencia: Verifica que el producto exista");
+        } else {
+          toast.error(`Error al crear el item de la solicitud: ${itemError.message}`);
+        }
+        return;
+      }
 
       toast.success("Solicitud creada exitosamente");
       queryClient.invalidateQueries({ queryKey: ['purchaseRequests'] });
       onOpenChange(false);
     } catch (error) {
-      console.error('Error creating purchase request:', error);
-      toast.error("Error al crear la solicitud");
+      console.error('Error inesperado al crear la solicitud:', error);
+      toast.error("Error inesperado al crear la solicitud");
     } finally {
       setIsSubmitting(false);
     }

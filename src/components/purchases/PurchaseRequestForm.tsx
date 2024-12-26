@@ -23,6 +23,8 @@ import { FormSection } from "./form-sections/FormSection";
 import { RequestDetails } from "./form-sections/RequestDetails";
 import { ProductDetails } from "./form-sections/ProductDetails";
 import { Loader2 } from "lucide-react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 
 export interface FormValues {
   laboratoryId: string;
@@ -51,7 +53,19 @@ export const PurchaseRequestForm = ({
   isEditing = false
 }: PurchaseRequestFormProps) => {
   const form = useForm<FormValues>({
-    defaultValues: initialValues
+    defaultValues: initialValues,
+    resolver: zodResolver(
+      z.object({
+        laboratoryId: z.string().min(1, "El laboratorio es requerido"),
+        budgetCodeId: z.string().min(1, "El código presupuestal es requerido"),
+        supplierId: z.string().min(1, "El proveedor es requerido"),
+        productId: z.string().min(1, "El producto es requerido"),
+        quantity: z.number().min(1, "La cantidad debe ser mayor a 0"),
+        unitPrice: z.number().min(0, "El precio unitario debe ser mayor o igual a 0"),
+        currency: z.string().min(1, "La moneda es requerida"),
+        observations: z.string().optional()
+      })
+    )
   });
 
   const { data: laboratories } = useQuery({
