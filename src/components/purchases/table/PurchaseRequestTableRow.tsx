@@ -1,12 +1,10 @@
 import { TableCell, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { PurchaseRequest } from "../types";
+import { Archive, MoreHorizontal } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { PurchaseRequest } from "../types";
-import { Button } from "@/components/ui/button";
-import { Eye, Trash2, MoreVertical } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -18,151 +16,149 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
 interface PurchaseRequestTableRowProps {
   request: PurchaseRequest;
-  visibleColumns: Record<string, boolean>;
-  onClick?: () => void;
-  onDelete?: (id: string) => void;
-  onStatusChange?: (id: string, status: string) => void;
+  visibleColumns: {
+    number: boolean;
+    laboratory: boolean;
+    budgetCode: boolean;
+    product: boolean;
+    supplier: boolean;
+    quantity: boolean;
+    unitPrice: boolean;
+    currency: boolean;
+    status: boolean;
+    date: boolean;
+    observations: boolean;
+    creator: boolean;
+  };
+  onClick: () => void;
+  onDelete: (id: string) => void;
+  onStatusChange: (id: string, status: string) => void;
   userRole?: string | null;
+  isSelected?: boolean;
+  onSelect?: () => void;
+  showSelection?: boolean;
 }
 
 const statusConfig = {
-  pending: { 
-    label: "Pendiente", 
-    className: "bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200" 
-  },
-  in_process: { 
-    label: "En Proceso", 
-    className: "bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200" 
-  },
-  purchased: { 
-    label: "Comprado", 
-    className: "bg-green-100 text-green-800 border-green-200 hover:bg-green-200" 
-  },
-  ready_for_delivery: { 
-    label: "Listo para Entrega", 
-    className: "bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-200" 
-  },
-  delivered: { 
-    label: "Entregado", 
-    className: "bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200" 
-  }
+  pending: { label: "Pendiente", className: "bg-yellow-100 text-yellow-800 border-yellow-200" },
+  in_process: { label: "En Proceso", className: "bg-blue-100 text-blue-800 border-blue-200" },
+  purchased: { label: "Comprado", className: "bg-green-100 text-green-800 border-green-200" },
+  ready_for_delivery: { label: "Listo para Entrega", className: "bg-purple-100 text-purple-800 border-purple-200" },
+  delivered: { label: "Entregado", className: "bg-gray-100 text-gray-800 border-gray-200" }
 };
 
-const formatCurrency = (amount: number, currency: string) => {
-  return new Intl.NumberFormat('es-UY', {
-    style: 'currency',
-    currency: currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(amount);
-};
-
-export const PurchaseRequestTableRow = ({
-  request,
-  visibleColumns,
-  onClick,
+export const PurchaseRequestTableRow = ({ 
+  request, 
+  visibleColumns, 
+  onClick, 
   onDelete,
   onStatusChange,
-  userRole
+  userRole,
+  isSelected = false,
+  onSelect,
+  showSelection = false
 }: PurchaseRequestTableRowProps) => {
-  const canChangeStatus = userRole === 'admin' || userRole === 'manager' || userRole === 'purchases';
-  const canDelete = userRole === 'purchases';
+  const formatCurrency = (amount: number, currency: string) => {
+    return new Intl.NumberFormat('es-PE', {
+      style: 'currency',
+      currency: currency,
+    }).format(amount);
+  };
+
+  const handleRowClick = (e: React.MouseEvent) => {
+    // Evitar que el clic en la casilla de selección active el onClick de la fila
+    if ((e.target as HTMLElement).closest('.checkbox-cell')) {
+      return;
+    }
+    onClick();
+  };
+
+  const handleStatusClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Evitar que el clic en el selector active el onClick de la fila
+  };
 
   return (
     <TableRow 
-      className="hover:bg-muted/50 transition-colors cursor-pointer"
-      onClick={onClick}
+      className="cursor-pointer hover:bg-muted/50"
+      onClick={handleRowClick}
     >
-      {visibleColumns.number && (
-        <TableCell className="font-medium">
-          #{request.number}
+      {showSelection && (
+        <TableCell className="checkbox-cell">
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={onSelect}
+            aria-label="Seleccionar solicitud"
+          />
         </TableCell>
       )}
+      {visibleColumns.number && (
+        <TableCell className="font-medium">#{request.number}</TableCell>
+      )}
       {visibleColumns.laboratory && (
-        <TableCell>
-          <span className="font-medium text-primary">
-            {request.laboratory?.name || "-"}
-          </span>
-        </TableCell>
+        <TableCell>{request.laboratory?.name}</TableCell>
       )}
       {visibleColumns.budgetCode && (
         <TableCell>
-          <div className="space-y-1">
-            <div className="font-medium">{request.budget_code?.code || "-"}</div>
-            <div className="text-xs text-muted-foreground">
-              {request.budget_code?.description}
-            </div>
-          </div>
+          {request.budget_code?.code} - {request.budget_code?.description}
         </TableCell>
       )}
       {visibleColumns.product && (
         <TableCell>
-          <div className="font-medium">
-            {request.purchase_request_items?.[0]?.product?.name || "-"}
-          </div>
+          {request.purchase_request_items?.[0]?.product?.name}
         </TableCell>
       )}
       {visibleColumns.supplier && (
         <TableCell>
-          <div className="text-muted-foreground">
-            {request.purchase_request_items?.[0]?.product?.supplier?.name || "-"}
-          </div>
+          {request.purchase_request_items?.[0]?.product?.supplier?.name}
         </TableCell>
       )}
       {visibleColumns.quantity && (
-        <TableCell className="text-center font-medium">
-          {request.purchase_request_items?.[0]?.quantity || "-"}
+        <TableCell className="text-center">
+          {request.purchase_request_items?.[0]?.quantity}
         </TableCell>
       )}
       {visibleColumns.unitPrice && (
         <TableCell className="text-right">
-          <div className="font-medium">
-            {request.purchase_request_items?.[0]?.unit_price
-              ? formatCurrency(
-                  request.purchase_request_items[0].unit_price,
-                  request.purchase_request_items[0].currency
-                )
-              : "-"}
-          </div>
+          {formatCurrency(
+            request.purchase_request_items?.[0]?.unit_price || 0,
+            request.purchase_request_items?.[0]?.currency || 'PEN'
+          )}
         </TableCell>
       )}
       {visibleColumns.currency && (
         <TableCell className="text-center">
-          <Badge variant="outline">
-            {request.purchase_request_items?.[0]?.currency || "-"}
-          </Badge>
+          {request.purchase_request_items?.[0]?.currency}
         </TableCell>
       )}
       {visibleColumns.status && (
-        <TableCell>
-          {canChangeStatus && !request.deleted_at ? (
+        <TableCell onClick={handleStatusClick}>
+          {userRole && ['admin', 'manager', 'purchases'].includes(userRole) ? (
             <Select
               value={request.status}
-              onValueChange={(value) => {
-                onStatusChange?.(request.id, value);
-                event?.stopPropagation();
-              }}
+              onValueChange={(value) => onStatusChange(request.id, value)}
             >
               <SelectTrigger className={`w-[180px] ${statusConfig[request.status]?.className}`}>
                 <SelectValue>{statusConfig[request.status]?.label}</SelectValue>
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(statusConfig).map(([value, { label }]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
+                <SelectItem value="pending">Pendiente</SelectItem>
+                <SelectItem value="in_process">En Proceso</SelectItem>
+                <SelectItem value="purchased">Comprado</SelectItem>
+                <SelectItem value="ready_for_delivery">Listo para Entrega</SelectItem>
+                <SelectItem value="delivered">Entregado</SelectItem>
               </SelectContent>
             </Select>
           ) : (
-            <Badge className={statusConfig[request.status]?.className}>
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusConfig[request.status]?.className}`}>
               {statusConfig[request.status]?.label}
-            </Badge>
+            </span>
           )}
         </TableCell>
       )}
@@ -179,45 +175,28 @@ export const PurchaseRequestTableRow = ({
         </TableCell>
       )}
       {visibleColumns.observations && (
-        <TableCell>
-          <div className="max-w-[200px] truncate text-muted-foreground">
-            {request.observations || "-"}
-          </div>
+        <TableCell className="max-w-[200px] truncate">
+          {request.observations || '-'}
         </TableCell>
       )}
       {visibleColumns.creator && (
         <TableCell>
-          <div className="font-medium">
-            {request.profiles?.first_name && request.profiles?.last_name
-              ? `${request.profiles.first_name} ${request.profiles.last_name}`
-              : "-"}
-          </div>
+          {request.profiles?.first_name} {request.profiles?.last_name}
         </TableCell>
       )}
       <TableCell>
-        <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={onClick}>
-                <Eye className="h-4 w-4 mr-2" />
-                Ver detalles
-              </DropdownMenuItem>
-              {canDelete && (
-                <DropdownMenuItem 
-                  className="text-destructive"
-                  onClick={() => onDelete?.(request.id)}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  {request.deleted_at ? 'Eliminar permanentemente' : 'Eliminar'}
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+        <div className="flex justify-end">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(request.id);
+            }}
+            className="h-8 w-8"
+          >
+            <Archive className="h-4 w-4" />
+          </Button>
         </div>
       </TableCell>
     </TableRow>

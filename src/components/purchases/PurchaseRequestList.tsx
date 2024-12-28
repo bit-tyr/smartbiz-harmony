@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Search, Filter, Loader2 } from "lucide-react";
+import { Search, Filter, Loader2, FileDown, FileSpreadsheet, CheckSquare, ShoppingCart, History } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -20,6 +20,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { utils, writeFileXLSX } from 'xlsx';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 interface PurchaseRequestListProps {
   requests: PurchaseRequest[];
@@ -60,6 +63,7 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
   const queryClient = useQueryClient();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
+  const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
 
   useEffect(() => {
     const getUserRole = async () => {
@@ -159,21 +163,68 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-[400px] bg-muted/10 rounded-lg">
-        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-        <p className="text-muted-foreground">Cargando solicitudes...</p>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="flex gap-2">
+            <Button
+              variant={currentView === 'current' ? "secondary" : "ghost"}
+              onClick={() => setCurrentView('current')}
+              className="flex items-center gap-2"
+            >
+              <ShoppingCart className="h-4 w-4" />
+              Solicitudes Actuales
+            </Button>
+            <Button
+              variant={currentView === 'history' ? "secondary" : "ghost"}
+              onClick={() => setCurrentView('history')}
+              className="flex items-center gap-2"
+            >
+              <History className="h-4 w-4" />
+              Histórico
+            </Button>
+          </div>
+        </div>
+        <div className="flex flex-col items-center justify-center h-[400px] bg-muted/10 rounded-lg">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+          <p className="text-muted-foreground">Cargando solicitudes...</p>
+        </div>
       </div>
     );
   }
 
   if (!requests?.length) {
     return (
-      <div className="flex flex-col items-center justify-center h-[400px] bg-muted/10 rounded-lg">
-        <div className="text-center space-y-4">
-          <p className="text-2xl font-semibold text-primary">No hay solicitudes</p>
-          <p className="text-muted-foreground">
-            No se encontraron solicitudes de compra registradas
-          </p>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="flex gap-2">
+            <Button
+              variant={currentView === 'current' ? "secondary" : "ghost"}
+              onClick={() => setCurrentView('current')}
+              className="flex items-center gap-2"
+            >
+              <ShoppingCart className="h-4 w-4" />
+              Solicitudes Actuales
+            </Button>
+            <Button
+              variant={currentView === 'history' ? "secondary" : "ghost"}
+              onClick={() => setCurrentView('history')}
+              className="flex items-center gap-2"
+            >
+              <History className="h-4 w-4" />
+              Histórico
+            </Button>
+          </div>
+        </div>
+        <div className="flex flex-col items-center justify-center h-[400px] bg-muted/10 rounded-lg">
+          <div className="text-center space-y-4">
+            <p className="text-2xl font-semibold text-primary">No hay solicitudes</p>
+            <p className="text-muted-foreground">
+              {currentView === 'current' 
+                ? "No se encontraron solicitudes de compra activas"
+                : "No se encontraron solicitudes en el histórico"
+              }
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -297,6 +348,19 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
 
   const handleStatusChange = async (requestId: string, newStatus: string) => {
     try {
+      // Verificar si el usuario tiene permisos para cambiar el estado
+      if (!userRole || !['admin', 'manager', 'purchases'].includes(userRole)) {
+        toast.error("No tienes permisos para cambiar el estado de las solicitudes");
+        return;
+      }
+
+      // Solo permitir cambios si la solicitud no está eliminada
+      const request = requests.find(r => r.id === requestId);
+      if (request?.deleted_at) {
+        toast.error("No se puede cambiar el estado de una solicitud eliminada");
+        return;
+      }
+
       const { data, error } = await supabase
         .from('purchase_requests')
         .update({ status: newStatus })
@@ -317,6 +381,92 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
     }
   };
 
+  const handleSelectRequest = (requestId: string) => {
+    setSelectedRequests(prev => 
+      prev.includes(requestId) 
+        ? prev.filter(id => id !== requestId)
+        : [...prev, requestId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedRequests.length === filteredRequests.length) {
+      setSelectedRequests([]);
+    } else {
+      setSelectedRequests(filteredRequests.map(request => request.id));
+    }
+  };
+
+  const exportToExcel = () => {
+    if (selectedRequests.length === 0) {
+      toast.error("Por favor selecciona al menos una solicitud");
+      return;
+    }
+
+    const selectedData = filteredRequests
+      .filter(request => selectedRequests.includes(request.id))
+      .map(request => ({
+        'Número': request.number,
+        'Laboratorio': request.laboratory?.name,
+        'Código Presupuestal': `${request.budget_code?.code} - ${request.budget_code?.description}`,
+        'Producto': request.purchase_request_items?.[0]?.product?.name,
+        'Proveedor': request.purchase_request_items?.[0]?.product?.supplier?.name,
+        'Cantidad': request.purchase_request_items?.[0]?.quantity,
+        'Precio Unitario': request.purchase_request_items?.[0]?.unit_price,
+        'Moneda': request.purchase_request_items?.[0]?.currency,
+        'Estado': statusConfig[request.status]?.label,
+        'Fecha': new Date(request.created_at).toLocaleDateString(),
+        'Observaciones': request.observations,
+        'Creado por': `${request.profiles?.first_name || ''} ${request.profiles?.last_name || ''}`
+      }));
+
+    const ws = utils.json_to_sheet(selectedData);
+    const wb = utils.book_new();
+    utils.book_append_sheet(wb, ws, "Solicitudes");
+    writeFileXLSX(wb, "solicitudes_compra.xlsx");
+    toast.success("Archivo Excel exportado exitosamente");
+  };
+
+  const exportToPDF = () => {
+    if (selectedRequests.length === 0) {
+      toast.error("Por favor selecciona al menos una solicitud");
+      return;
+    }
+
+    const doc = new jsPDF();
+    
+    doc.setFontSize(16);
+    doc.text("Reporte de Solicitudes de Compra", 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Fecha de generación: ${new Date().toLocaleDateString()}`, 14, 25);
+
+    const selectedData = filteredRequests
+      .filter(request => selectedRequests.includes(request.id))
+      .map(request => [
+        request.number.toString(),
+        request.laboratory?.name || '',
+        request.purchase_request_items?.[0]?.product?.name || '',
+        request.purchase_request_items?.[0]?.quantity?.toString() || '',
+        `${request.purchase_request_items?.[0]?.currency} ${request.purchase_request_items?.[0]?.unit_price}` || '',
+        statusConfig[request.status]?.label || '',
+        new Date(request.created_at).toLocaleDateString(),
+        `${request.profiles?.first_name || ''} ${request.profiles?.last_name || ''}`
+      ]);
+
+    (doc as any).autoTable({
+      startY: 35,
+      head: [['Número', 'Laboratorio', 'Producto', 'Cantidad', 'Precio', 'Estado', 'Fecha', 'Creado por']],
+      body: selectedData,
+      theme: 'striped',
+      headStyles: { fillColor: [63, 63, 70] },
+      styles: { fontSize: 8 },
+      margin: { top: 35 }
+    });
+
+    doc.save("solicitudes_compra.pdf");
+    toast.success("Archivo PDF exportado exitosamente");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -324,14 +474,36 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
           <Button
             variant={currentView === 'current' ? "secondary" : "ghost"}
             onClick={() => setCurrentView('current')}
+            className="flex items-center gap-2"
           >
+            <ShoppingCart className="h-4 w-4" />
             Solicitudes Actuales
           </Button>
           <Button
             variant={currentView === 'history' ? "secondary" : "ghost"}
             onClick={() => setCurrentView('history')}
+            className="flex items-center gap-2"
           >
+            <History className="h-4 w-4" />
             Histórico
+          </Button>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={exportToExcel}
+            disabled={selectedRequests.length === 0}
+          >
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            Exportar Excel
+          </Button>
+          <Button
+            variant="outline"
+            onClick={exportToPDF}
+            disabled={selectedRequests.length === 0}
+          >
+            <FileDown className="h-4 w-4 mr-2" />
+            Exportar PDF
           </Button>
         </div>
       </div>
@@ -360,6 +532,14 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
               <SelectItem value="delivered">Entregado</SelectItem>
             </SelectContent>
           </Select>
+          <Button
+            variant="outline"
+            onClick={handleSelectAll}
+            className="flex items-center gap-2"
+          >
+            <CheckSquare className="h-4 w-4" />
+            {selectedRequests.length === filteredRequests.length ? "Deseleccionar Todo" : "Seleccionar Todo"}
+          </Button>
           <ColumnSelector 
             visibleColumns={visibleColumns} 
             onColumnChange={handleColumnChange}
@@ -369,7 +549,12 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
 
       <div className="rounded-lg border bg-card">
         <Table>
-          <PurchaseRequestTableHeader visibleColumns={visibleColumns} />
+          <PurchaseRequestTableHeader 
+            visibleColumns={visibleColumns} 
+            showSelection={true}
+            onSelectAll={handleSelectAll}
+            allSelected={selectedRequests.length === filteredRequests.length}
+          />
           <TableBody>
             {filteredRequests.map((request) => (
               <PurchaseRequestTableRow
@@ -380,6 +565,9 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
                 onDelete={handleDeleteClick}
                 onStatusChange={handleStatusChange}
                 userRole={userRole}
+                isSelected={selectedRequests.includes(request.id)}
+                onSelect={() => handleSelectRequest(request.id)}
+                showSelection={true}
               />
             ))}
           </TableBody>
