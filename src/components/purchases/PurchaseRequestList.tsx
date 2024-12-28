@@ -230,13 +230,33 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
 
     try {
       if (currentView === 'history') {
+        console.log('Intentando eliminar solicitud:', selectedRequestId);
+        
+        // Primero verificamos los items asociados
+        const { data: items, error: checkError } = await supabase
+          .from('purchase_request_items')
+          .select('id')
+          .eq('purchase_request_id', selectedRequestId);
+          
+        console.log('Items asociados:', items);
+
+        if (checkError) {
+          console.error('Error al verificar items:', checkError);
+          throw checkError;
+        }
+
         // Primero eliminamos los items asociados
         const { error: itemsError } = await supabase
           .from('purchase_request_items')
           .delete()
           .eq('purchase_request_id', selectedRequestId);
 
-        if (itemsError) throw itemsError;
+        if (itemsError) {
+          console.error('Error al eliminar items:', itemsError);
+          throw itemsError;
+        }
+
+        console.log('Items eliminados exitosamente');
 
         // Luego eliminamos la solicitud principal
         const { error } = await supabase
@@ -244,7 +264,12 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
           .delete()
           .eq('id', selectedRequestId);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error al eliminar solicitud principal:', error);
+          throw error;
+        }
+
+        console.log('Solicitud principal eliminada exitosamente');
         toast.success("Solicitud eliminada permanentemente");
       } else {
         // Mover al histórico para solicitudes actuales
@@ -259,7 +284,7 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
 
       queryClient.invalidateQueries({ queryKey: ['purchaseRequests'] });
     } catch (error) {
-      console.error('Error al procesar la solicitud:', error);
+      console.error('Error completo al procesar la solicitud:', error);
       toast.error(currentView === 'history' 
         ? "Error al eliminar la solicitud permanentemente"
         : "Error al mover la solicitud al histórico"

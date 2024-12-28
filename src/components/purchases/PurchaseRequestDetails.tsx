@@ -14,6 +14,8 @@ import { PurchaseRequestForm } from "./PurchaseRequestForm";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { AttachmentSection } from "./form-sections/AttachmentSection";
+import { AttachmentList } from "./form-sections/AttachmentList";
 
 interface PurchaseRequestDetailsProps {
   request: PurchaseRequest | null;
@@ -155,7 +157,7 @@ export const PurchaseRequestDetails = ({ request, onClose }: PurchaseRequestDeta
             isEditing={true}
           />
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <h3 className="font-semibold mb-2">Información General</h3>
@@ -222,6 +224,21 @@ export const PurchaseRequestDetails = ({ request, onClose }: PurchaseRequestDeta
                 <p className="text-gray-700">{request.observations}</p>
               </div>
             )}
+            <div>
+              <h3 className="font-semibold mb-4">Archivos Adjuntos</h3>
+              <div className="space-y-4">
+                <AttachmentList 
+                  purchaseRequestId={request.id}
+                  canDelete={!request.deleted_at}
+                />
+                {!request.deleted_at && (
+                  <AttachmentSection 
+                    form={null} 
+                    purchaseRequestId={request.id}
+                  />
+                )}
+              </div>
+            </div>
           </div>
         )}
       </DialogContent>
