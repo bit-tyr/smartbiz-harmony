@@ -191,6 +191,15 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
     
     if (!searchTerms) return true;
 
+    // Log temporal para debugging
+    if (currentView === 'history') {
+      console.log('Solicitudes en histórico:', requests.filter(r => r.deleted_at).map(r => ({
+        id: r.id,
+        number: r.number,
+        deleted_at: r.deleted_at
+      })));
+    }
+
     const searchableFields = [
       request.number?.toString(),
       request.laboratory?.name,
@@ -220,18 +229,41 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
     if (!selectedRequestId) return;
 
     try {
-      const { error } = await supabase
-        .from('purchase_requests')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('id', selectedRequestId);
+      if (currentView === 'history') {
+        // Primero eliminamos los items asociados
+        const { error: itemsError } = await supabase
+          .from('purchase_request_items')
+          .delete()
+          .eq('purchase_request_id', selectedRequestId);
 
-      if (error) throw error;
+        if (itemsError) throw itemsError;
 
-      toast.success("Solicitud movida al histórico exitosamente");
+        // Luego eliminamos la solicitud principal
+        const { error } = await supabase
+          .from('purchase_requests')
+          .delete()
+          .eq('id', selectedRequestId);
+
+        if (error) throw error;
+        toast.success("Solicitud eliminada permanentemente");
+      } else {
+        // Mover al histórico para solicitudes actuales
+        const { error } = await supabase
+          .from('purchase_requests')
+          .update({ deleted_at: new Date().toISOString() })
+          .eq('id', selectedRequestId);
+
+        if (error) throw error;
+        toast.success("Solicitud movida al histórico exitosamente");
+      }
+
       queryClient.invalidateQueries({ queryKey: ['purchaseRequests'] });
     } catch (error) {
-      console.error('Error moving purchase request to history:', error);
-      toast.error("Error al mover la solicitud al histórico");
+      console.error('Error al procesar la solicitud:', error);
+      toast.error(currentView === 'history' 
+        ? "Error al eliminar la solicitud permanentemente"
+        : "Error al mover la solicitud al histórico"
+      );
     } finally {
       setIsDeleteDialogOpen(false);
       setSelectedRequestId(null);
@@ -339,7 +371,10 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
           <AlertDialogHeader>
             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción moverá la solicitud de compra al histórico. Podrás consultarla en la pestaña de histórico.
+              {currentView === 'history' 
+                ? "Esta acción eliminará permanentemente la solicitud de compra. Esta acción no se puede deshacer."
+                : "Esta acción moverá la solicitud de compra al histórico. Podrás consultarla en la pestaña de histórico."
+              }
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -348,7 +383,7 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
               onClick={handleDeleteConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Mover al histórico
+              {currentView === 'history' ? 'Eliminar permanentemente' : 'Mover al histórico'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

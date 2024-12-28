@@ -207,13 +207,13 @@ export const PurchaseRequestTableRow = ({
                 <Eye className="h-4 w-4 mr-2" />
                 Ver detalles
               </DropdownMenuItem>
-              {canDelete && !request.deleted_at && (
+              {canDelete && (
                 <DropdownMenuItem 
                   className="text-destructive"
                   onClick={() => onDelete?.(request.id)}
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
-                  Eliminar
+                  {request.deleted_at ? 'Eliminar permanentemente' : 'Eliminar'}
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>
