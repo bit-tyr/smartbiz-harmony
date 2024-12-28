@@ -1,106 +1,65 @@
-import { UseFormReturn } from "react-hook-form";
 import { FormSection } from "./FormSection";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Upload, X } from "lucide-react";
+import { X, Upload } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface AttachmentSectionProps {
-  form: UseFormReturn<any>;
-  purchaseRequestId?: string;
+  purchaseRequestId: string;
+  onFilesChange: (files: File[]) => void;
 }
 
-const sanitizeFileName = (fileName: string): string => {
-  // Reemplazar caracteres especiales y espacios
+export const sanitizeFileName = (fileName: string): string => {
   const sanitized = fileName
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Remover acentos
-    .replace(/[^a-zA-Z0-9.-]/g, '_') // Reemplazar caracteres especiales con _
-    .replace(/_{2,}/g, '_'); // Reemplazar múltiples _ consecutivos con uno solo
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9.-]/g, '_')
+    .replace(/_{2,}/g, '_');
 
-  // Separar nombre y extensión
   const lastDot = sanitized.lastIndexOf('.');
   const name = lastDot > -1 ? sanitized.slice(0, lastDot) : sanitized;
   const ext = lastDot > -1 ? sanitized.slice(lastDot) : '';
 
-  // Limitar longitud del nombre si es necesario (manteniendo la extensión)
   const maxLength = 100;
-  const finalName = name.length > maxLength ? name.slice(0, maxLength) + ext : sanitized;
-
-  return finalName;
+  return name.length > maxLength ? name.slice(0, maxLength) + ext : sanitized;
 };
 
-export const AttachmentSection = ({ form, purchaseRequestId }: AttachmentSectionProps) => {
+interface TempFile {
+  file: File;
+  id: string;
+}
+
+export const AttachmentSection = ({ purchaseRequestId, onFilesChange }: AttachmentSectionProps) => {
   const [isUploading, setIsUploading] = useState(false);
-  const [files, setFiles] = useState<File[]>([]);
+  const [tempFiles, setTempFiles] = useState<TempFile[]>([]);
+  const queryClient = useQueryClient();
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newFiles = Array.from(e.target.files);
-      setFiles(prev => [...prev, ...newFiles]);
-    }
-  };
-
-  const removeFile = (index: number) => {
-    setFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const uploadFiles = async () => {
-    if (!purchaseRequestId) return;
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
     
-    setIsUploading(true);
-    try {
-      for (const file of files) {
-        const sanitizedName = sanitizeFileName(file.name);
-        const filePath = `${purchaseRequestId}/${sanitizedName}`;
+    const files = Array.from(e.target.files);
+    const newTempFiles = files.map(file => ({
+      file,
+      id: crypto.randomUUID()
+    }));
+    
+    setTempFiles(prev => {
+      const updated = [...prev, ...newTempFiles];
+      onFilesChange(updated.map(tf => tf.file));
+      return updated;
+    });
+    e.target.value = '';
+  };
 
-        // Subir el archivo a Supabase Storage
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('purchase-attachments')
-          .upload(filePath, file, {
-            cacheControl: '3600',
-            upsert: false
-          });
-
-        if (uploadError) {
-          console.error('Error al subir archivo:', uploadError);
-          toast.error(`Error al subir ${file.name}`);
-          continue;
-        }
-
-        // Crear registro en la tabla de adjuntos
-        const { error: dbError } = await supabase
-          .from('purchase_request_attachments')
-          .insert({
-            purchase_request_id: purchaseRequestId,
-            file_name: file.name, // Guardamos el nombre original para mostrar
-            file_path: uploadData.path,
-            file_size: file.size,
-            file_type: file.type
-          });
-
-        if (dbError) {
-          console.error('Error al guardar registro de archivo:', dbError);
-          toast.error(`Error al registrar ${file.name}`);
-          
-          // Si falla el registro en la base de datos, eliminamos el archivo del storage
-          await supabase.storage
-            .from('purchase-attachments')
-            .remove([uploadData.path]);
-        } else {
-          toast.success(`${file.name} subido exitosamente`);
-        }
-      }
-
-      setFiles([]);
-    } catch (error) {
-      console.error('Error al subir archivos:', error);
-      toast.error('Error al subir archivos');
-    } finally {
-      setIsUploading(false);
-    }
+  const removeFile = (id: string) => {
+    setTempFiles(prev => {
+      const updated = prev.filter(f => f.id !== id);
+      onFilesChange(updated.map(tf => tf.file));
+      return updated;
+    });
   };
 
   return (
@@ -113,34 +72,29 @@ export const AttachmentSection = ({ form, purchaseRequestId }: AttachmentSection
             onChange={handleFileChange}
             className="flex-1"
             disabled={isUploading}
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
           />
-          {purchaseRequestId && files.length > 0 && (
-            <Button
-              type="button"
-              onClick={uploadFiles}
-              disabled={isUploading}
-              className="flex items-center gap-2"
-            >
-              <Upload className="h-4 w-4" />
-              {isUploading ? 'Subiendo...' : 'Subir'}
-            </Button>
+          {isUploading && (
+            <div className="flex items-center gap-2">
+              <Upload className="h-4 w-4 animate-spin" />
+              <span>Subiendo...</span>
+            </div>
           )}
         </div>
 
-        {files.length > 0 && (
+        {tempFiles.length > 0 && (
           <div className="space-y-2">
-            {files.map((file, index) => (
+            {tempFiles.map((tempFile) => (
               <div
-                key={index}
+                key={tempFile.id}
                 className="flex items-center justify-between p-2 bg-muted rounded-md"
               >
-                <span className="text-sm truncate flex-1">{file.name}</span>
+                <span className="text-sm truncate flex-1">{tempFile.file.name}</span>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => removeFile(index)}
-                  disabled={isUploading}
+                  onClick={() => removeFile(tempFile.id)}
                 >
                   <X className="h-4 w-4" />
                 </Button>

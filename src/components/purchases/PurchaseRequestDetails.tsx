@@ -16,6 +16,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { AttachmentSection } from "./form-sections/AttachmentSection";
 import { AttachmentList } from "./form-sections/AttachmentList";
+import { useForm } from "react-hook-form";
+import { AttachmentUploader } from "./form-sections/AttachmentUploader";
 
 interface PurchaseRequestDetailsProps {
   request: PurchaseRequest | null;
@@ -26,6 +28,7 @@ export const PurchaseRequestDetails = ({ request, onClose }: PurchaseRequestDeta
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
+  const form = useForm();
 
   if (!request) return null;
 
@@ -155,6 +158,7 @@ export const PurchaseRequestDetails = ({ request, onClose }: PurchaseRequestDeta
             onCancel={() => setIsEditing(false)}
             initialValues={initialValues}
             isEditing={true}
+            purchaseRequestId={request.id}
           />
         ) : (
           <div className="space-y-6">
@@ -232,8 +236,7 @@ export const PurchaseRequestDetails = ({ request, onClose }: PurchaseRequestDeta
                   canDelete={!request.deleted_at}
                 />
                 {!request.deleted_at && (
-                  <AttachmentSection 
-                    form={null} 
+                  <AttachmentUploader 
                     purchaseRequestId={request.id}
                   />
                 )}

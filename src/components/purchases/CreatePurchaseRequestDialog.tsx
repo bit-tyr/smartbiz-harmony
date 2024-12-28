@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { PurchaseRequestForm } from "./PurchaseRequestForm";
 import { toast } from "sonner";
+import { sanitizeFileName } from "./form-sections/AttachmentSection";
 
 interface CreatePurchaseRequestDialogProps {
   open: boolean;
@@ -21,47 +22,46 @@ export const CreatePurchaseRequestDialog = ({
   onOpenChange,
 }: CreatePurchaseRequestDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [purchaseRequestId, setPurchaseRequestId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
+  useEffect(() => {
+    if (open && !purchaseRequestId) {
+      // Generar un UUID para la nueva solicitud
+      setPurchaseRequestId(crypto.randomUUID());
+    }
+    if (!open) {
+      setPurchaseRequestId(null);
+    }
+  }, [open]);
+
   const onSubmit = async (values: any) => {
+    if (!purchaseRequestId) return;
+    setIsSubmitting(true);
+
     try {
-      setIsSubmitting(true);
-
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        console.error('Error de sesión:', sessionError);
-        toast.error("Error al verificar la sesión");
-        throw sessionError;
-      }
-
+      // Obtener la sesión del usuario
+      const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
-        toast.error("Usuario no autenticado");
+        toast.error("No hay sesión de usuario");
         return;
       }
 
       // Crear la solicitud principal
-      const { data: purchaseRequest, error: purchaseError } = await supabase
+      const { error: requestError } = await supabase
         .from('purchase_requests')
         .insert({
+          id: purchaseRequestId,
           laboratory_id: values.laboratoryId,
           budget_code_id: values.budgetCodeId,
           observations: values.observations || null,
-          user_id: session.user.id,
-          status: 'pending'
-        })
-        .select()
-        .single();
+          status: 'pending',
+          user_id: session.user.id
+        });
 
-      if (purchaseError) {
-        console.error('Error al crear la solicitud:', purchaseError);
-        if (purchaseError.code === '42501') {
-          toast.error("No tienes permisos para crear solicitudes");
-        } else if (purchaseError.code === '23503') {
-          toast.error("Error de referencia: Verifica que el laboratorio y código presupuestal existan");
-        } else {
-          toast.error(`Error al crear la solicitud: ${purchaseError.message}`);
-        }
+      if (requestError) {
+        console.error('Error al crear la solicitud:', requestError);
+        toast.error("Error al crear la solicitud");
         return;
       }
 
@@ -69,7 +69,7 @@ export const CreatePurchaseRequestDialog = ({
       const { error: itemError } = await supabase
         .from('purchase_request_items')
         .insert({
-          purchase_request_id: purchaseRequest.id,
+          purchase_request_id: purchaseRequestId,
           product_id: values.productId,
           quantity: Number(values.quantity),
           unit_price: Number(values.unitPrice),
@@ -82,7 +82,7 @@ export const CreatePurchaseRequestDialog = ({
         await supabase
           .from('purchase_requests')
           .delete()
-          .eq('id', purchaseRequest.id);
+          .eq('id', purchaseRequestId);
         
         if (itemError.code === '23503') {
           toast.error("Error de referencia: Verifica que el producto exista");
@@ -105,17 +105,18 @@ export const CreatePurchaseRequestDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px]">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>Nueva Solicitud de Compra</DialogTitle>
           <DialogDescription>
-            Complete los campos para crear una nueva solicitud de compra
+            Complete los detalles de la nueva solicitud de compra
           </DialogDescription>
         </DialogHeader>
         <PurchaseRequestForm
           onSubmit={onSubmit}
           isSubmitting={isSubmitting}
           onCancel={() => onOpenChange(false)}
+          purchaseRequestId={purchaseRequestId || undefined}
         />
       </DialogContent>
     </Dialog>

@@ -25,6 +25,8 @@ import { ProductDetails } from "./form-sections/ProductDetails";
 import { Loader2 } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { AttachmentSection } from "./form-sections/AttachmentSection";
+import { useState } from "react";
 
 export interface FormValues {
   laboratoryId: string;
@@ -35,14 +37,16 @@ export interface FormValues {
   unitPrice: number;
   currency: string;
   observations?: string;
+  files?: File[];
 }
 
 interface PurchaseRequestFormProps {
-  onSubmit: (values: FormValues) => Promise<void>;
+  onSubmit: (values: FormValues & { files: File[] }) => Promise<void>;
   isSubmitting: boolean;
   onCancel: () => void;
   initialValues?: FormValues;
   isEditing?: boolean;
+  purchaseRequestId?: string;
 }
 
 export const PurchaseRequestForm = ({
@@ -50,8 +54,10 @@ export const PurchaseRequestForm = ({
   isSubmitting,
   onCancel,
   initialValues,
-  isEditing = false
+  isEditing = false,
+  purchaseRequestId
 }: PurchaseRequestFormProps) => {
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const form = useForm<FormValues>({
     defaultValues: initialValues,
     resolver: zodResolver(
@@ -67,6 +73,14 @@ export const PurchaseRequestForm = ({
       })
     )
   });
+
+  const handleSubmit = async (values: FormValues) => {
+    await onSubmit({ ...values, files: selectedFiles });
+  };
+
+  const handleFilesChange = (files: File[]) => {
+    setSelectedFiles(files);
+  };
 
   const { data: laboratories } = useQuery({
     queryKey: ['laboratories'],
@@ -118,7 +132,7 @@ export const PurchaseRequestForm = ({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <RequestDetails 
           form={form}
           laboratories={laboratories}
@@ -147,6 +161,13 @@ export const PurchaseRequestForm = ({
             </FormItem>
           )}
         />
+
+        {purchaseRequestId && (
+          <AttachmentSection
+            purchaseRequestId={purchaseRequestId}
+            onFilesChange={handleFilesChange}
+          />
+        )}
 
         <div className="flex justify-end gap-4">
           <Button

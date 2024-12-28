@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,8 @@ import { FormsTab } from "@/components/purchases/tabs/FormsTab";
 import { FaqTab } from "@/components/purchases/tabs/FaqTab";
 import { usePurchaseRequests } from "@/hooks/usePurchaseRequests";
 import { PurchaseRequest } from "@/components/purchases/types";
+import { AttachmentSection } from "@/components/purchases/form-sections/AttachmentSection";
+import { sanitizeFileName } from "@/components/purchases/form-sections/AttachmentSection";
 
 const Compras = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -23,6 +25,16 @@ const Compras = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const queryClient = useQueryClient();
+  const [tempRequestId, setTempRequestId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (showPurchaseForm && !tempRequestId) {
+      setTempRequestId(crypto.randomUUID());
+    }
+    if (!showPurchaseForm) {
+      setTempRequestId(null);
+    }
+  }, [showPurchaseForm]);
 
   const { data: purchaseRequests, isLoading } = useQuery({
     queryKey: ['purchaseRequests', currentView],
@@ -90,6 +102,7 @@ const Compras = () => {
   });
 
   const handleSubmit = async (values: FormValues) => {
+    if (!tempRequestId) return;
     try {
       setIsSubmitting(true);
       
@@ -102,6 +115,7 @@ const Compras = () => {
       const { data: purchaseRequest, error: purchaseError } = await supabase
         .from('purchase_requests')
         .insert({
+          id: tempRequestId,
           laboratory_id: values.laboratoryId,
           budget_code_id: values.budgetCodeId,
           observations: values.observations || null,
@@ -119,7 +133,7 @@ const Compras = () => {
       const { error: itemError } = await supabase
         .from('purchase_request_items')
         .insert({
-          purchase_request_id: purchaseRequest.id,
+          purchase_request_id: tempRequestId,
           product_id: values.productId,
           quantity: parseInt(values.quantity.toString()),
           unit_price: parseFloat(values.unitPrice.toString()),
@@ -127,8 +141,53 @@ const Compras = () => {
         });
 
       if (itemError) {
+        await supabase
+          .from('purchase_requests')
+          .delete()
+          .eq('id', tempRequestId);
+        
         toast.error("Error al crear el item de la solicitud");
         throw itemError;
+      }
+
+      const selectedFiles = values.files || [];
+      for (const file of selectedFiles) {
+        const sanitizedName = sanitizeFileName(file.name);
+        const filePath = `${tempRequestId}/${sanitizedName}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('purchase-attachments')
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (uploadError) {
+          console.error('Error al subir archivo:', uploadError);
+          toast.error(`Error al subir ${file.name}`);
+          continue;
+        }
+
+        const { error: dbError } = await supabase
+          .from('purchase_request_attachments')
+          .insert({
+            purchase_request_id: tempRequestId,
+            file_name: file.name,
+            file_path: uploadData.path,
+            file_size: file.size,
+            file_type: file.type
+          });
+
+        if (dbError) {
+          console.error('Error al guardar registro de archivo:', dbError);
+          toast.error(`Error al registrar ${file.name}`);
+          
+          await supabase.storage
+            .from('purchase-attachments')
+            .remove([uploadData.path]);
+        } else {
+          toast.success(`${file.name} adjuntado exitosamente`);
+        }
       }
 
       toast.success("Solicitud creada exitosamente");
@@ -218,6 +277,7 @@ const Compras = () => {
                     onSubmit={handleSubmit}
                     isSubmitting={isSubmitting}
                     onCancel={() => setShowPurchaseForm(false)}
+                    purchaseRequestId={tempRequestId || undefined}
                   />
                 </div>
               ) : (
