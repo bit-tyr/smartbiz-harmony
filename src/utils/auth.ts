@@ -1,6 +1,30 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+export const getUserRole = async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) return null;
+
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select(`
+      role_id,
+      roles:roles(name)
+    `)
+    .eq('id', session.user.id)
+    .single();
+
+  if (error) {
+    console.error('Error al obtener el perfil:', error);
+    return null;
+  }
+
+  return {
+    role: profile?.roles?.[0]?.name?.toLowerCase(),
+    isPurchasesUser: profile?.roles?.[0]?.name?.toLowerCase() === 'purchases'
+  };
+};
+
 export const createAdminProfile = async (userId: string) => {
   try {
     // Get the Administrator role

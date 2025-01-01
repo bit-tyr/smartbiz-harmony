@@ -13,6 +13,11 @@ import Compras from "./pages/Compras";
 import Secretaria from "./pages/Secretaria";
 import Mantenimiento from "./pages/Mantenimiento";
 import Admin from "./pages/Admin";
+<<<<<<< Updated upstream
+=======
+import DatosMaestros from "./pages/DatosMaestros";
+import Viajes from "./pages/Viajes";
+>>>>>>> Stashed changes
 
 const queryClient = new QueryClient();
 
@@ -51,6 +56,23 @@ const App = () => (
                 </Layout>
               </ProtectedRoute>
             } />
+<<<<<<< Updated upstream
+=======
+            <Route path="/viajes" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Viajes />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/datos-maestros" element={
+              <ProtectedRoute>
+                <Layout>
+                  <DatosMaestros />
+                </Layout>
+              </ProtectedRoute>
+            } />
+>>>>>>> Stashed changes
             <Route path="/secretaria" element={
               <ProtectedRoute>
                 <Layout>

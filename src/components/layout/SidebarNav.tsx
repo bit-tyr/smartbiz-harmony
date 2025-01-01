@@ -1,6 +1,10 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+<<<<<<< Updated upstream
 import { ShoppingCart, FileText, Wrench, Home, Users } from "lucide-react";
+=======
+import { ShoppingCart, FileText, Wrench, Home, Users, Database, Plane } from "lucide-react";
+>>>>>>> Stashed changes
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -16,23 +20,35 @@ export const SidebarNav = ({ isAdmin }: SidebarNavProps) => {
     const getUserRole = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: profile, error } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select(`
-            roles (
-              name
-            )
-          `)
+          .select('role_id')
           .eq('id', user.id)
           .single();
 
-        if (error) {
-          console.error('Error fetching user role:', error);
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
           return;
         }
 
-        if (profile?.roles) {
-          setUserRole(profile.roles.name);
+        if (profile?.role_id) {
+          const { data: role, error: roleError } = await supabase
+            .from('roles')
+            .select('name')
+            .eq('id', profile.role_id)
+            .single();
+
+          if (roleError) {
+            console.error('Error fetching role:', roleError);
+            return;
+          }
+
+          console.log('Role data:', role);
+          
+          if (role?.name) {
+            console.log('Role name:', role.name);
+            setUserRole(role.name);
+          }
         }
       }
     };
@@ -43,6 +59,10 @@ export const SidebarNav = ({ isAdmin }: SidebarNavProps) => {
   const showPurchasesLink = isAdmin || userRole === 'Purchases';
   const showMaintenanceLink = isAdmin || userRole === 'Maintenance';
   const showSecretaryLink = isAdmin || userRole === 'Secretary';
+<<<<<<< Updated upstream
+=======
+  const showMasterDataLink = isAdmin || userRole === 'Purchases';
+>>>>>>> Stashed changes
 
   return (
     <div className="px-3 py-2">
@@ -71,6 +91,16 @@ export const SidebarNav = ({ isAdmin }: SidebarNavProps) => {
             </Button>
           </Link>
         )}
+
+        <Link to="/viajes">
+          <Button
+            variant={location.pathname === "/viajes" ? "secondary" : "ghost"}
+            className="w-full justify-start"
+          >
+            <Plane className="mr-2 h-4 w-4" />
+            Viajes
+          </Button>
+        </Link>
 
         {showPurchasesLink && (
           <Link to="/compras">
