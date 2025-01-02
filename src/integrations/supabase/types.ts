@@ -702,6 +702,8 @@ export type Database = {
           estimated_amount: number
           expense_type: Database["public"]["Enums"]["travel_expense_type"]
           id: string
+          receipt_path: string | null
+          status: string | null
           travel_request_id: string
           updated_at: string
         }
@@ -712,6 +714,8 @@ export type Database = {
           estimated_amount: number
           expense_type: Database["public"]["Enums"]["travel_expense_type"]
           id?: string
+          receipt_path?: string | null
+          status?: string | null
           travel_request_id: string
           updated_at?: string
         }
@@ -722,6 +726,8 @@ export type Database = {
           estimated_amount?: number
           expense_type?: Database["public"]["Enums"]["travel_expense_type"]
           id?: string
+          receipt_path?: string | null
+          status?: string | null
           travel_request_id?: string
           updated_at?: string
         }
