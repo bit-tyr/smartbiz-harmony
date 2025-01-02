@@ -123,7 +123,7 @@ const useAuth = () => {
           setIsAdmin(!!profiles.is_admin);
           setIsBlocked(!!profiles.is_blocked);
         }
-      } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+      } else if (event === 'SIGNED_OUT') {
         setSession(null);
         setIsAdmin(false);
         setIsBlocked(false);
