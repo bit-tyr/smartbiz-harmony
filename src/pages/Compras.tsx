@@ -16,6 +16,7 @@ import { usePurchaseRequests } from "@/hooks/usePurchaseRequests";
 import { PurchaseRequest } from "@/components/purchases/types";
 import { AttachmentSection } from "@/components/purchases/form-sections/AttachmentSection";
 import { sanitizeFileName } from "@/components/purchases/form-sections/AttachmentSection";
+import { CreateTravelRequestDialog } from "@/components/travel/CreateTravelRequestDialog";
 
 const Compras = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -26,6 +27,7 @@ const Compras = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const [tempRequestId, setTempRequestId] = useState<string | null>(null);
+  const [showTravelForm, setShowTravelForm] = useState(false);
 
   useEffect(() => {
     if (showPurchaseForm && !tempRequestId) {
@@ -293,16 +295,17 @@ const Compras = () => {
                   <Button 
                     variant="outline" 
                     className="justify-start hover:bg-primary/5 hover:text-primary transition-colors"
+                    onClick={() => setShowTravelForm(true)}
                   >
-                    <CreditCard className="h-5 w-5 mr-2" />
-                    Inscripción a Evento/Curso
+                    <Plane className="h-5 w-5 mr-2" />
+                    Pasajes/Viáticos/Alojamiento
                   </Button>
                   <Button 
                     variant="outline" 
                     className="justify-start hover:bg-primary/5 hover:text-primary transition-colors"
                   >
-                    <Plane className="h-5 w-5 mr-2" />
-                    Pasajes/Viáticos/Alojamiento
+                    <CreditCard className="h-5 w-5 mr-2" />
+                    Inscripción a Evento/Curso
                   </Button>
                   <Button 
                     variant="outline" 
@@ -346,6 +349,13 @@ const Compras = () => {
         <PurchaseRequestView 
           request={selectedRequest} 
           onClose={() => setSelectedRequest(null)} 
+        />
+      )}
+
+      {showTravelForm && (
+        <CreateTravelRequestDialog
+          open={showTravelForm}
+          onOpenChange={setShowTravelForm}
         />
       )}
     </div>
