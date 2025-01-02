@@ -72,6 +72,47 @@ export type Database = {
         }
         Relationships: []
       }
+      files: {
+        Row: {
+          created_at: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id: string
+          purchase_request_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id?: string
+          purchase_request_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          purchase_request_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "files_purchase_request_id_fkey"
+            columns: ["purchase_request_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       groups: {
         Row: {
           created_at: string
@@ -319,32 +360,70 @@ export type Database = {
           },
         ]
       }
+      projects: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          laboratory_id: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          laboratory_id?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          laboratory_id?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_laboratory_id_fkey"
+            columns: ["laboratory_id"]
+            isOneToOne: false
+            referencedRelation: "laboratories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       purchase_request_attachments: {
         Row: {
           created_at: string
           file_name: string
           file_path: string
-          file_type: string | null
+          file_size: number
+          file_type: string
           id: string
-          purchase_request_id: string
+          purchase_request_id: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
           file_name: string
           file_path: string
-          file_type?: string | null
+          file_size: number
+          file_type: string
           id?: string
-          purchase_request_id: string
+          purchase_request_id?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
           file_name?: string
           file_path?: string
-          file_type?: string | null
+          file_size?: number
+          file_type?: string
           id?: string
-          purchase_request_id?: string
+          purchase_request_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -443,9 +522,11 @@ export type Database = {
       purchase_requests: {
         Row: {
           actions: string | null
+          attachments: string[] | null
           budget_code_id: string | null
           created_at: string
           creator_id: string | null
+          deleted_at: string | null
           first_name: string | null
           id: string
           laboratory_id: string | null
@@ -455,13 +536,14 @@ export type Database = {
           status: string | null
           updated_at: string
           user_id: string
-          deleted_at: string | null
         }
         Insert: {
           actions?: string | null
+          attachments?: string[] | null
           budget_code_id?: string | null
           created_at?: string
           creator_id?: string | null
+          deleted_at?: string | null
           first_name?: string | null
           id?: string
           laboratory_id?: string | null
@@ -471,13 +553,14 @@ export type Database = {
           status?: string | null
           updated_at?: string
           user_id: string
-          deleted_at?: string | null
         }
         Update: {
           actions?: string | null
+          attachments?: string[] | null
           budget_code_id?: string | null
           created_at?: string
           creator_id?: string | null
+          deleted_at?: string | null
           first_name?: string | null
           id?: string
           laboratory_id?: string | null
@@ -487,7 +570,6 @@ export type Database = {
           status?: string | null
           updated_at?: string
           user_id?: string
-          deleted_at?: string | null
         }
         Relationships: [
           {
@@ -574,6 +656,181 @@ export type Database = {
         }
         Relationships: []
       }
+      travel_attachments: {
+        Row: {
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id: string
+          travel_request_id: string
+          uploaded_at: string
+        }
+        Insert: {
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id?: string
+          travel_request_id: string
+          uploaded_at?: string
+        }
+        Update: {
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          travel_request_id?: string
+          uploaded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "travel_attachments_travel_request_id_fkey"
+            columns: ["travel_request_id"]
+            isOneToOne: false
+            referencedRelation: "travel_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      travel_expenses: {
+        Row: {
+          created_at: string
+          currency: string
+          description: string
+          estimated_amount: number
+          expense_type: Database["public"]["Enums"]["travel_expense_type"]
+          id: string
+          travel_request_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          description: string
+          estimated_amount: number
+          expense_type: Database["public"]["Enums"]["travel_expense_type"]
+          id?: string
+          travel_request_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          description?: string
+          estimated_amount?: number
+          expense_type?: Database["public"]["Enums"]["travel_expense_type"]
+          id?: string
+          travel_request_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "travel_expenses_travel_request_id_fkey"
+            columns: ["travel_request_id"]
+            isOneToOne: false
+            referencedRelation: "travel_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      travel_requests: {
+        Row: {
+          created_at: string
+          currency: string
+          departure_date: string
+          destination: string
+          finance_approver_id: string | null
+          finance_notes: string | null
+          id: string
+          laboratory_id: string
+          manager_id: string | null
+          manager_notes: string | null
+          project_id: string | null
+          purpose: string
+          return_date: string
+          status: Database["public"]["Enums"]["travel_request_status"] | null
+          total_estimated_budget: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          departure_date: string
+          destination: string
+          finance_approver_id?: string | null
+          finance_notes?: string | null
+          id?: string
+          laboratory_id: string
+          manager_id?: string | null
+          manager_notes?: string | null
+          project_id?: string | null
+          purpose: string
+          return_date: string
+          status?: Database["public"]["Enums"]["travel_request_status"] | null
+          total_estimated_budget: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          departure_date?: string
+          destination?: string
+          finance_approver_id?: string | null
+          finance_notes?: string | null
+          id?: string
+          laboratory_id?: string
+          manager_id?: string | null
+          manager_notes?: string | null
+          project_id?: string | null
+          purpose?: string
+          return_date?: string
+          status?: Database["public"]["Enums"]["travel_request_status"] | null
+          total_estimated_budget?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "travel_requests_finance_approver_id_fkey"
+            columns: ["finance_approver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "travel_requests_laboratory_id_fkey"
+            columns: ["laboratory_id"]
+            isOneToOne: false
+            referencedRelation: "laboratories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "travel_requests_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "travel_requests_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "travel_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_groups: {
         Row: {
           created_at: string
@@ -605,6 +862,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_travel_request: {
+        Args: {
+          request_id: string
+          approver_id: string
+          notes?: string
+        }
+        Returns: {
+          created_at: string
+          currency: string
+          departure_date: string
+          destination: string
+          finance_approver_id: string | null
+          finance_notes: string | null
+          id: string
+          laboratory_id: string
+          manager_id: string | null
+          manager_notes: string | null
+          project_id: string | null
+          purpose: string
+          return_date: string
+          status: Database["public"]["Enums"]["travel_request_status"] | null
+          total_estimated_budget: number
+          updated_at: string
+          user_id: string
+        }
+      }
       delete_user: {
         Args: {
           user_id: string
@@ -642,7 +925,18 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      travel_expense_type:
+        | "pasaje_aereo"
+        | "alojamiento"
+        | "viaticos"
+        | "transporte_local"
+        | "otros"
+      travel_request_status:
+        | "pendiente"
+        | "aprobado_por_gerente"
+        | "aprobado_por_finanzas"
+        | "rechazado"
+        | "completado"
     }
     CompositeTypes: {
       [_ in never]: never
