@@ -5,11 +5,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { UseFormReturn } from "react-hook-form";
 import { TravelRequestFormValues } from "../schemas/travelRequestSchema";
 
-interface LaboratoryProjectSectionProps {
+interface LaboratoryBudgetSectionProps {
   form: UseFormReturn<TravelRequestFormValues>;
 }
 
-export const LaboratoryProjectSection = ({ form }: LaboratoryProjectSectionProps) => {
+export const LaboratoryBudgetSection = ({ form }: LaboratoryBudgetSectionProps) => {
   const { data: laboratories } = useQuery({
     queryKey: ['laboratories'],
     queryFn: async () => {
@@ -22,18 +22,16 @@ export const LaboratoryProjectSection = ({ form }: LaboratoryProjectSectionProps
     },
   });
 
-  const { data: projects } = useQuery({
-    queryKey: ['projects', form.watch('laboratoryId')],
+  const { data: budgetCodes } = useQuery({
+    queryKey: ['budget_codes'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('projects')
+        .from('budget_codes')
         .select('*')
-        .eq('laboratory_id', form.watch('laboratoryId'))
-        .order('name');
+        .order('code');
       if (error) throw error;
       return data;
     },
-    enabled: !!form.watch('laboratoryId'),
   });
 
   return (
@@ -65,20 +63,20 @@ export const LaboratoryProjectSection = ({ form }: LaboratoryProjectSectionProps
 
       <FormField
         control={form.control}
-        name="projectId"
+        name="budgetCodeId"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Proyecto (opcional)</FormLabel>
+            <FormLabel>Código Presupuestal</FormLabel>
             <Select onValueChange={field.onChange} defaultValue={field.value}>
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleccione un proyecto" />
+                  <SelectValue placeholder="Seleccione un código presupuestal" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {projects?.map((project) => (
-                  <SelectItem key={project.id} value={project.id}>
-                    {project.name}
+                {budgetCodes?.map((code) => (
+                  <SelectItem key={code.id} value={code.id}>
+                    {code.code} - {code.description}
                   </SelectItem>
                 ))}
               </SelectContent>
