@@ -25,7 +25,9 @@ interface TravelRequestListProps {
   onSelectRequest: (request: any) => void;
 }
 
-const statusConfig = {
+type TravelRequestStatus = "pendiente" | "aprobado_por_gerente" | "aprobado_por_finanzas" | "rechazado" | "completado";
+
+const statusConfig: Record<TravelRequestStatus, { label: string; className: string }> = {
   pendiente: { label: "Pendiente", className: "bg-yellow-100 text-yellow-800" },
   aprobado_por_gerente: { label: "Aprobado por Gerente", className: "bg-blue-100 text-blue-800" },
   aprobado_por_finanzas: { label: "Aprobado por Finanzas", className: "bg-green-100 text-green-800" },
@@ -56,7 +58,7 @@ export const TravelRequestList = ({ onSelectRequest }: TravelRequestListProps) =
     },
   });
 
-  const handleStatusChange = async (requestId: string, newStatus: string) => {
+  const handleStatusChange = async (requestId: string, newStatus: TravelRequestStatus) => {
     try {
       const { error } = await supabase
         .from('travel_requests')
@@ -106,11 +108,11 @@ export const TravelRequestList = ({ onSelectRequest }: TravelRequestListProps) =
             <TableCell>
               <Select
                 value={request.status}
-                onValueChange={(value) => handleStatusChange(request.id, value)}
+                onValueChange={(value: TravelRequestStatus) => handleStatusChange(request.id, value)}
               >
-                <SelectTrigger className={`w-[200px] ${statusConfig[request.status as keyof typeof statusConfig]?.className}`}>
+                <SelectTrigger className={`w-[200px] ${statusConfig[request.status as TravelRequestStatus]?.className}`}>
                   <SelectValue>
-                    {statusConfig[request.status as keyof typeof statusConfig]?.label}
+                    {statusConfig[request.status as TravelRequestStatus]?.label}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
