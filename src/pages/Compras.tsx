@@ -17,6 +17,7 @@ import { PurchaseRequest } from "@/components/purchases/types";
 import { AttachmentSection } from "@/components/purchases/form-sections/AttachmentSection";
 import { sanitizeFileName } from "@/components/purchases/form-sections/AttachmentSection";
 import { CreateTravelRequestDialog } from "@/components/travel/CreateTravelRequestDialog";
+import { TravelRequestList } from "@/components/travel/TravelRequestList";
 
 const Compras = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -224,6 +225,10 @@ const Compras = () => {
             <ShoppingCart className="h-4 w-4 mr-2" />
             Bandeja de Entrada
           </TabsTrigger>
+          <TabsTrigger value="travel" className="data-[state=active]:bg-background">
+            <Plane className="h-4 w-4 mr-2" />
+            Viajes y Viáticos
+          </TabsTrigger>
           <TabsTrigger value="forms" className="data-[state=active]:bg-background">
             <FileText className="h-4 w-4 mr-2" />
             Formularios
@@ -251,6 +256,23 @@ const Compras = () => {
                 isLoading={isLoading}
                 onSelectRequest={setSelectedRequest}
               />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="travel">
+          <Card className="border-none shadow-md">
+            <CardHeader className="bg-muted/30 rounded-t-lg">
+              <CardTitle className="text-xl flex items-center">
+                <Plane className="h-5 w-5 mr-2 text-primary" />
+                Solicitudes de Viajes y Viáticos
+              </CardTitle>
+              <CardDescription>
+                Gestiona y monitorea todas tus solicitudes de viajes
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <TravelRequestList onSelectRequest={setSelectedRequest} />
             </CardContent>
           </Card>
         </TabsContent>

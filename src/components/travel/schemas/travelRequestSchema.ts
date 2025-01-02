@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const travelRequestSchema = z.object({
   laboratoryId: z.string().min(1, "El laboratorio es requerido"),
-  projectId: z.string().optional(),
+  budgetCodeId: z.string().min(1, "El código presupuestal es requerido"),
   destination: z.string().min(1, "El destino es requerido"),
   departureDate: z.string().min(1, "La fecha de salida es requerida"),
   returnDate: z.string().min(1, "La fecha de retorno es requerida"),
