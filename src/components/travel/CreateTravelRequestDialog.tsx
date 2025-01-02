@@ -37,13 +37,14 @@ export const CreateTravelRequestDialog = ({
         .insert({
           user_id: session.user.id,
           laboratory_id: values.laboratoryId,
-          project_id: values.projectId,
+          project_id: values.projectId || null,
           destination: values.destination,
           departure_date: values.departureDate,
           return_date: values.returnDate,
           purpose: values.purpose,
-          total_estimated_budget: values.totalEstimatedBudget,
-          currency: values.currency || 'USD'
+          total_estimated_budget: Number(values.totalEstimatedBudget),
+          currency: values.currency,
+          status: 'pendiente'
         });
 
       if (requestError) {
