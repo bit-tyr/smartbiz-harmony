@@ -27,6 +27,8 @@ const useAuth = () => {
         if (sessionError) {
           console.error('Session error:', sessionError);
           if (mounted) {
+            // Clear local storage and session
+            localStorage.clear();
             await supabase.auth.signOut();
             setSession(null);
             setLoading(false);
@@ -72,6 +74,9 @@ const useAuth = () => {
       } catch (error) {
         console.error('Error checking session:', error);
         toast.error("Error al verificar la sesión");
+        // Clear local storage and session on error
+        localStorage.clear();
+        await supabase.auth.signOut();
       } finally {
         if (mounted) {
           setLoading(false);
@@ -118,10 +123,12 @@ const useAuth = () => {
           setIsAdmin(!!profiles.is_admin);
           setIsBlocked(!!profiles.is_blocked);
         }
-      } else if (event === 'SIGNED_OUT') {
+      } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
         setSession(null);
         setIsAdmin(false);
         setIsBlocked(false);
+        // Clear local storage on sign out
+        localStorage.clear();
       }
       setLoading(false);
     });
