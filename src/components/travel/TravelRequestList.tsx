@@ -12,10 +12,26 @@ import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Eye } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
 
 interface TravelRequestListProps {
   onSelectRequest: (request: any) => void;
 }
+
+const statusConfig = {
+  pendiente: { label: "Pendiente", className: "bg-yellow-100 text-yellow-800" },
+  aprobado_por_gerente: { label: "Aprobado por Gerente", className: "bg-blue-100 text-blue-800" },
+  aprobado_por_finanzas: { label: "Aprobado por Finanzas", className: "bg-green-100 text-green-800" },
+  rechazado: { label: "Rechazado", className: "bg-red-100 text-red-800" },
+  completado: { label: "Completado", className: "bg-gray-100 text-gray-800" }
+};
 
 export const TravelRequestList = ({ onSelectRequest }: TravelRequestListProps) => {
   const { data: requests, isLoading } = useQuery({
@@ -27,7 +43,11 @@ export const TravelRequestList = ({ onSelectRequest }: TravelRequestListProps) =
           *,
           laboratory:laboratories(name),
           budget_code:budget_codes(code, description),
-          travel_expenses(*)
+          travel_expenses(*),
+          profiles:profiles!travel_requests_user_id_fkey(
+            first_name,
+            last_name
+          )
         `)
         .order('created_at', { ascending: false });
 
@@ -36,30 +56,30 @@ export const TravelRequestList = ({ onSelectRequest }: TravelRequestListProps) =
     },
   });
 
+  const handleStatusChange = async (requestId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('travel_requests')
+        .update({ status: newStatus })
+        .eq('id', requestId);
+
+      if (error) throw error;
+      toast.success('Estado actualizado exitosamente');
+    } catch (error) {
+      console.error('Error al actualizar estado:', error);
+      toast.error('Error al actualizar el estado');
+    }
+  };
+
   if (isLoading) {
     return <div>Cargando solicitudes...</div>;
   }
-
-  const getStatusBadge = (status: string) => {
-    const statusStyles = {
-      pendiente: "bg-yellow-100 text-yellow-800",
-      aprobado_por_gerente: "bg-blue-100 text-blue-800",
-      aprobado_por_finanzas: "bg-green-100 text-green-800",
-      rechazado: "bg-red-100 text-red-800",
-      completado: "bg-gray-100 text-gray-800",
-    };
-
-    return (
-      <Badge className={statusStyles[status as keyof typeof statusStyles]}>
-        {status.replace(/_/g, " ").toUpperCase()}
-      </Badge>
-    );
-  };
 
   return (
     <Table>
       <TableHeader>
         <TableRow>
+          <TableHead>Solicitante</TableHead>
           <TableHead>Destino</TableHead>
           <TableHead>Laboratorio</TableHead>
           <TableHead>Fechas</TableHead>
@@ -71,6 +91,9 @@ export const TravelRequestList = ({ onSelectRequest }: TravelRequestListProps) =
       <TableBody>
         {requests?.map((request) => (
           <TableRow key={request.id}>
+            <TableCell>
+              {request.profiles?.first_name} {request.profiles?.last_name}
+            </TableCell>
             <TableCell>{request.destination}</TableCell>
             <TableCell>{request.laboratory?.name}</TableCell>
             <TableCell>
@@ -81,7 +104,23 @@ export const TravelRequestList = ({ onSelectRequest }: TravelRequestListProps) =
               {request.total_estimated_budget} {request.currency}
             </TableCell>
             <TableCell>
-              {getStatusBadge(request.status)}
+              <Select
+                value={request.status}
+                onValueChange={(value) => handleStatusChange(request.id, value)}
+              >
+                <SelectTrigger className={`w-[200px] ${statusConfig[request.status as keyof typeof statusConfig]?.className}`}>
+                  <SelectValue>
+                    {statusConfig[request.status as keyof typeof statusConfig]?.label}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pendiente">Pendiente</SelectItem>
+                  <SelectItem value="aprobado_por_gerente">Aprobado por Gerente</SelectItem>
+                  <SelectItem value="aprobado_por_finanzas">Aprobado por Finanzas</SelectItem>
+                  <SelectItem value="rechazado">Rechazado</SelectItem>
+                  <SelectItem value="completado">Completado</SelectItem>
+                </SelectContent>
+              </Select>
             </TableCell>
             <TableCell>
               <Button

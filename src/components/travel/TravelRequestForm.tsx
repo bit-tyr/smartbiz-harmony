@@ -22,18 +22,23 @@ import { Loader2 } from "lucide-react";
 import { LaboratoryBudgetSection } from "./form-sections/LaboratoryBudgetSection";
 import { DateSection } from "./form-sections/DateSection";
 import { travelRequestSchema, TravelRequestFormValues } from "./schemas/travelRequestSchema";
+import { TravelAttachmentSection } from "./form-sections/AttachmentSection";
+import { useState } from "react";
 
 interface TravelRequestFormProps {
-  onSubmit: (values: TravelRequestFormValues) => Promise<void>;
+  onSubmit: (values: TravelRequestFormValues & { files: File[] }) => Promise<void>;
   isSubmitting: boolean;
   onCancel: () => void;
+  travelRequestId?: string;
 }
 
 export const TravelRequestForm = ({
   onSubmit,
   isSubmitting,
   onCancel,
+  travelRequestId
 }: TravelRequestFormProps) => {
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const form = useForm<TravelRequestFormValues>({
     resolver: zodResolver(travelRequestSchema),
     defaultValues: {
@@ -41,9 +46,17 @@ export const TravelRequestForm = ({
     },
   });
 
+  const handleSubmit = async (values: TravelRequestFormValues) => {
+    await onSubmit({ ...values, files: selectedFiles });
+  };
+
+  const handleFilesChange = (files: File[]) => {
+    setSelectedFiles(files);
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <LaboratoryBudgetSection form={form} />
         
         <FormField
@@ -114,6 +127,13 @@ export const TravelRequestForm = ({
             )}
           />
         </div>
+
+        {travelRequestId && (
+          <TravelAttachmentSection
+            travelRequestId={travelRequestId}
+            onFilesChange={handleFilesChange}
+          />
+        )}
 
         <div className="flex justify-end gap-4">
           <Button type="button" variant="outline" onClick={onCancel}>
