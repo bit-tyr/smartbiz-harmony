@@ -17,7 +17,12 @@ export const DateSection = ({ form }: DateSectionProps) => {
           <FormItem>
             <FormLabel>Fecha de Salida</FormLabel>
             <FormControl>
-              <Input {...field} type="date" />
+              <Input 
+                {...field} 
+                type="date" 
+                value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
+                onChange={(e) => field.onChange(new Date(e.target.value))}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -31,7 +36,12 @@ export const DateSection = ({ form }: DateSectionProps) => {
           <FormItem>
             <FormLabel>Fecha de Retorno</FormLabel>
             <FormControl>
-              <Input {...field} type="date" />
+              <Input 
+                {...field} 
+                type="date" 
+                value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
+                onChange={(e) => field.onChange(new Date(e.target.value))}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>

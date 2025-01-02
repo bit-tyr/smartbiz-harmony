@@ -23,7 +23,7 @@ export const LaboratoryBudgetSection = ({ form }: LaboratoryBudgetSectionProps) 
   });
 
   const { data: budgetCodes } = useQuery({
-    queryKey: ['budgetCodes'],
+    queryKey: ['budget_codes'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('budget_codes')
@@ -70,7 +70,7 @@ export const LaboratoryBudgetSection = ({ form }: LaboratoryBudgetSectionProps) 
             <Select onValueChange={field.onChange} defaultValue={field.value}>
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleccione un código" />
+                  <SelectValue placeholder="Seleccione un código presupuestal" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
