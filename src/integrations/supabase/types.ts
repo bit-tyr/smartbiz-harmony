@@ -743,6 +743,7 @@ export type Database = {
       }
       travel_requests: {
         Row: {
+          budget_code_id: string | null
           created_at: string
           currency: string
           departure_date: string
@@ -762,6 +763,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          budget_code_id?: string | null
           created_at?: string
           currency?: string
           departure_date: string
@@ -781,6 +783,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          budget_code_id?: string | null
           created_at?: string
           currency?: string
           departure_date?: string
@@ -800,6 +803,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "travel_requests_budget_code_id_fkey"
+            columns: ["budget_code_id"]
+            isOneToOne: false
+            referencedRelation: "budget_codes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "travel_requests_finance_approver_id_fkey"
             columns: ["finance_approver_id"]
@@ -875,6 +885,7 @@ export type Database = {
           notes?: string
         }
         Returns: {
+          budget_code_id: string | null
           created_at: string
           currency: string
           departure_date: string
