@@ -39,6 +39,12 @@ export const TravelRequestList = ({ onSelectRequest }: TravelRequestListProps) =
   const { data: requests, isLoading, refetch } = useQuery({
     queryKey: ['travelRequests'],
     queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('No authenticated session');
+      }
+
       const { data, error } = await supabase
         .from('travel_requests')
         .select(`
@@ -60,11 +66,23 @@ export const TravelRequestList = ({ onSelectRequest }: TravelRequestListProps) =
 
   const handleStatusChange = async (requestId: string, newStatus: TravelRequestStatus) => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error("No hay sesión activa");
+        return;
+      }
+
       const { error } = await supabase
         .from('travel_requests')
         .update({ 
           status: newStatus,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          ...(newStatus === 'aprobado_por_gerente' ? {
+            manager_id: session.user.id,
+          } : newStatus === 'aprobado_por_finanzas' ? {
+            finance_approver_id: session.user.id,
+          } : {})
         })
         .eq('id', requestId);
 
