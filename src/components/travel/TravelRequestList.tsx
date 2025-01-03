@@ -9,7 +9,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { format } from "date-fns";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Eye } from "lucide-react";
 import {
@@ -20,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useEffect, useState } from "react";
 
 interface TravelRequestListProps {
   onSelectRequest: (request: any) => void;
@@ -36,6 +36,29 @@ const statusConfig: Record<TravelRequestStatus, { label: string; className: stri
 };
 
 export const TravelRequestList = ({ onSelectRequest }: TravelRequestListProps) => {
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getUserRole = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUserId(session.user.id);
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role_id, roles(name)')
+          .eq('id', session.user.id)
+          .single();
+        
+        if (profile?.roles) {
+          setUserRole(profile.roles.name.toLowerCase());
+        }
+      }
+    };
+    
+    getUserRole();
+  }, []);
+
   const { data: requests, isLoading, refetch } = useQuery({
     queryKey: ['travelRequests'],
     queryFn: async () => {
@@ -59,7 +82,10 @@ export const TravelRequestList = ({ onSelectRequest }: TravelRequestListProps) =
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching travel requests:', error);
+        throw error;
+      }
       return data;
     },
   });
@@ -73,14 +99,38 @@ export const TravelRequestList = ({ onSelectRequest }: TravelRequestListProps) =
         return;
       }
 
+      // First check if the user has permission to make this status change
+      if (!userRole) {
+        toast.error("No se pudo determinar el rol del usuario");
+        return;
+      }
+
+      const request = requests?.find(r => r.id === requestId);
+      if (!request) {
+        toast.error("Solicitud no encontrada");
+        return;
+      }
+
+      // Validate status transitions based on user role
+      const canUpdateStatus = (
+        (userRole === 'manager' && request.status === 'pendiente') ||
+        (userRole === 'finance' && request.status === 'aprobado_por_gerente') ||
+        ['admin', 'purchases'].includes(userRole)
+      );
+
+      if (!canUpdateStatus) {
+        toast.error("No tienes permisos para realizar este cambio de estado");
+        return;
+      }
+
       const { error } = await supabase
         .from('travel_requests')
         .update({ 
           status: newStatus,
           updated_at: new Date().toISOString(),
-          ...(newStatus === 'aprobado_por_gerente' ? {
+          ...(userRole === 'manager' ? {
             manager_id: session.user.id,
-          } : newStatus === 'aprobado_por_finanzas' ? {
+          } : userRole === 'finance' ? {
             finance_approver_id: session.user.id,
           } : {})
         })
@@ -136,6 +186,7 @@ export const TravelRequestList = ({ onSelectRequest }: TravelRequestListProps) =
               <Select
                 value={request.status}
                 onValueChange={(value: TravelRequestStatus) => handleStatusChange(request.id, value)}
+                disabled={!['admin', 'manager', 'finance', 'purchases'].includes(userRole || '')}
               >
                 <SelectTrigger className={`w-[200px] ${statusConfig[request.status as TravelRequestStatus]?.className}`}>
                   <SelectValue>
