@@ -36,7 +36,7 @@ const statusConfig: Record<TravelRequestStatus, { label: string; className: stri
 };
 
 export const TravelRequestList = ({ onSelectRequest }: TravelRequestListProps) => {
-  const { data: requests, isLoading } = useQuery({
+  const { data: requests, isLoading, refetch } = useQuery({
     queryKey: ['travelRequests'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -62,10 +62,19 @@ export const TravelRequestList = ({ onSelectRequest }: TravelRequestListProps) =
     try {
       const { error } = await supabase
         .from('travel_requests')
-        .update({ status: newStatus })
+        .update({ 
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', requestId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error al actualizar estado:', error);
+        toast.error("Error al actualizar el estado");
+        return;
+      }
+
+      await refetch();
       toast.success('Estado actualizado exitosamente');
     } catch (error) {
       console.error('Error al actualizar estado:', error);
