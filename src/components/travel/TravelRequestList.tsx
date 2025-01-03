@@ -11,52 +11,41 @@ import {
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Eye } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
+import { TravelStatusSelector } from "./TravelStatusSelector";
+import { TravelRequestStatus } from "./config/statusConfig";
 
 interface TravelRequestListProps {
   onSelectRequest: (request: any) => void;
 }
 
-type TravelRequestStatus = "pendiente" | "aprobado_por_gerente" | "aprobado_por_finanzas" | "rechazado" | "completado";
-
-const statusConfig: Record<TravelRequestStatus, { label: string; className: string }> = {
-  pendiente: { label: "Pendiente", className: "bg-yellow-100 text-yellow-800" },
-  aprobado_por_gerente: { label: "Aprobado por Gerente", className: "bg-blue-100 text-blue-800" },
-  aprobado_por_finanzas: { label: "Aprobado por Finanzas", className: "bg-green-100 text-green-800" },
-  rechazado: { label: "Rechazado", className: "bg-red-100 text-red-800" },
-  completado: { label: "Completado", className: "bg-gray-100 text-gray-800" }
-};
-
 export const TravelRequestList = ({ onSelectRequest }: TravelRequestListProps) => {
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   useEffect(() => {
-    const getUserRole = async () => {
+    const getUserProfile = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        setUserId(session.user.id);
-        const { data: profile } = await supabase
+        const { data: profile, error } = await supabase
           .from('profiles')
-          .select('role_id, roles(name)')
+          .select('*, roles(name)')
           .eq('id', session.user.id)
           .single();
         
-        if (profile?.roles) {
-          setUserRole(profile.roles.name.toLowerCase());
+        if (error) {
+          console.error('Error fetching profile:', error);
+          toast.error("Error al obtener el perfil del usuario");
+          return;
+        }
+
+        if (profile) {
+          setUserProfile(profile);
         }
       }
     };
     
-    getUserRole();
+    getUserProfile();
   }, []);
 
   const { data: requests, isLoading, refetch } = useQuery({
@@ -92,16 +81,8 @@ export const TravelRequestList = ({ onSelectRequest }: TravelRequestListProps) =
 
   const handleStatusChange = async (requestId: string, newStatus: TravelRequestStatus) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        toast.error("No hay sesión activa");
-        return;
-      }
-
-      // First check if the user has permission to make this status change
-      if (!userRole) {
-        toast.error("No se pudo determinar el rol del usuario");
+      if (!userProfile) {
+        toast.error("No se pudo determinar el perfil del usuario");
         return;
       }
 
@@ -111,11 +92,12 @@ export const TravelRequestList = ({ onSelectRequest }: TravelRequestListProps) =
         return;
       }
 
-      // Validate status transitions based on user role
+      const userRole = userProfile.roles?.name?.toLowerCase();
       const canUpdateStatus = (
         (userRole === 'manager' && request.status === 'pendiente') ||
         (userRole === 'finance' && request.status === 'aprobado_por_gerente') ||
-        ['admin', 'purchases'].includes(userRole)
+        userProfile.is_admin ||
+        userRole === 'purchases'
       );
 
       if (!canUpdateStatus) {
@@ -129,9 +111,9 @@ export const TravelRequestList = ({ onSelectRequest }: TravelRequestListProps) =
           status: newStatus,
           updated_at: new Date().toISOString(),
           ...(userRole === 'manager' ? {
-            manager_id: session.user.id,
+            manager_id: userProfile.id,
           } : userRole === 'finance' ? {
-            finance_approver_id: session.user.id,
+            finance_approver_id: userProfile.id,
           } : {})
         })
         .eq('id', requestId);
@@ -153,6 +135,11 @@ export const TravelRequestList = ({ onSelectRequest }: TravelRequestListProps) =
   if (isLoading) {
     return <div>Cargando solicitudes...</div>;
   }
+
+  const canUpdateStatus = userProfile?.roles?.name?.toLowerCase() === 'manager' ||
+                         userProfile?.roles?.name?.toLowerCase() === 'finance' ||
+                         userProfile?.is_admin ||
+                         userProfile?.roles?.name?.toLowerCase() === 'purchases';
 
   return (
     <Table>
@@ -183,24 +170,11 @@ export const TravelRequestList = ({ onSelectRequest }: TravelRequestListProps) =
               {request.total_estimated_budget} {request.currency}
             </TableCell>
             <TableCell>
-              <Select
-                value={request.status}
-                onValueChange={(value: TravelRequestStatus) => handleStatusChange(request.id, value)}
-                disabled={!['admin', 'manager', 'finance', 'purchases'].includes(userRole || '')}
-              >
-                <SelectTrigger className={`w-[200px] ${statusConfig[request.status as TravelRequestStatus]?.className}`}>
-                  <SelectValue>
-                    {statusConfig[request.status as TravelRequestStatus]?.label}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pendiente">Pendiente</SelectItem>
-                  <SelectItem value="aprobado_por_gerente">Aprobado por Gerente</SelectItem>
-                  <SelectItem value="aprobado_por_finanzas">Aprobado por Finanzas</SelectItem>
-                  <SelectItem value="rechazado">Rechazado</SelectItem>
-                  <SelectItem value="completado">Completado</SelectItem>
-                </SelectContent>
-              </Select>
+              <TravelStatusSelector
+                status={request.status}
+                onStatusChange={(status) => handleStatusChange(request.id, status)}
+                disabled={!canUpdateStatus}
+              />
             </TableCell>
             <TableCell>
               <Button
