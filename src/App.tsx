@@ -25,17 +25,17 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/select-area" element={
-              <ProtectedRoute>
-                <SelectArea />
-              </ProtectedRoute>
-            } />
             <Route path="/" element={
               <ProtectedRoute>
                 <Layout>
                   <Dashboard />
                 </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/login" element={<Login />} />
+            <Route path="/select-area" element={
+              <ProtectedRoute>
+                <SelectArea />
               </ProtectedRoute>
             } />
             <Route path="/admin" element={
