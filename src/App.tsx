@@ -15,7 +15,14 @@ import Mantenimiento from "./pages/Mantenimiento";
 import Admin from "./pages/Admin";
 import DatosMaestros from "./pages/DatosMaestros";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -25,17 +32,17 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/select-area" element={
+              <ProtectedRoute>
+                <SelectArea />
+              </ProtectedRoute>
+            } />
             <Route path="/" element={
               <ProtectedRoute>
                 <Layout>
                   <Dashboard />
                 </Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/login" element={<Login />} />
-            <Route path="/select-area" element={
-              <ProtectedRoute>
-                <SelectArea />
               </ProtectedRoute>
             } />
             <Route path="/admin" element={
