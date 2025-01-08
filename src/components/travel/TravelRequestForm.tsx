@@ -50,16 +50,45 @@ export const TravelRequestForm = ({
         return;
       }
 
+      // Transform form values to match database schema
       const finalValues = {
-        ...values,
+        laboratory_id: values.laboratoryId,
+        budget_code_id: values.budgetCodeId,
+        first_name: values.firstName,
+        last_name: values.lastName,
+        document_number: values.documentNumber,
+        birth_date: values.birthDate?.toISOString().split('T')[0],
+        document_expiry: values.documentExpiry?.toISOString().split('T')[0],
+        phone: values.phone,
+        email: values.email,
+        destination: values.destination,
+        departure_date: values.departureDate?.toISOString().split('T')[0],
+        return_date: values.returnDate?.toISOString().split('T')[0],
         purpose: values.travelPurpose,
+        needs_passage: values.needsPassage,
+        needs_insurance: values.needsInsurance,
+        insurance_period: values.insurancePeriod,
+        emergency_contact: values.emergencyContact,
+        preferred_schedule: values.preferredSchedule,
+        requires_allowance: values.requiresAllowance,
+        allowance_amount: values.allowanceAmount,
+        currency: values.currency,
+        bank: values.bank,
+        account_number: values.accountNumber,
+        account_holder: values.accountHolder,
+        hotel_name: values.hotelName,
+        check_in: values.checkIn?.toISOString().split('T')[0],
+        check_out: values.checkOut?.toISOString().split('T')[0],
+        number_of_days: values.numberOfDays,
         created_by: user.id,
+        user_id: user.id,
         status: 'pendiente',
+        total_estimated_budget: values.allowanceAmount || 0, // You might want to calculate this based on all expenses
       };
 
       const { data, error } = await supabase
         .from('travel_requests')
-        .insert([finalValues])
+        .insert(finalValues)
         .select()
         .single();
 
