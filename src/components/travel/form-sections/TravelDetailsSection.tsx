@@ -12,7 +12,13 @@ interface TravelDetailsSectionProps {
 const formatDateValue = (date: Date | null | undefined): string => {
   if (!date) return '';
   try {
-    return new Date(date).toISOString().split('T')[0];
+    // Ensure we're working with a valid date object
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) {
+      console.error('Invalid date value:', date);
+      return '';
+    }
+    return dateObj.toISOString().split('T')[0];
   } catch (error) {
     console.error('Error formatting date:', error);
     return '';
