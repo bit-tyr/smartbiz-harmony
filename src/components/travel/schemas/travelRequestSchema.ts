@@ -32,7 +32,9 @@ export const travelRequestSchema = z.object({
   preferredSchedule: z.string().optional(),
   requiresAllowance: z.boolean().default(false),
   allowanceAmount: z.number().min(0, "El monto debe ser mayor o igual a 0"),
-  currency: z.string().min(1, "La moneda es requerida"),
+  currency: z.enum(["USD", "UYU", "BRL", "EUR", "ARS"], {
+    required_error: "La moneda es requerida",
+  }),
   bank: z.string().optional(),
   accountNumber: z.string().optional(),
   accountHolder: z.string().optional(),

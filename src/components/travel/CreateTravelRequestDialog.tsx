@@ -66,7 +66,7 @@ export const CreateTravelRequestDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nueva Solicitud de Viaje</DialogTitle>
           <DialogDescription>

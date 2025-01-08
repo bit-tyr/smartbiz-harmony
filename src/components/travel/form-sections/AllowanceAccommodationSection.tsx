@@ -15,7 +15,29 @@ interface AllowanceAccommodationSectionProps {
   form: UseFormReturn<TravelRequestFormValues>;
 }
 
+const BANK_OPTIONS = [
+  "Santander",
+  "Itau",
+  "BROU",
+  "Prex",
+  "HSBC",
+  "Scotiabank",
+  "BBVA",
+  "Bandes",
+  "Otro",
+] as const;
+
+const CURRENCY_OPTIONS = [
+  { value: "USD", label: "Dólares (USD)" },
+  { value: "UYU", label: "Pesos Uruguayos (UYU)" },
+  { value: "BRL", label: "Reales (BRL)" },
+  { value: "EUR", label: "Euros (EUR)" },
+  { value: "ARS", label: "Pesos Argentinos (ARS)" },
+] as const;
+
 export const AllowanceAccommodationSection = ({ form }: AllowanceAccommodationSectionProps) => {
+  const [showCustomBank, setShowCustomBank] = useState(false);
+
   return (
     <div className="space-y-6">
       <div className="space-y-4">
@@ -68,9 +90,11 @@ export const AllowanceAccommodationSection = ({ form }: AllowanceAccommodationSe
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="USD">USD</SelectItem>
-                    <SelectItem value="EUR">EUR</SelectItem>
-                    <SelectItem value="PEN">PEN</SelectItem>
+                    {CURRENCY_OPTIONS.map((currency) => (
+                      <SelectItem key={currency.value} value={currency.value}>
+                        {currency.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -83,9 +107,40 @@ export const AllowanceAccommodationSection = ({ form }: AllowanceAccommodationSe
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Banco</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
+                <Select 
+                  onValueChange={(value) => {
+                    if (value === "Otro") {
+                      setShowCustomBank(true);
+                      field.onChange("");
+                    } else {
+                      setShowCustomBank(false);
+                      field.onChange(value);
+                    }
+                  }} 
+                  value={BANK_OPTIONS.includes(field.value as any) ? field.value : "Otro"}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione el banco" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {BANK_OPTIONS.map((bank) => (
+                      <SelectItem key={bank} value={bank}>
+                        {bank}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {showCustomBank && (
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="Ingrese el nombre del banco"
+                      className="mt-2"
+                    />
+                  </FormControl>
+                )}
                 <FormMessage />
               </FormItem>
             )}
