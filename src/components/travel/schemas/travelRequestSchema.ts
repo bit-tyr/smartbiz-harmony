@@ -23,6 +23,7 @@ export const travelRequestSchema = z.object({
   returnDate: z.date({
     required_error: "La fecha de retorno es requerida",
   }),
+  purpose: z.string().min(1, "El propósito del viaje es requerido"),
   travelPurpose: z.string().min(1, "El motivo del viaje es requerido"),
   needsPassage: z.boolean().default(false),
   needsInsurance: z.boolean().default(false),

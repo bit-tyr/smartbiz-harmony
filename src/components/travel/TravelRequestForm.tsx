@@ -34,12 +34,19 @@ export const TravelRequestForm = ({
       needsInsurance: false,
       requiresAllowance: false,
       allowanceAmount: 0,
-      numberOfDays: 0
+      numberOfDays: 0,
+      purpose: '', // Add default empty string
+      travelPurpose: '', // Add default empty string
     },
   });
 
   const handleSubmit = async (values: TravelRequestFormValues) => {
-    await onSubmit({ ...values, files: selectedFiles });
+    // Ensure purpose is set from travelPurpose
+    const finalValues = {
+      ...values,
+      purpose: values.travelPurpose,
+    };
+    await onSubmit({ ...finalValues, files: selectedFiles });
   };
 
   const handleFilesChange = (files: File[]) => {
