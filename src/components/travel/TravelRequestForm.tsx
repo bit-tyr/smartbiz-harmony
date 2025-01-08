@@ -10,6 +10,8 @@ import { AllowanceAccommodationSection } from "./form-sections/AllowanceAccommod
 import { TravelAttachmentSection } from "./form-sections/AttachmentSection";
 import { travelRequestSchema, TravelRequestFormValues } from "./schemas/travelRequestSchema";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface TravelRequestFormProps {
   onSubmit: (values: TravelRequestFormValues & { files: File[] }) => Promise<void>;
@@ -35,18 +37,76 @@ export const TravelRequestForm = ({
       requiresAllowance: false,
       allowanceAmount: 0,
       numberOfDays: 0,
-      purpose: '', // Add default empty string
-      travelPurpose: '', // Add default empty string
+      purpose: '',
+      travelPurpose: '',
     },
   });
 
   const handleSubmit = async (values: TravelRequestFormValues) => {
-    // Ensure purpose is set from travelPurpose
-    const finalValues = {
-      ...values,
-      purpose: values.travelPurpose,
-    };
-    await onSubmit({ ...finalValues, files: selectedFiles });
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Usuario no autenticado");
+        return;
+      }
+
+      const finalValues = {
+        ...values,
+        purpose: values.travelPurpose,
+        created_by: user.id,
+        status: 'pendiente',
+      };
+
+      const { data, error } = await supabase
+        .from('travel_requests')
+        .insert([finalValues])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error al guardar la solicitud:', error);
+        toast.error("Error al guardar la solicitud");
+        return;
+      }
+
+      // Upload files if any
+      if (selectedFiles.length > 0) {
+        for (const file of selectedFiles) {
+          const fileExt = file.name.split('.').pop();
+          const filePath = `${data.id}/${Math.random()}.${fileExt}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('travel-attachments')
+            .upload(filePath, file);
+
+          if (uploadError) {
+            console.error('Error al subir archivo:', uploadError);
+            toast.error(`Error al subir ${file.name}`);
+            continue;
+          }
+
+          const { error: attachmentError } = await supabase
+            .from('travel_attachments')
+            .insert({
+              travel_request_id: data.id,
+              file_name: file.name,
+              file_path: filePath,
+              file_type: file.type,
+              file_size: file.size
+            });
+
+          if (attachmentError) {
+            console.error('Error al guardar adjunto:', attachmentError);
+          }
+        }
+      }
+
+      toast.success("Solicitud guardada exitosamente");
+      onCancel(); // Close the form
+    } catch (error) {
+      console.error('Error inesperado:', error);
+      toast.error("Error al procesar la solicitud");
+    }
   };
 
   const handleFilesChange = (files: File[]) => {
