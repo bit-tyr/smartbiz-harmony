@@ -9,6 +9,16 @@ interface TravelDetailsSectionProps {
   form: UseFormReturn<TravelRequestFormValues>;
 }
 
+const formatDateValue = (date: Date | null | undefined): string => {
+  if (!date) return '';
+  try {
+    return new Date(date).toISOString().split('T')[0];
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return '';
+  }
+};
+
 export const TravelDetailsSection = ({ form }: TravelDetailsSectionProps) => {
   return (
     <div className="space-y-4">
@@ -50,8 +60,11 @@ export const TravelDetailsSection = ({ form }: TravelDetailsSectionProps) => {
                 <Input 
                   type="date" 
                   {...field}
-                  value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
-                  onChange={(e) => field.onChange(new Date(e.target.value))}
+                  value={formatDateValue(field.value)}
+                  onChange={(e) => {
+                    const date = e.target.value ? new Date(e.target.value) : null;
+                    field.onChange(date);
+                  }}
                 />
               </FormControl>
               <FormMessage />
@@ -68,8 +81,11 @@ export const TravelDetailsSection = ({ form }: TravelDetailsSectionProps) => {
                 <Input 
                   type="date" 
                   {...field}
-                  value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
-                  onChange={(e) => field.onChange(new Date(e.target.value))}
+                  value={formatDateValue(field.value)}
+                  onChange={(e) => {
+                    const date = e.target.value ? new Date(e.target.value) : null;
+                    field.onChange(date);
+                  }}
                 />
               </FormControl>
               <FormMessage />
