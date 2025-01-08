@@ -54,7 +54,7 @@ export const TravelRequestForm = ({
       }
 
       // Transform form values to match database schema
-      const finalValues = {
+      const travelRequest = {
         laboratory_id: values.laboratoryId,
         budget_code_id: values.budgetCodeId,
         first_name: values.firstName,
@@ -72,6 +72,7 @@ export const TravelRequestForm = ({
         needs_insurance: values.needsInsurance,
         insurance_period: values.insurancePeriod,
         emergency_contact: values.emergencyContact,
+        additional_observations: values.additionalObservations,
         preferred_schedule: values.preferredSchedule,
         requires_allowance: values.requiresAllowance,
         allowance_amount: values.allowanceAmount,
@@ -86,12 +87,12 @@ export const TravelRequestForm = ({
         created_by: user.id,
         user_id: user.id,
         status: 'pendiente' as TravelRequestStatus,
-        total_estimated_budget: values.allowanceAmount || 0, // You might want to calculate this based on all expenses
+        total_estimated_budget: values.allowanceAmount || 0 // You might want to calculate this based on all expenses
       };
 
       const { data, error } = await supabase
         .from('travel_requests')
-        .insert(finalValues)
+        .insert(travelRequest)
         .select()
         .single();
 
@@ -104,8 +105,12 @@ export const TravelRequestForm = ({
       // Upload files if any
       if (selectedFiles.length > 0) {
         for (const file of selectedFiles) {
-          const fileExt = file.name.split('.').pop();
-          const filePath = `${data.id}/${Math.random()}.${fileExt}`;
+          const sanitizedName = file.name
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-zA-Z0-9.-]/g, '_');
+          
+          const filePath = `${data.id}/${sanitizedName}`;
 
           const { error: uploadError } = await supabase.storage
             .from('travel-attachments')
@@ -129,6 +134,11 @@ export const TravelRequestForm = ({
 
           if (attachmentError) {
             console.error('Error al guardar adjunto:', attachmentError);
+            toast.error(`Error al registrar ${file.name}`);
+            
+            await supabase.storage
+              .from('travel-attachments')
+              .remove([filePath]);
           }
         }
       }
