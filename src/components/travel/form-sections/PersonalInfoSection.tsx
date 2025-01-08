@@ -7,6 +7,21 @@ interface PersonalInfoSectionProps {
   form: UseFormReturn<TravelRequestFormValues>;
 }
 
+const formatDateValue = (date: Date | null | undefined): string => {
+  if (!date) return '';
+  try {
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) {
+      console.error('Invalid date value:', date);
+      return '';
+    }
+    return dateObj.toISOString().split('T')[0];
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return '';
+  }
+};
+
 export const PersonalInfoSection = ({ form }: PersonalInfoSectionProps) => {
   return (
     <div className="space-y-4">
@@ -19,20 +34,7 @@ export const PersonalInfoSection = ({ form }: PersonalInfoSectionProps) => {
             <FormItem>
               <FormLabel>Primer Nombre</FormLabel>
               <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="secondName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Segundo Nombre</FormLabel>
-              <FormControl>
-                <Input {...field} />
+                <Input {...field} value={field.value || ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -45,20 +47,7 @@ export const PersonalInfoSection = ({ form }: PersonalInfoSectionProps) => {
             <FormItem>
               <FormLabel>Primer Apellido</FormLabel>
               <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="secondLastName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Segundo Apellido</FormLabel>
-              <FormControl>
-                <Input {...field} />
+                <Input {...field} value={field.value || ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -71,7 +60,7 @@ export const PersonalInfoSection = ({ form }: PersonalInfoSectionProps) => {
             <FormItem>
               <FormLabel>Número de Documento</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input {...field} value={field.value || ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -86,9 +75,11 @@ export const PersonalInfoSection = ({ form }: PersonalInfoSectionProps) => {
               <FormControl>
                 <Input 
                   type="date" 
-                  {...field} 
-                  value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
-                  onChange={(e) => field.onChange(new Date(e.target.value))}
+                  value={formatDateValue(field.value)}
+                  onChange={(e) => {
+                    const date = e.target.value ? new Date(e.target.value) : null;
+                    field.onChange(date);
+                  }}
                 />
               </FormControl>
               <FormMessage />
@@ -104,9 +95,11 @@ export const PersonalInfoSection = ({ form }: PersonalInfoSectionProps) => {
               <FormControl>
                 <Input 
                   type="date" 
-                  {...field}
-                  value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
-                  onChange={(e) => field.onChange(new Date(e.target.value))}
+                  value={formatDateValue(field.value)}
+                  onChange={(e) => {
+                    const date = e.target.value ? new Date(e.target.value) : null;
+                    field.onChange(date);
+                  }}
                 />
               </FormControl>
               <FormMessage />
@@ -120,7 +113,7 @@ export const PersonalInfoSection = ({ form }: PersonalInfoSectionProps) => {
             <FormItem>
               <FormLabel>Teléfono</FormLabel>
               <FormControl>
-                <Input {...field} type="tel" />
+                <Input {...field} type="tel" value={field.value || ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -133,7 +126,7 @@ export const PersonalInfoSection = ({ form }: PersonalInfoSectionProps) => {
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input {...field} type="email" />
+                <Input {...field} type="email" value={field.value || ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
