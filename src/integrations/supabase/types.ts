@@ -189,6 +189,7 @@ export type Database = {
       }
       laboratories: {
         Row: {
+          budget_code_id: string | null
           code: string
           created_at: string
           description: string | null
@@ -197,6 +198,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          budget_code_id?: string | null
           code: string
           created_at?: string
           description?: string | null
@@ -205,6 +207,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          budget_code_id?: string | null
           code?: string
           created_at?: string
           description?: string | null
@@ -212,7 +215,15 @@ export type Database = {
           name?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "laboratories_budget_code_id_fkey"
+            columns: ["budget_code_id"]
+            isOneToOne: false
+            referencedRelation: "budget_codes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -743,63 +754,141 @@ export type Database = {
       }
       travel_requests: {
         Row: {
+          account_holder: string | null
+          account_number: string | null
+          additional_observations: string | null
+          allowance_amount: number | null
+          bank: string | null
+          birth_date: string | null
           budget_code_id: string | null
+          check_in: string | null
+          check_out: string | null
           created_at: string
+          created_by: string | null
           currency: string
           departure_date: string
           destination: string
+          document_expiry: string | null
+          document_number: string | null
+          email: string | null
+          emergency_contact: string | null
           finance_approver_id: string | null
           finance_notes: string | null
+          first_name: string | null
+          hotel_name: string | null
           id: string
+          insurance_period: string | null
           laboratory_id: string
+          last_name: string | null
           manager_id: string | null
           manager_notes: string | null
+          needs_insurance: boolean | null
+          needs_passage: boolean | null
+          number_of_days: number | null
+          phone: string | null
+          preferred_schedule: string | null
           project_id: string | null
           purpose: string
+          requires_allowance: boolean | null
           return_date: string
+          second_last_name: string | null
           status: Database["public"]["Enums"]["travel_request_status"] | null
           total_estimated_budget: number
+          travel_purpose: string | null
           updated_at: string
+          updated_by: string | null
           user_id: string
         }
         Insert: {
+          account_holder?: string | null
+          account_number?: string | null
+          additional_observations?: string | null
+          allowance_amount?: number | null
+          bank?: string | null
+          birth_date?: string | null
           budget_code_id?: string | null
+          check_in?: string | null
+          check_out?: string | null
           created_at?: string
+          created_by?: string | null
           currency?: string
           departure_date: string
           destination: string
+          document_expiry?: string | null
+          document_number?: string | null
+          email?: string | null
+          emergency_contact?: string | null
           finance_approver_id?: string | null
           finance_notes?: string | null
+          first_name?: string | null
+          hotel_name?: string | null
           id?: string
+          insurance_period?: string | null
           laboratory_id: string
+          last_name?: string | null
           manager_id?: string | null
           manager_notes?: string | null
+          needs_insurance?: boolean | null
+          needs_passage?: boolean | null
+          number_of_days?: number | null
+          phone?: string | null
+          preferred_schedule?: string | null
           project_id?: string | null
           purpose: string
+          requires_allowance?: boolean | null
           return_date: string
+          second_last_name?: string | null
           status?: Database["public"]["Enums"]["travel_request_status"] | null
           total_estimated_budget: number
+          travel_purpose?: string | null
           updated_at?: string
+          updated_by?: string | null
           user_id: string
         }
         Update: {
+          account_holder?: string | null
+          account_number?: string | null
+          additional_observations?: string | null
+          allowance_amount?: number | null
+          bank?: string | null
+          birth_date?: string | null
           budget_code_id?: string | null
+          check_in?: string | null
+          check_out?: string | null
           created_at?: string
+          created_by?: string | null
           currency?: string
           departure_date?: string
           destination?: string
+          document_expiry?: string | null
+          document_number?: string | null
+          email?: string | null
+          emergency_contact?: string | null
           finance_approver_id?: string | null
           finance_notes?: string | null
+          first_name?: string | null
+          hotel_name?: string | null
           id?: string
+          insurance_period?: string | null
           laboratory_id?: string
+          last_name?: string | null
           manager_id?: string | null
           manager_notes?: string | null
+          needs_insurance?: boolean | null
+          needs_passage?: boolean | null
+          number_of_days?: number | null
+          phone?: string | null
+          preferred_schedule?: string | null
           project_id?: string | null
           purpose?: string
+          requires_allowance?: boolean | null
           return_date?: string
+          second_last_name?: string | null
           status?: Database["public"]["Enums"]["travel_request_status"] | null
           total_estimated_budget?: number
+          travel_purpose?: string | null
           updated_at?: string
+          updated_by?: string | null
           user_id?: string
         }
         Relationships: [
@@ -885,23 +974,49 @@ export type Database = {
           notes?: string
         }
         Returns: {
+          account_holder: string | null
+          account_number: string | null
+          additional_observations: string | null
+          allowance_amount: number | null
+          bank: string | null
+          birth_date: string | null
           budget_code_id: string | null
+          check_in: string | null
+          check_out: string | null
           created_at: string
+          created_by: string | null
           currency: string
           departure_date: string
           destination: string
+          document_expiry: string | null
+          document_number: string | null
+          email: string | null
+          emergency_contact: string | null
           finance_approver_id: string | null
           finance_notes: string | null
+          first_name: string | null
+          hotel_name: string | null
           id: string
+          insurance_period: string | null
           laboratory_id: string
+          last_name: string | null
           manager_id: string | null
           manager_notes: string | null
+          needs_insurance: boolean | null
+          needs_passage: boolean | null
+          number_of_days: number | null
+          phone: string | null
+          preferred_schedule: string | null
           project_id: string | null
           purpose: string
+          requires_allowance: boolean | null
           return_date: string
+          second_last_name: string | null
           status: Database["public"]["Enums"]["travel_request_status"] | null
           total_estimated_budget: number
+          travel_purpose: string | null
           updated_at: string
+          updated_by: string | null
           user_id: string
         }
       }
