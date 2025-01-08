@@ -39,6 +39,16 @@ const CURRENCY_OPTIONS = [
 export const AllowanceAccommodationSection = ({ form }: AllowanceAccommodationSectionProps) => {
   const [showCustomBank, setShowCustomBank] = useState(false);
 
+  const formatDateValue = (date: Date | null | undefined) => {
+    if (!date) return '';
+    try {
+      return new Date(date).toISOString().split('T')[0];
+    } catch (e) {
+      console.error('Invalid date:', e);
+      return '';
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="space-y-4">
@@ -201,8 +211,11 @@ export const AllowanceAccommodationSection = ({ form }: AllowanceAccommodationSe
                   <Input 
                     type="date" 
                     {...field}
-                    value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
-                    onChange={(e) => field.onChange(new Date(e.target.value))}
+                    value={formatDateValue(field.value)}
+                    onChange={(e) => {
+                      const date = e.target.value ? new Date(e.target.value) : null;
+                      field.onChange(date);
+                    }}
                   />
                 </FormControl>
                 <FormMessage />
@@ -219,8 +232,11 @@ export const AllowanceAccommodationSection = ({ form }: AllowanceAccommodationSe
                   <Input 
                     type="date" 
                     {...field}
-                    value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
-                    onChange={(e) => field.onChange(new Date(e.target.value))}
+                    value={formatDateValue(field.value)}
+                    onChange={(e) => {
+                      const date = e.target.value ? new Date(e.target.value) : null;
+                      field.onChange(date);
+                    }}
                   />
                 </FormControl>
                 <FormMessage />
