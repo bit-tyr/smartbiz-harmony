@@ -11,18 +11,7 @@ interface TravelDetailsSectionProps {
 
 const formatDateValue = (date: Date | null | undefined): string => {
   if (!date) return '';
-  try {
-    // Ensure we're working with a valid date object
-    const dateObj = new Date(date);
-    if (isNaN(dateObj.getTime())) {
-      console.error('Invalid date value:', date);
-      return '';
-    }
-    return dateObj.toISOString().split('T')[0];
-  } catch (error) {
-    console.error('Error formatting date:', error);
-    return '';
-  }
+  return new Date(date).toISOString().split('T')[0];
 };
 
 export const TravelDetailsSection = ({ form }: TravelDetailsSectionProps) => {
@@ -37,7 +26,7 @@ export const TravelDetailsSection = ({ form }: TravelDetailsSectionProps) => {
             <FormItem>
               <FormLabel>Origen y Destino</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="Ciudad, País" />
+                <Input {...field} placeholder="Ciudad, País" value={field.value || ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -50,7 +39,7 @@ export const TravelDetailsSection = ({ form }: TravelDetailsSectionProps) => {
             <FormItem>
               <FormLabel>Motivo del Viaje</FormLabel>
               <FormControl>
-                <Textarea {...field} />
+                <Textarea {...field} value={field.value || ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -65,7 +54,6 @@ export const TravelDetailsSection = ({ form }: TravelDetailsSectionProps) => {
               <FormControl>
                 <Input 
                   type="date" 
-                  {...field}
                   value={formatDateValue(field.value)}
                   onChange={(e) => {
                     const date = e.target.value ? new Date(e.target.value) : null;
@@ -86,7 +74,6 @@ export const TravelDetailsSection = ({ form }: TravelDetailsSectionProps) => {
               <FormControl>
                 <Input 
                   type="date" 
-                  {...field}
                   value={formatDateValue(field.value)}
                   onChange={(e) => {
                     const date = e.target.value ? new Date(e.target.value) : null;
@@ -105,7 +92,7 @@ export const TravelDetailsSection = ({ form }: TravelDetailsSectionProps) => {
             <FormItem className="flex flex-row items-start space-x-3 space-y-0">
               <FormControl>
                 <Checkbox
-                  checked={field.value}
+                  checked={field.value || false}
                   onCheckedChange={field.onChange}
                 />
               </FormControl>
@@ -122,7 +109,7 @@ export const TravelDetailsSection = ({ form }: TravelDetailsSectionProps) => {
             <FormItem className="flex flex-row items-start space-x-3 space-y-0">
               <FormControl>
                 <Checkbox
-                  checked={field.value}
+                  checked={field.value || false}
                   onCheckedChange={field.onChange}
                 />
               </FormControl>
@@ -139,7 +126,7 @@ export const TravelDetailsSection = ({ form }: TravelDetailsSectionProps) => {
             <FormItem>
               <FormLabel>Contacto de Emergencia</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input {...field} value={field.value || ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -152,7 +139,7 @@ export const TravelDetailsSection = ({ form }: TravelDetailsSectionProps) => {
             <FormItem>
               <FormLabel>Horario de Preferencia</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input {...field} value={field.value || ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
