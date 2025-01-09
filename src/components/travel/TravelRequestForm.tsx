@@ -12,6 +12,9 @@ import { travelRequestSchema, TravelRequestFormValues } from "./schemas/travelRe
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Database } from "@/integrations/supabase/types";
+
+type TravelRequestStatus = Database['public']['Enums']['travel_request_status'];
 
 interface TravelRequestFormProps {
   onSubmit: (values: TravelRequestFormValues & { files: File[] }) => Promise<void>;
@@ -87,7 +90,7 @@ export const TravelRequestForm = ({
         check_out: values.checkOut?.toISOString().split('T')[0],
         number_of_days: values.numberOfDays,
         created_by: user.id,
-        status: 'pendiente',
+        status: 'pendiente' as TravelRequestStatus,
         total_estimated_budget: values.allowanceAmount || 0
       };
 
