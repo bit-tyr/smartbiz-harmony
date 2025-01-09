@@ -12,9 +12,6 @@ import { travelRequestSchema, TravelRequestFormValues } from "./schemas/travelRe
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Database } from "@/integrations/supabase/types";
-
-type TravelRequestStatus = Database['public']['Enums']['travel_request_status'];
 
 interface TravelRequestFormProps {
   onSubmit: (values: TravelRequestFormValues & { files: File[] }) => Promise<void>;
@@ -48,7 +45,9 @@ export const TravelRequestForm = ({
 
   const handleSubmit = async (values: TravelRequestFormValues) => {
     try {
+      console.log("Submitting form with values:", values);
       setIsSubmittingForm(true);
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast.error("Usuario no autenticado");
@@ -57,6 +56,7 @@ export const TravelRequestForm = ({
 
       // Transform form values to match database schema
       const travelRequest = {
+        user_id: user.id,
         laboratory_id: values.laboratoryId,
         budget_code_id: values.budgetCodeId,
         first_name: values.firstName,
@@ -87,12 +87,11 @@ export const TravelRequestForm = ({
         check_out: values.checkOut?.toISOString().split('T')[0],
         number_of_days: values.numberOfDays,
         created_by: user.id,
-        user_id: user.id,
-        status: 'pendiente' as TravelRequestStatus,
+        status: 'pendiente',
         total_estimated_budget: values.allowanceAmount || 0
       };
 
-      console.log('Submitting travel request:', travelRequest);
+      console.log("Sending travel request to database:", travelRequest);
 
       const { data, error } = await supabase
         .from('travel_requests')
@@ -106,7 +105,7 @@ export const TravelRequestForm = ({
         return;
       }
 
-      console.log('Travel request saved:', data);
+      console.log("Travel request saved successfully:", data);
 
       // Upload files if any
       if (selectedFiles.length > 0) {
