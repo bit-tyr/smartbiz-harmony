@@ -30,6 +30,7 @@ export const TravelRequestForm = ({
   travelRequestId
 }: TravelRequestFormProps) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [isSubmittingForm, setIsSubmittingForm] = useState(false);
   
   const form = useForm<TravelRequestFormValues>({
     resolver: zodResolver(travelRequestSchema),
@@ -47,6 +48,7 @@ export const TravelRequestForm = ({
 
   const handleSubmit = async (values: TravelRequestFormValues) => {
     try {
+      setIsSubmittingForm(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast.error("Usuario no autenticado");
@@ -87,8 +89,10 @@ export const TravelRequestForm = ({
         created_by: user.id,
         user_id: user.id,
         status: 'pendiente' as TravelRequestStatus,
-        total_estimated_budget: values.allowanceAmount || 0 // You might want to calculate this based on all expenses
+        total_estimated_budget: values.allowanceAmount || 0
       };
+
+      console.log('Submitting travel request:', travelRequest);
 
       const { data, error } = await supabase
         .from('travel_requests')
@@ -101,6 +105,8 @@ export const TravelRequestForm = ({
         toast.error("Error al guardar la solicitud");
         return;
       }
+
+      console.log('Travel request saved:', data);
 
       // Upload files if any
       if (selectedFiles.length > 0) {
@@ -148,6 +154,8 @@ export const TravelRequestForm = ({
     } catch (error) {
       console.error('Error inesperado:', error);
       toast.error("Error al procesar la solicitud");
+    } finally {
+      setIsSubmittingForm(false);
     }
   };
 
@@ -174,8 +182,8 @@ export const TravelRequestForm = ({
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? (
+          <Button type="submit" disabled={isSubmittingForm}>
+            {isSubmittingForm ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Guardando...
