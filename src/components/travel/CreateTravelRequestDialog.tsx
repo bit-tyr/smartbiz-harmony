@@ -36,7 +36,7 @@ export const CreateTravelRequestDialog = ({
       const { error: requestError } = await supabase
         .from('travel_requests')
         .insert({
-          created_by: session.user.id,
+          user_id: session.user.id,
           laboratory_id: values.laboratoryId,
           budget_code_id: values.budgetCodeId,
           destination: values.destination,
