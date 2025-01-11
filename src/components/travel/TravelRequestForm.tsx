@@ -48,11 +48,12 @@ export const TravelRequestForm = ({
 
   const handleSubmit = async (values: TravelRequestFormValues) => {
     try {
-      console.log("Submitting form with values:", values);
+      console.log("Iniciando envío del formulario con valores:", values);
       setIsSubmittingForm(true);
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
+        console.error("Error: Usuario no autenticado");
         toast.error("Usuario no autenticado");
         return;
       }
@@ -94,7 +95,7 @@ export const TravelRequestForm = ({
         total_estimated_budget: values.allowanceAmount || 0
       };
 
-      console.log("Sending travel request to database:", travelRequest);
+      console.log("Enviando solicitud a la base de datos:", travelRequest);
 
       const { data, error } = await supabase
         .from('travel_requests')
@@ -103,12 +104,12 @@ export const TravelRequestForm = ({
         .single();
 
       if (error) {
-        console.error('Error al guardar la solicitud:', error);
-        toast.error("Error al guardar la solicitud");
+        console.error('Error detallado al guardar la solicitud:', error);
+        toast.error(`Error al guardar la solicitud: ${error.message}`);
         return;
       }
 
-      console.log("Travel request saved successfully:", data);
+      console.log("Solicitud guardada exitosamente:", data);
 
       // Upload files if any
       if (selectedFiles.length > 0) {
@@ -152,7 +153,7 @@ export const TravelRequestForm = ({
       }
 
       toast.success("Solicitud guardada exitosamente");
-      onCancel(); // Close the form
+      onCancel(); // Cerrar el formulario
     } catch (error) {
       console.error('Error inesperado:', error);
       toast.error("Error al procesar la solicitud");
