@@ -3,129 +3,114 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { LaboratoryBudgetSection } from "./form-sections/LaboratoryBudgetSection";
-import { PersonalInfoSection } from "./form-sections/PersonalInfoSection";
-import { TravelDetailsSection } from "./form-sections/TravelDetailsSection";
-import { AllowanceAccommodationSection } from "./form-sections/AllowanceAccommodationSection";
-import { TravelAttachmentSection } from "./form-sections/AttachmentSection";
-import { travelRequestSchema, TravelRequestFormValues } from "./schemas/travelRequestSchema";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Database } from "@/integrations/supabase/types";
-
-type TravelRequestStatus = Database['public']['Enums']['travel_request_status'];
+import { TravelRequestFormValues, travelRequestSchema } from "./schemas/travelRequestSchema";
+import { PersonalInfoSection } from "./form-sections/PersonalInfoSection";
+import { TravelDetailsSection } from "./form-sections/TravelDetailsSection";
+import { LaboratoryBudgetSection } from "./form-sections/LaboratoryBudgetSection";
+import { AllowanceAccommodationSection } from "./form-sections/AllowanceAccommodationSection";
+import { TravelAttachmentSection } from "./form-sections/AttachmentSection";
 
 interface TravelRequestFormProps {
-  onSubmit: (values: TravelRequestFormValues & { files: File[] }) => Promise<void>;
-  isSubmitting: boolean;
   onCancel: () => void;
-  travelRequestId?: string;
 }
 
-export const TravelRequestForm = ({
-  onSubmit,
-  isSubmitting,
-  onCancel,
-  travelRequestId
-}: TravelRequestFormProps) => {
+export const TravelRequestForm = ({ onCancel }: TravelRequestFormProps) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
 
   const form = useForm<TravelRequestFormValues>({
     resolver: zodResolver(travelRequestSchema),
     defaultValues: {
-      currency: 'USD',
+      firstName: "",
+      lastName: "",
+      documentNumber: "",
+      birthDate: null,
+      documentExpiry: null,
+      phone: "",
+      email: "",
+      destination: "",
+      departureDate: null,
+      returnDate: null,
+      travelPurpose: "",
       needsPassage: false,
       needsInsurance: false,
-      requiresAllowance: false,
-      allowanceAmount: 0,
-      numberOfDays: 0,
-      purpose: '',
-      travelPurpose: '',
+      emergencyContact: "",
+      preferredSchedule: "",
+      laboratoryId: "",
+      budgetCodeId: "",
     },
   });
 
-  const handleSubmit = async (values: TravelRequestFormValues) => {
-    try {
-      console.log("Iniciando envío del formulario con valores:", values);
-      setIsSubmittingForm(true);
+  const onSubmit = async (values: TravelRequestFormValues) => {
+    console.log("Iniciando envío del formulario con valores:", values);
+    setIsSubmittingForm(true);
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error("Error: Usuario no autenticado");
-        toast.error("Usuario no autenticado");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        console.error('No hay sesión de usuario activa');
+        toast.error("Error de autenticación");
         return;
       }
 
+      console.log("Preparando datos para enviar a la base de datos...");
       const travelRequest = {
-        user_id: user.id,
+        user_id: session.user.id,
         laboratory_id: values.laboratoryId,
         budget_code_id: values.budgetCodeId,
+        destination: values.destination,
+        departure_date: values.departureDate,
+        return_date: values.returnDate,
+        travel_purpose: values.travelPurpose,
+        needs_passage: values.needsPassage,
+        needs_insurance: values.needsInsurance,
+        emergency_contact: values.emergencyContact,
+        preferred_schedule: values.preferredSchedule,
         first_name: values.firstName,
         last_name: values.lastName,
         document_number: values.documentNumber,
-        birth_date: values.birthDate?.toISOString().split('T')[0],
-        document_expiry: values.documentExpiry?.toISOString().split('T')[0],
+        birth_date: values.birthDate,
+        document_expiry: values.documentExpiry,
         phone: values.phone,
         email: values.email,
-        destination: values.destination,
-        departure_date: values.departureDate?.toISOString().split('T')[0],
-        return_date: values.returnDate?.toISOString().split('T')[0],
-        purpose: values.travelPurpose,
-        needs_passage: values.needsPassage,
-        needs_insurance: values.needsInsurance,
-        insurance_period: values.insurancePeriod,
-        emergency_contact: values.emergencyContact,
-        additional_observations: values.additionalObservations,
-        preferred_schedule: values.preferredSchedule,
-        requires_allowance: values.requiresAllowance,
-        allowance_amount: values.allowanceAmount,
-        currency: values.currency,
-        bank: values.bank,
-        account_number: values.accountNumber,
-        account_holder: values.accountHolder,
-        hotel_name: values.hotelName,
-        check_in: values.checkIn?.toISOString().split('T')[0],
-        check_out: values.checkOut?.toISOString().split('T')[0],
-        number_of_days: values.numberOfDays,
-        created_by: user.id,
-        status: 'pendiente' as TravelRequestStatus,
-        total_estimated_budget: values.allowanceAmount || 0
+        created_by: session.user.id,
+        status: 'pendiente',
       };
 
       console.log("Enviando solicitud a la base de datos:", travelRequest);
-
       const { data, error } = await supabase
         .from('travel_requests')
-        .insert(travelRequest)
+        .insert([travelRequest])
         .select()
         .single();
 
       if (error) {
-        console.error('Error detallado al guardar la solicitud:', error);
-        toast.error(`Error al guardar la solicitud: ${error.message}`);
-        return;
+        console.error('Error al guardar la solicitud:', error);
+        throw error;
       }
 
       console.log("Solicitud guardada exitosamente:", data);
 
       if (selectedFiles.length > 0) {
+        console.log("Iniciando carga de archivos...");
         for (const file of selectedFiles) {
           const sanitizedName = file.name
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '')
             .replace(/[^a-zA-Z0-9.-]/g, '_');
-          
-          const filePath = `${data.id}/${sanitizedName}`;
 
+          const filePath = `${data.id}/${sanitizedName}`;
+          
           const { error: uploadError } = await supabase.storage
             .from('travel-attachments')
             .upload(filePath, file);
 
           if (uploadError) {
             console.error('Error al subir archivo:', uploadError);
-            toast.error(`Error al subir ${file.name}`);
+            toast.error(`Error al subir el archivo ${file.name}`);
             continue;
           }
 
@@ -136,18 +121,14 @@ export const TravelRequestForm = ({
               file_name: file.name,
               file_path: filePath,
               file_type: file.type,
-              file_size: file.size
+              file_size: file.size,
             });
 
           if (attachmentError) {
-            console.error('Error al guardar adjunto:', attachmentError);
-            toast.error(`Error al registrar ${file.name}`);
-            
-            await supabase.storage
-              .from('travel-attachments')
-              .remove([filePath]);
+            console.error('Error al registrar archivo:', attachmentError);
           }
         }
+        console.log("Archivos subidos exitosamente");
       }
 
       toast.success("Solicitud guardada exitosamente");
@@ -167,15 +148,15 @@ export const TravelRequestForm = ({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
-        <LaboratoryBudgetSection form={form} />
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <PersonalInfoSection form={form} />
         <TravelDetailsSection form={form} />
+        <LaboratoryBudgetSection form={form} />
         <AllowanceAccommodationSection form={form} />
         
-        {travelRequestId && (
+        {form.formState.isSubmitSuccessful && (
           <TravelAttachmentSection
-            travelRequestId={travelRequestId}
+            travelRequestId={form.getValues().id}
             onFilesChange={handleFilesChange}
           />
         )}
