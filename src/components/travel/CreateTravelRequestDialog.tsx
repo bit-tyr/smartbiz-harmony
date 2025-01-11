@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { TravelRequestForm } from "./TravelRequestForm";
 import { toast } from "sonner";
+import { TravelRequestFormValues } from "./schemas/travelRequestSchema";
 
 interface CreateTravelRequestDialogProps {
   open: boolean;
@@ -23,7 +24,7 @@ export const CreateTravelRequestDialog = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
 
-  const onSubmit = async (values: any) => {
+  const handleSubmit = async (values: TravelRequestFormValues) => {
     setIsSubmitting(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -37,14 +38,27 @@ export const CreateTravelRequestDialog = ({
         .insert({
           user_id: session.user.id,
           laboratory_id: values.laboratoryId,
-          project_id: values.projectId || null,
+          budget_code_id: values.budgetCodeId,
           destination: values.destination,
           departure_date: values.departureDate,
           return_date: values.returnDate,
-          purpose: values.purpose,
-          total_estimated_budget: Number(values.totalEstimatedBudget),
-          currency: values.currency,
-          status: 'pendiente'
+          purpose: values.travelPurpose,
+          total_estimated_budget: Number(values.allowanceAmount || 0),
+          currency: 'USD',
+          status: 'pendiente',
+          first_name: values.firstName,
+          last_name: values.lastName,
+          document_number: values.documentNumber,
+          birth_date: values.birthDate,
+          document_expiry: values.documentExpiry,
+          phone: values.phone,
+          email: values.email,
+          travel_purpose: values.travelPurpose,
+          needs_passage: values.needsPassage,
+          needs_insurance: values.needsInsurance,
+          emergency_contact: values.emergencyContact,
+          preferred_schedule: values.preferredSchedule,
+          created_by: session.user.id
         });
 
       if (requestError) {
@@ -74,7 +88,7 @@ export const CreateTravelRequestDialog = ({
           </DialogDescription>
         </DialogHeader>
         <TravelRequestForm
-          onSubmit={onSubmit}
+          onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
           onCancel={() => onOpenChange(false)}
         />
