@@ -31,7 +31,7 @@ export const TravelRequestForm = ({
 }: TravelRequestFormProps) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
-  
+
   const form = useForm<TravelRequestFormValues>({
     resolver: zodResolver(travelRequestSchema),
     defaultValues: {
@@ -58,7 +58,6 @@ export const TravelRequestForm = ({
         return;
       }
 
-      // Transform form values to match database schema
       const travelRequest = {
         user_id: user.id,
         laboratory_id: values.laboratoryId,
@@ -111,7 +110,6 @@ export const TravelRequestForm = ({
 
       console.log("Solicitud guardada exitosamente:", data);
 
-      // Upload files if any
       if (selectedFiles.length > 0) {
         for (const file of selectedFiles) {
           const sanitizedName = file.name
@@ -153,7 +151,8 @@ export const TravelRequestForm = ({
       }
 
       toast.success("Solicitud guardada exitosamente");
-      onCancel(); // Cerrar el formulario
+      form.reset();
+      onCancel();
     } catch (error) {
       console.error('Error inesperado:', error);
       toast.error("Error al procesar la solicitud");
@@ -182,10 +181,18 @@ export const TravelRequestForm = ({
         )}
 
         <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onCancel}
+            disabled={isSubmittingForm}
+          >
             Cancelar
           </Button>
-          <Button type="submit" disabled={isSubmittingForm}>
+          <Button 
+            type="submit" 
+            disabled={isSubmittingForm}
+          >
             {isSubmittingForm ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
