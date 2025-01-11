@@ -35,8 +35,8 @@ export const CreateTravelRequestDialog = ({
 
       const { error: requestError } = await supabase
         .from('travel_requests')
-        .insert({
-          user_id: session.user.id,
+        .insert([{
+          created_by: session.user.id,
           laboratory_id: values.laboratoryId,
           budget_code_id: values.budgetCodeId,
           destination: values.destination,
@@ -67,7 +67,7 @@ export const CreateTravelRequestDialog = ({
           check_in: values.checkIn,
           check_out: values.checkOut,
           number_of_days: values.numberOfDays
-        });
+        }]);
 
       if (requestError) {
         console.error('Error al crear la solicitud:', requestError);
