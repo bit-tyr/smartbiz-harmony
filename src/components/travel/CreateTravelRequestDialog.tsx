@@ -35,13 +35,13 @@ export const CreateTravelRequestDialog = ({
 
       const { error: requestError } = await supabase
         .from('travel_requests')
-        .insert([{
+        .insert({
           created_by: session.user.id,
           laboratory_id: values.laboratoryId,
           budget_code_id: values.budgetCodeId,
           destination: values.destination,
-          departure_date: values.departureDate,
-          return_date: values.returnDate,
+          departure_date: values.departureDate?.toISOString().split('T')[0],
+          return_date: values.returnDate?.toISOString().split('T')[0],
           purpose: values.travelPurpose,
           total_estimated_budget: Number(values.allowanceAmount || 0),
           currency: values.currency || 'USD',
@@ -49,8 +49,8 @@ export const CreateTravelRequestDialog = ({
           first_name: values.firstName,
           last_name: values.lastName,
           document_number: values.documentNumber,
-          birth_date: values.birthDate,
-          document_expiry: values.documentExpiry,
+          birth_date: values.birthDate?.toISOString().split('T')[0],
+          document_expiry: values.documentExpiry?.toISOString().split('T')[0],
           phone: values.phone,
           email: values.email,
           travel_purpose: values.travelPurpose,
@@ -64,10 +64,10 @@ export const CreateTravelRequestDialog = ({
           account_number: values.accountNumber,
           account_holder: values.accountHolder,
           hotel_name: values.hotelName,
-          check_in: values.checkIn,
-          check_out: values.checkOut,
+          check_in: values.checkIn?.toISOString().split('T')[0],
+          check_out: values.checkOut?.toISOString().split('T')[0],
           number_of_days: values.numberOfDays
-        }]);
+        });
 
       if (requestError) {
         console.error('Error al crear la solicitud:', requestError);
