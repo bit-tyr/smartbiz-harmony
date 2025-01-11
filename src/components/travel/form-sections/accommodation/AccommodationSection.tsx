@@ -11,7 +11,7 @@ const formatDateValue = (date: Date | null | undefined) => {
   if (!date) return '';
   try {
     const d = new Date(date);
-    if (isNaN(d.getTime())) return ''; // Check if date is valid
+    if (isNaN(d.getTime())) return ''; 
     return d.toISOString().split('T')[0];
   } catch (e) {
     console.error('Invalid date:', e);
@@ -31,7 +31,7 @@ export const AccommodationSection = ({ form }: AccommodationSectionProps) => {
             <FormItem>
               <FormLabel>Hotel</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input {...field} value={field.value || ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -46,7 +46,6 @@ export const AccommodationSection = ({ form }: AccommodationSectionProps) => {
               <FormControl>
                 <Input 
                   type="date" 
-                  {...field}
                   value={formatDateValue(field.value)}
                   onChange={(e) => {
                     const date = e.target.value ? new Date(e.target.value) : null;
@@ -67,7 +66,6 @@ export const AccommodationSection = ({ form }: AccommodationSectionProps) => {
               <FormControl>
                 <Input 
                   type="date" 
-                  {...field}
                   value={formatDateValue(field.value)}
                   onChange={(e) => {
                     const date = e.target.value ? new Date(e.target.value) : null;
@@ -88,8 +86,9 @@ export const AccommodationSection = ({ form }: AccommodationSectionProps) => {
               <FormControl>
                 <Input 
                   type="number" 
-                  {...field} 
-                  onChange={e => field.onChange(parseInt(e.target.value))}
+                  {...field}
+                  value={field.value || ''}
+                  onChange={e => field.onChange(parseInt(e.target.value) || 0)}
                 />
               </FormControl>
               <FormMessage />

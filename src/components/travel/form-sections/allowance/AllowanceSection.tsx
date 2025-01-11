@@ -69,8 +69,9 @@ export const AllowanceSection = ({ form }: AllowanceSectionProps) => {
               <FormControl>
                 <Input 
                   type="number" 
-                  {...field} 
-                  onChange={e => field.onChange(parseFloat(e.target.value))}
+                  {...field}
+                  value={field.value || ''}
+                  onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
                 />
               </FormControl>
               <FormMessage />
@@ -83,7 +84,7 @@ export const AllowanceSection = ({ form }: AllowanceSectionProps) => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Moneda</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value || ''}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccione la moneda" />
@@ -117,7 +118,7 @@ export const AllowanceSection = ({ form }: AllowanceSectionProps) => {
                     field.onChange(value);
                   }
                 }} 
-                value={BANK_OPTIONS.includes(field.value as any) ? field.value : "Otro"}
+                value={field.value || ''}
               >
                 <FormControl>
                   <SelectTrigger>
@@ -138,6 +139,7 @@ export const AllowanceSection = ({ form }: AllowanceSectionProps) => {
                     {...field}
                     placeholder="Ingrese el nombre del banco"
                     className="mt-2"
+                    value={field.value || ''}
                   />
                 </FormControl>
               )}
@@ -152,7 +154,7 @@ export const AllowanceSection = ({ form }: AllowanceSectionProps) => {
             <FormItem>
               <FormLabel>Número de Cuenta</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input {...field} value={field.value || ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -165,7 +167,7 @@ export const AllowanceSection = ({ form }: AllowanceSectionProps) => {
             <FormItem>
               <FormLabel>Beneficiario de la Cuenta</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input {...field} value={field.value || ''} />
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -27,6 +27,15 @@ export const travelRequestSchema = z.object({
   emergencyContact: z.string().min(1, "El contacto de emergencia es requerido"),
   preferredSchedule: z.string().optional(),
   allowanceAmount: z.number().min(0, "El monto debe ser mayor o igual a 0"),
+  requiresAllowance: z.boolean().default(false),
+  currency: z.string().optional(),
+  bank: z.string().optional(),
+  accountNumber: z.string().optional(),
+  accountHolder: z.string().optional(),
+  hotelName: z.string().optional(),
+  checkIn: z.date().optional().nullable(),
+  checkOut: z.date().optional().nullable(),
+  numberOfDays: z.number().optional(),
 });
 
 export type TravelRequestFormValues = z.infer<typeof travelRequestSchema>;

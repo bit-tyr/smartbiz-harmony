@@ -36,7 +36,7 @@ export const CreateTravelRequestDialog = ({
       const { error: requestError } = await supabase
         .from('travel_requests')
         .insert({
-          user_id: session.user.id,
+          created_by: session.user.id,
           laboratory_id: values.laboratoryId,
           budget_code_id: values.budgetCodeId,
           destination: values.destination,
@@ -44,7 +44,7 @@ export const CreateTravelRequestDialog = ({
           return_date: values.returnDate,
           purpose: values.travelPurpose,
           total_estimated_budget: Number(values.allowanceAmount || 0),
-          currency: 'USD',
+          currency: values.currency || 'USD',
           status: 'pendiente',
           first_name: values.firstName,
           last_name: values.lastName,
@@ -58,7 +58,15 @@ export const CreateTravelRequestDialog = ({
           needs_insurance: values.needsInsurance,
           emergency_contact: values.emergencyContact,
           preferred_schedule: values.preferredSchedule,
-          created_by: session.user.id
+          requires_allowance: values.requiresAllowance,
+          allowance_amount: values.allowanceAmount,
+          bank: values.bank,
+          account_number: values.accountNumber,
+          account_holder: values.accountHolder,
+          hotel_name: values.hotelName,
+          check_in: values.checkIn,
+          check_out: values.checkOut,
+          number_of_days: values.numberOfDays
         });
 
       if (requestError) {
