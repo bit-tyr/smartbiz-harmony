@@ -94,8 +94,8 @@ export const TravelRequestList = ({ onSelectRequest }: TravelRequestListProps) =
 
       const userRole = userProfile.roles?.name?.toLowerCase();
       const canUpdateStatus = (
-        (userRole === 'manager' && request.status === 'pending') ||
-        (userRole === 'finance' && request.status === 'in_process') ||
+        (userRole === 'manager' && request.status === 'pendiente') ||
+        (userRole === 'finance' && request.status === 'aprobado_por_gerente') ||
         userProfile.is_admin ||
         userRole === 'purchases'
       );
