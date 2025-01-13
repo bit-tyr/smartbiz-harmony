@@ -14,6 +14,7 @@ import { TravelRequestForm } from "./TravelRequestForm";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { TravelRequestFormValues } from "./schemas/travelRequestSchema";
 
 interface TravelRequestDetailsProps {
   request: TravelRequest | null;
@@ -79,13 +80,13 @@ export const TravelRequestDetails = ({ request, onClose }: TravelRequestDetailsP
               firstName: request.firstName,
               lastName: request.lastName,
               documentNumber: request.documentNumber,
-              birthDate: request.birthDate,
-              documentExpiry: request.documentExpiry,
+              birthDate: new Date(request.birthDate),
+              documentExpiry: new Date(request.documentExpiry),
               phone: request.phone,
               email: request.email,
               destination: request.destination,
-              departureDate: request.departureDate,
-              returnDate: request.returnDate,
+              departureDate: new Date(request.departureDate),
+              returnDate: new Date(request.returnDate),
               travelPurpose: request.travelPurpose,
               needsPassage: request.needsPassage,
               needsInsurance: request.needsInsurance,
@@ -98,8 +99,8 @@ export const TravelRequestDetails = ({ request, onClose }: TravelRequestDetailsP
               accountNumber: request.accountNumber,
               accountHolder: request.accountHolder,
               hotelName: request.hotelName,
-              checkIn: request.checkIn,
-              checkOut: request.checkOut,
+              checkIn: request.checkIn ? new Date(request.checkIn) : null,
+              checkOut: request.checkOut ? new Date(request.checkOut) : null,
               numberOfDays: request.numberOfDays,
             }}
             isEditing={true}
