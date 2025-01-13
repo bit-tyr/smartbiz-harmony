@@ -1,8 +1,4 @@
-export type TravelRequestStatus = 
-  | "pendiente"
-  | "en_proceso" 
-  | "aprobado"
-  | "rechazado";
+export type TravelRequestStatus = 'pendiente' | 'en_proceso' | 'aprobado' | 'rechazado';
 
 export const statusConfig = {
   pendiente: {

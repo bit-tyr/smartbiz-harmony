@@ -1,0 +1,47 @@
+export interface TravelRequest {
+  id: string;
+  status: TravelRequestStatus;
+  laboratoryId: string;
+  budgetCodeId: string;
+  firstName: string;
+  lastName: string;
+  documentNumber: string;
+  birthDate: string;
+  documentExpiry: string;
+  phone: string;
+  email: string;
+  destination: string;
+  departureDate: string;
+  returnDate: string;
+  travelPurpose: string;
+  needsPassage: boolean;
+  needsInsurance: boolean;
+  emergencyContact: string;
+  preferredSchedule: string;
+  allowanceAmount: number;
+  requiresAllowance: boolean;
+  currency: string;
+  bank: string;
+  accountNumber: string;
+  accountHolder: string;
+  hotelName: string;
+  checkIn: string | null;
+  checkOut: string | null;
+  numberOfDays: number;
+  deleted_at?: string | null;
+  departure_date: string;
+  return_date: string;
+  travel_purpose: string;
+  emergency_contact: string;
+  requires_allowance: boolean;
+  allowance_amount: number;
+  account_number: string;
+  account_holder: string;
+  hotel_name: string;
+  check_in: string | null;
+  check_out: string | null;
+  number_of_days: number;
+  additional_observations?: string;
+}
+
+export type TravelRequestStatus = 'pendiente' | 'en_proceso' | 'aprobado' | 'rechazado';

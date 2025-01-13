@@ -15,18 +15,22 @@ interface TravelRequestFormProps {
   onSubmit: (values: TravelRequestFormValues) => Promise<void>;
   isSubmitting: boolean;
   onCancel: () => void;
+  initialValues?: TravelRequestFormValues;
+  isEditing?: boolean;
 }
 
 export const TravelRequestForm = ({ 
   onSubmit,
   isSubmitting,
-  onCancel 
+  onCancel,
+  initialValues,
+  isEditing = false
 }: TravelRequestFormProps) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   const form = useForm<TravelRequestFormValues>({
     resolver: zodResolver(travelRequestSchema),
-    defaultValues: {
+    defaultValues: initialValues || {
       firstName: "",
       lastName: "",
       documentNumber: "",

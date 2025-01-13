@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { TravelRequest } from "./types";
+import { TravelRequest, TravelRequestStatus } from "./types";
 import { Button } from "@/components/ui/button";
 import { Edit2 } from "lucide-react";
 import { useState } from "react";
@@ -26,6 +26,27 @@ export const TravelRequestDetails = ({ request, onClose }: TravelRequestDetailsP
   const queryClient = useQueryClient();
 
   if (!request) return null;
+
+  const handleSubmit = async (values: TravelRequestFormValues) => {
+    try {
+      setIsSubmitting(true);
+      const { error } = await supabase
+        .from('travel_requests')
+        .update(values)
+        .eq('id', request.id);
+
+      if (error) throw error;
+
+      toast.success("Solicitud de viaje actualizada exitosamente");
+      queryClient.invalidateQueries({ queryKey: ['travelRequests'] });
+      onClose();
+    } catch (error) {
+      console.error('Error updating travel request:', error);
+      toast.error("Error al actualizar la solicitud");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <Dialog open={!!request} onOpenChange={onClose}>
@@ -49,26 +70,7 @@ export const TravelRequestDetails = ({ request, onClose }: TravelRequestDetailsP
 
         {isEditing ? (
           <TravelRequestForm
-            onSubmit={async (values) => {
-              try {
-                setIsSubmitting(true);
-                const { error } = await supabase
-                  .from('travel_requests')
-                  .update(values)
-                  .eq('id', request.id);
-
-                if (error) throw error;
-
-                toast.success("Solicitud de viaje actualizada exitosamente");
-                queryClient.invalidateQueries(['travelRequests']);
-                onClose();
-              } catch (error) {
-                console.error('Error updating travel request:', error);
-                toast.error("Error al actualizar la solicitud");
-              } finally {
-                setIsSubmitting(false);
-              }
-            }}
+            onSubmit={handleSubmit}
             isSubmitting={isSubmitting}
             onCancel={() => setIsEditing(false)}
             initialValues={{
