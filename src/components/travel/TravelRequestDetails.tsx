@@ -49,9 +49,14 @@ export const TravelRequestDetails = ({ request, onClose }: TravelRequestDetailsP
     }
   };
 
+  const formatDate = (date: string | null) => {
+    if (!date) return '-';
+    return format(new Date(date), "PPP", { locale: es });
+  };
+
   return (
     <Dialog open={!!request} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex justify-between items-center">
             <DialogTitle>Detalles de la Solicitud de Viaje</DialogTitle>
@@ -109,39 +114,83 @@ export const TravelRequestDetails = ({ request, onClose }: TravelRequestDetailsP
           <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <h3 className="font-semibold mb-2">Información General</h3>
+                <h3 className="font-semibold mb-2">Información Personal</h3>
+                <dl className="space-y-2">
+                  <div>
+                    <dt className="text-sm text-gray-500">Nombre</dt>
+                    <dd>{request.firstName} {request.lastName}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-gray-500">Documento</dt>
+                    <dd>{request.documentNumber}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-gray-500">Fecha de Nacimiento</dt>
+                    <dd>{formatDate(request.birthDate)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-gray-500">Vencimiento del Documento</dt>
+                    <dd>{formatDate(request.documentExpiry)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-gray-500">Teléfono</dt>
+                    <dd>{request.phone}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-gray-500">Email</dt>
+                    <dd>{request.email}</dd>
+                  </div>
+                </dl>
+              </div>
+              
+              <div>
+                <h3 className="font-semibold mb-2">Información del Viaje</h3>
                 <dl className="space-y-2">
                   <div>
                     <dt className="text-sm text-gray-500">Estado</dt>
                     <dd>{request.status}</dd>
                   </div>
                   <div>
-                    <dt className="text-sm text-gray-500">Fecha de Salida</dt>
-                    <dd>{format(new Date(request.departure_date), "PPP", { locale: es })}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm text-gray-500">Fecha de Retorno</dt>
-                    <dd>{format(new Date(request.return_date), "PPP", { locale: es })}</dd>
-                  </div>
-                  <div>
                     <dt className="text-sm text-gray-500">Destino</dt>
                     <dd>{request.destination}</dd>
                   </div>
                   <div>
+                    <dt className="text-sm text-gray-500">Fecha de Salida</dt>
+                    <dd>{formatDate(request.departureDate)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-gray-500">Fecha de Retorno</dt>
+                    <dd>{formatDate(request.returnDate)}</dd>
+                  </div>
+                  <div>
                     <dt className="text-sm text-gray-500">Propósito del Viaje</dt>
-                    <dd>{request.travel_purpose}</dd>
+                    <dd>{request.travelPurpose}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-gray-500">Requiere Pasaje</dt>
+                    <dd>{request.needsPassage ? 'Sí' : 'No'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-gray-500">Requiere Seguro</dt>
+                    <dd>{request.needsInsurance ? 'Sí' : 'No'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-gray-500">Horario Preferido</dt>
+                    <dd>{request.preferredSchedule || '-'}</dd>
                   </div>
                 </dl>
               </div>
-              
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <h3 className="font-semibold mb-2">Información de Viáticos</h3>
                 <dl className="space-y-2">
-                  {request.requires_allowance && (
+                  {request.requiresAllowance && (
                     <>
                       <div>
                         <dt className="text-sm text-gray-500">Monto de Viáticos</dt>
-                        <dd>{request.allowance_amount} {request.currency}</dd>
+                        <dd>{request.allowanceAmount} {request.currency}</dd>
                       </div>
                       <div>
                         <dt className="text-sm text-gray-500">Banco</dt>
@@ -149,55 +198,55 @@ export const TravelRequestDetails = ({ request, onClose }: TravelRequestDetailsP
                       </div>
                       <div>
                         <dt className="text-sm text-gray-500">Número de Cuenta</dt>
-                        <dd>{request.account_number || "-"}</dd>
+                        <dd>{request.accountNumber || "-"}</dd>
                       </div>
                       <div>
                         <dt className="text-sm text-gray-500">Titular de la Cuenta</dt>
-                        <dd>{request.account_holder || "-"}</dd>
+                        <dd>{request.accountHolder || "-"}</dd>
                       </div>
                     </>
                   )}
-                  {!request.requires_allowance && (
+                  {!request.requiresAllowance && (
                     <div>
                       <dd className="text-gray-500">No requiere viáticos</dd>
                     </div>
                   )}
                 </dl>
               </div>
+
+              {request.hotelName && (
+                <div>
+                  <h3 className="font-semibold mb-2">Información de Alojamiento</h3>
+                  <dl className="space-y-2">
+                    <div>
+                      <dt className="text-sm text-gray-500">Hotel</dt>
+                      <dd>{request.hotelName}</dd>
+                    </div>
+                    {request.checkIn && request.checkOut && (
+                      <>
+                        <div>
+                          <dt className="text-sm text-gray-500">Check-in</dt>
+                          <dd>{formatDate(request.checkIn)}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-sm text-gray-500">Check-out</dt>
+                          <dd>{formatDate(request.checkOut)}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-sm text-gray-500">Número de Días</dt>
+                          <dd>{request.numberOfDays}</dd>
+                        </div>
+                      </>
+                    )}
+                  </dl>
+                </div>
+              )}
             </div>
 
-            {request.hotel_name && (
-              <div>
-                <h3 className="font-semibold mb-2">Información de Alojamiento</h3>
-                <dl className="space-y-2">
-                  <div>
-                    <dt className="text-sm text-gray-500">Hotel</dt>
-                    <dd>{request.hotel_name}</dd>
-                  </div>
-                  {request.check_in && request.check_out && (
-                    <>
-                      <div>
-                        <dt className="text-sm text-gray-500">Check-in</dt>
-                        <dd>{format(new Date(request.check_in), "PPP", { locale: es })}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-sm text-gray-500">Check-out</dt>
-                        <dd>{format(new Date(request.check_out), "PPP", { locale: es })}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-sm text-gray-500">Número de Días</dt>
-                        <dd>{request.number_of_days}</dd>
-                      </div>
-                    </>
-                  )}
-                </dl>
-              </div>
-            )}
-
-            {request.emergency_contact && (
+            {request.emergencyContact && (
               <div>
                 <h3 className="font-semibold mb-2">Contacto de Emergencia</h3>
-                <p>{request.emergency_contact}</p>
+                <p>{request.emergencyContact}</p>
               </div>
             )}
 
