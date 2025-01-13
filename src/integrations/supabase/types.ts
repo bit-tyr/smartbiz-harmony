@@ -532,53 +532,104 @@ export type Database = {
       }
       purchase_requests: {
         Row: {
+          account_holder: string | null
+          account_number: string | null
           actions: string | null
+          allowance_amount: number | null
           attachments: string[] | null
+          bank: string | null
           budget_code_id: string | null
+          check_in: string | null
+          check_out: string | null
           created_at: string
           creator_id: string | null
           deleted_at: string | null
+          departure_date: string | null
+          emergency_contact: string | null
           first_name: string | null
+          hotel_name: string | null
           id: string
           laboratory_id: string | null
           last_name: string | null
+          needs_insurance: boolean | null
+          needs_passage: boolean | null
           number: number
+          number_of_days: number | null
           observations: string | null
+          preferred_schedule: string | null
+          requires_allowance: boolean | null
+          return_date: string | null
           status: string | null
+          travel_destination: string | null
+          travel_purpose: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          account_holder?: string | null
+          account_number?: string | null
           actions?: string | null
+          allowance_amount?: number | null
           attachments?: string[] | null
+          bank?: string | null
           budget_code_id?: string | null
+          check_in?: string | null
+          check_out?: string | null
           created_at?: string
           creator_id?: string | null
           deleted_at?: string | null
+          departure_date?: string | null
+          emergency_contact?: string | null
           first_name?: string | null
+          hotel_name?: string | null
           id?: string
           laboratory_id?: string | null
           last_name?: string | null
+          needs_insurance?: boolean | null
+          needs_passage?: boolean | null
           number?: number
+          number_of_days?: number | null
           observations?: string | null
+          preferred_schedule?: string | null
+          requires_allowance?: boolean | null
+          return_date?: string | null
           status?: string | null
+          travel_destination?: string | null
+          travel_purpose?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          account_holder?: string | null
+          account_number?: string | null
           actions?: string | null
+          allowance_amount?: number | null
           attachments?: string[] | null
+          bank?: string | null
           budget_code_id?: string | null
+          check_in?: string | null
+          check_out?: string | null
           created_at?: string
           creator_id?: string | null
           deleted_at?: string | null
+          departure_date?: string | null
+          emergency_contact?: string | null
           first_name?: string | null
+          hotel_name?: string | null
           id?: string
           laboratory_id?: string | null
           last_name?: string | null
+          needs_insurance?: boolean | null
+          needs_passage?: boolean | null
           number?: number
+          number_of_days?: number | null
           observations?: string | null
+          preferred_schedule?: string | null
+          requires_allowance?: boolean | null
+          return_date?: string | null
           status?: string | null
+          travel_destination?: string | null
+          travel_purpose?: string | null
           updated_at?: string
           user_id?: string
         }
