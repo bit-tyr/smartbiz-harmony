@@ -16,8 +16,8 @@ interface LoginFormProps {
 }
 
 const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
-  const [email, setEmail] = useState("admin@example.com");
-  const [password, setPassword] = useState("admin123");
+  const [email, setEmail] = useState("compras@gmail.com");
+  const [password, setPassword] = useState("compras123");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
