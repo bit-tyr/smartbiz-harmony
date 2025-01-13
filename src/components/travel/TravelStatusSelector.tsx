@@ -31,10 +31,9 @@ export const TravelStatusSelector = ({
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="pendiente">Pendiente</SelectItem>
-        <SelectItem value="aprobado_por_gerente">Aprobado por Gerente</SelectItem>
-        <SelectItem value="aprobado_por_finanzas">Aprobado por Finanzas</SelectItem>
-        <SelectItem value="rechazado">Rechazado</SelectItem>
-        <SelectItem value="completado">Completado</SelectItem>
+        <SelectItem value="en_proceso">En Proceso</SelectItem>
+        <SelectItem value="aprobado">Aprobado</SelectItem>
+        <SelectItem value="denegado">Denegado</SelectItem>
       </SelectContent>
     </Select>
   );

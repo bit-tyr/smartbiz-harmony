@@ -1,24 +1,20 @@
-export type TravelRequestStatus = 'pendiente' | 'aprobado_por_gerente' | 'aprobado_por_finanzas' | 'rechazado' | 'completado';
+export type TravelRequestStatus = 'pendiente' | 'en_proceso' | 'aprobado' | 'denegado';
 
 export const statusConfig = {
   pendiente: {
     label: "Pendiente",
     className: "bg-yellow-100 text-yellow-800"
   },
-  aprobado_por_gerente: {
-    label: "Aprobado por Gerente",
+  en_proceso: {
+    label: "En Proceso",
     className: "bg-blue-100 text-blue-800"
   },
-  aprobado_por_finanzas: {
-    label: "Aprobado por Finanzas",
+  aprobado: {
+    label: "Aprobado",
     className: "bg-green-100 text-green-800"
   },
-  rechazado: {
-    label: "Rechazado", 
+  denegado: {
+    label: "Denegado", 
     className: "bg-red-100 text-red-800"
-  },
-  completado: {
-    label: "Completado",
-    className: "bg-purple-100 text-purple-800"
   }
 };
