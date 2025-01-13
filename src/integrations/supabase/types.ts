@@ -1065,10 +1065,9 @@ export type Database = {
         | "otros"
       travel_request_status:
         | "pendiente"
-        | "aprobado_por_gerente"
-        | "aprobado_por_finanzas"
-        | "rechazado"
-        | "completado"
+        | "en_proceso"
+        | "aprobado"
+        | "denegado"
     }
     CompositeTypes: {
       [_ in never]: never

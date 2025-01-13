@@ -38,7 +38,7 @@ const App = () => (
                 <SelectArea />
               </ProtectedRoute>
             } />
-            <Route path="/" element={
+            <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Layout>
                   <Dashboard />
@@ -80,6 +80,7 @@ const App = () => (
                 </Layout>
               </ProtectedRoute>
             } />
+            <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </BrowserRouter>
