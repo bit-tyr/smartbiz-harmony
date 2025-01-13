@@ -135,7 +135,7 @@ export const PurchaseRequestDetails = ({ request, onClose }: PurchaseRequestDeta
 
   return (
     <Dialog open={!!request} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex justify-between items-center">
             <DialogTitle>Detalles de la Solicitud #{request.number}</DialogTitle>
@@ -206,10 +206,14 @@ export const PurchaseRequestDetails = ({ request, onClose }: PurchaseRequestDeta
                       ) : "-"}
                     </dd>
                   </div>
+                  <div>
+                    <dt className="text-sm text-gray-500">Email</dt>
+                    <dd>{request.profiles?.email || "-"}</dd>
+                  </div>
                 </dl>
               </div>
               <div>
-                <h3 className="font-semibold mb-4">Detalles del Producto</h3>
+                <h3 className="font-semibold mb-4">Detalles del Producto y Viáticos</h3>
                 {request.purchase_request_items?.[0] && (
                   <dl className="space-y-3">
                     <div>
@@ -248,6 +252,18 @@ export const PurchaseRequestDetails = ({ request, onClose }: PurchaseRequestDeta
                             })}`
                           : "-"}
                       </dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm text-gray-500">Banco</dt>
+                      <dd>{request.bank || "-"}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm text-gray-500">Número de Cuenta</dt>
+                      <dd>{request.account_number || "-"}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm text-gray-500">Titular de la Cuenta</dt>
+                      <dd>{request.account_holder || "-"}</dd>
                     </div>
                   </dl>
                 )}
