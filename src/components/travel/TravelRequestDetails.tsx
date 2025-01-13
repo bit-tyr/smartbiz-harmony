@@ -6,50 +6,14 @@ import {
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TravelExpenseForm } from "./TravelExpenseForm";
-import { TravelExpenseList } from "./TravelExpenseList";
-import { ScrollArea } from "@/components/ui/scroll-area";
-
-interface TravelRequest {
-  id: string;
-  destination: string;
-  departure_date: string;
-  return_date: string;
-  purpose: string;
-  status: string;
-  total_estimated_budget: number;
-  currency: string;
-  first_name?: string;
-  last_name?: string;
-  document_number?: string;
-  birth_date?: string;
-  document_expiry?: string;
-  phone?: string;
-  email?: string;
-  emergency_contact?: string;
-  needs_passage?: boolean;
-  needs_insurance?: boolean;
-  insurance_period?: string;
-  preferred_schedule?: string;
-  requires_allowance?: boolean;
-  allowance_amount?: number;
-  bank?: string;
-  account_number?: string;
-  account_holder?: string;
-  hotel_name?: string;
-  check_in?: string;
-  check_out?: string;
-  number_of_days?: number;
-  additional_observations?: string;
-  laboratory?: {
-    name: string;
-  };
-  budget_code?: {
-    code: string;
-    description: string;
-  };
-}
+import { TravelRequest } from "./types";
+import { Button } from "@/components/ui/button";
+import { Edit2 } from "lucide-react";
+import { useState } from "react";
+import { TravelRequestForm } from "./TravelRequestForm";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface TravelRequestDetailsProps {
   request: TravelRequest | null;
@@ -57,192 +21,191 @@ interface TravelRequestDetailsProps {
 }
 
 export const TravelRequestDetails = ({ request, onClose }: TravelRequestDetailsProps) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
+
   if (!request) return null;
 
   return (
     <Dialog open={!!request} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh]">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Detalles del Viaje a {request.destination}</DialogTitle>
+          <div className="flex justify-between items-center">
+            <DialogTitle>Detalles de la Solicitud de Viaje</DialogTitle>
+            {!request.deleted_at && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditing(true)}
+                className="flex items-center gap-2"
+              >
+                <Edit2 className="h-4 w-4" />
+                <span>Editar</span>
+              </Button>
+            )}
+          </div>
         </DialogHeader>
 
-        <ScrollArea className="h-[calc(90vh-100px)]">
-          <div className="space-y-6 p-4">
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <h3 className="font-semibold">Información General</h3>
+        {isEditing ? (
+          <TravelRequestForm
+            onSubmit={async (values) => {
+              try {
+                setIsSubmitting(true);
+                const { error } = await supabase
+                  .from('travel_requests')
+                  .update(values)
+                  .eq('id', request.id);
+
+                if (error) throw error;
+
+                toast.success("Solicitud de viaje actualizada exitosamente");
+                queryClient.invalidateQueries(['travelRequests']);
+                onClose();
+              } catch (error) {
+                console.error('Error updating travel request:', error);
+                toast.error("Error al actualizar la solicitud");
+              } finally {
+                setIsSubmitting(false);
+              }
+            }}
+            isSubmitting={isSubmitting}
+            onCancel={() => setIsEditing(false)}
+            initialValues={{
+              laboratoryId: request.laboratoryId,
+              budgetCodeId: request.budgetCodeId,
+              firstName: request.firstName,
+              lastName: request.lastName,
+              documentNumber: request.documentNumber,
+              birthDate: request.birthDate,
+              documentExpiry: request.documentExpiry,
+              phone: request.phone,
+              email: request.email,
+              destination: request.destination,
+              departureDate: request.departureDate,
+              returnDate: request.returnDate,
+              travelPurpose: request.travelPurpose,
+              needsPassage: request.needsPassage,
+              needsInsurance: request.needsInsurance,
+              emergencyContact: request.emergencyContact,
+              preferredSchedule: request.preferredSchedule,
+              allowanceAmount: request.allowanceAmount,
+              requiresAllowance: request.requiresAllowance,
+              currency: request.currency,
+              bank: request.bank,
+              accountNumber: request.accountNumber,
+              accountHolder: request.accountHolder,
+              hotelName: request.hotelName,
+              checkIn: request.checkIn,
+              checkOut: request.checkOut,
+              numberOfDays: request.numberOfDays,
+            }}
+            isEditing={true}
+          />
+        ) : (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h3 className="font-semibold mb-2">Información General</h3>
                 <dl className="space-y-2">
                   <div>
                     <dt className="text-sm text-gray-500">Estado</dt>
                     <dd>{request.status}</dd>
                   </div>
                   <div>
+                    <dt className="text-sm text-gray-500">Fecha de Salida</dt>
+                    <dd>{format(new Date(request.departure_date), "PPP", { locale: es })}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-gray-500">Fecha de Retorno</dt>
+                    <dd>{format(new Date(request.return_date), "PPP", { locale: es })}</dd>
+                  </div>
+                  <div>
                     <dt className="text-sm text-gray-500">Destino</dt>
                     <dd>{request.destination}</dd>
                   </div>
                   <div>
-                    <dt className="text-sm text-gray-500">Fechas</dt>
-                    <dd>
-                      {format(new Date(request.departure_date), "PPP", { locale: es })} -{" "}
-                      {format(new Date(request.return_date), "PPP", { locale: es })}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm text-gray-500">Propósito</dt>
-                    <dd>{request.purpose}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm text-gray-500">Presupuesto Estimado</dt>
-                    <dd>
-                      {request.currency} {request.total_estimated_budget}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm text-gray-500">Laboratorio</dt>
-                    <dd>{request.laboratory?.name}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm text-gray-500">Código de Presupuesto</dt>
-                    <dd>{request.budget_code?.code} - {request.budget_code?.description}</dd>
+                    <dt className="text-sm text-gray-500">Propósito del Viaje</dt>
+                    <dd>{request.travel_purpose}</dd>
                   </div>
                 </dl>
               </div>
-
-              <div className="space-y-4">
-                <h3 className="font-semibold">Información Personal</h3>
+              
+              <div>
+                <h3 className="font-semibold mb-2">Información de Viáticos</h3>
                 <dl className="space-y-2">
-                  <div>
-                    <dt className="text-sm text-gray-500">Nombre Completo</dt>
-                    <dd>{request.first_name} {request.last_name}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm text-gray-500">Documento</dt>
-                    <dd>{request.document_number}</dd>
-                  </div>
-                  {request.birth_date && (
+                  {request.requires_allowance && (
+                    <>
+                      <div>
+                        <dt className="text-sm text-gray-500">Monto de Viáticos</dt>
+                        <dd>{request.allowance_amount} {request.currency}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm text-gray-500">Banco</dt>
+                        <dd>{request.bank || "-"}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm text-gray-500">Número de Cuenta</dt>
+                        <dd>{request.account_number || "-"}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm text-gray-500">Titular de la Cuenta</dt>
+                        <dd>{request.account_holder || "-"}</dd>
+                      </div>
+                    </>
+                  )}
+                  {!request.requires_allowance && (
                     <div>
-                      <dt className="text-sm text-gray-500">Fecha de Nacimiento</dt>
-                      <dd>{format(new Date(request.birth_date), "PPP", { locale: es })}</dd>
+                      <dd className="text-gray-500">No requiere viáticos</dd>
                     </div>
                   )}
-                  {request.document_expiry && (
-                    <div>
-                      <dt className="text-sm text-gray-500">Vencimiento de Documento</dt>
-                      <dd>{format(new Date(request.document_expiry), "PPP", { locale: es })}</dd>
-                    </div>
-                  )}
-                  <div>
-                    <dt className="text-sm text-gray-500">Teléfono</dt>
-                    <dd>{request.phone}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm text-gray-500">Email</dt>
-                    <dd>{request.email}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm text-gray-500">Contacto de Emergencia</dt>
-                    <dd>{request.emergency_contact}</dd>
-                  </div>
                 </dl>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <h3 className="font-semibold">Detalles del Viaje</h3>
+            {request.hotel_name && (
+              <div>
+                <h3 className="font-semibold mb-2">Información de Alojamiento</h3>
                 <dl className="space-y-2">
                   <div>
-                    <dt className="text-sm text-gray-500">Requiere Pasaje</dt>
-                    <dd>{request.needs_passage ? "Sí" : "No"}</dd>
+                    <dt className="text-sm text-gray-500">Hotel</dt>
+                    <dd>{request.hotel_name}</dd>
                   </div>
-                  <div>
-                    <dt className="text-sm text-gray-500">Requiere Seguro</dt>
-                    <dd>{request.needs_insurance ? "Sí" : "No"}</dd>
-                  </div>
-                  {request.insurance_period && (
-                    <div>
-                      <dt className="text-sm text-gray-500">Período de Seguro</dt>
-                      <dd>{request.insurance_period}</dd>
-                    </div>
-                  )}
-                  <div>
-                    <dt className="text-sm text-gray-500">Horario Preferido</dt>
-                    <dd>{request.preferred_schedule}</dd>
-                  </div>
-                </dl>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="font-semibold">Información de Alojamiento</h3>
-                <dl className="space-y-2">
-                  {request.hotel_name && (
-                    <div>
-                      <dt className="text-sm text-gray-500">Hotel</dt>
-                      <dd>{request.hotel_name}</dd>
-                    </div>
-                  )}
                   {request.check_in && request.check_out && (
-                    <div>
-                      <dt className="text-sm text-gray-500">Fechas de Hospedaje</dt>
-                      <dd>
-                        {format(new Date(request.check_in), "PPP", { locale: es })} -{" "}
-                        {format(new Date(request.check_out), "PPP", { locale: es })}
-                      </dd>
-                    </div>
+                    <>
+                      <div>
+                        <dt className="text-sm text-gray-500">Check-in</dt>
+                        <dd>{format(new Date(request.check_in), "PPP", { locale: es })}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm text-gray-500">Check-out</dt>
+                        <dd>{format(new Date(request.check_out), "PPP", { locale: es })}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm text-gray-500">Número de Días</dt>
+                        <dd>{request.number_of_days}</dd>
+                      </div>
+                    </>
                   )}
-                  <div>
-                    <dt className="text-sm text-gray-500">Número de Días</dt>
-                    <dd>{request.number_of_days}</dd>
-                  </div>
                 </dl>
               </div>
-            </div>
+            )}
 
-            {request.requires_allowance && (
-              <div className="space-y-4">
-                <h3 className="font-semibold">Información de Viáticos</h3>
-                <dl className="space-y-2">
-                  <div>
-                    <dt className="text-sm text-gray-500">Monto de Viáticos</dt>
-                    <dd>{request.currency} {request.allowance_amount}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm text-gray-500">Banco</dt>
-                    <dd>{request.bank}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm text-gray-500">Número de Cuenta</dt>
-                    <dd>{request.account_number}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm text-gray-500">Titular de la Cuenta</dt>
-                    <dd>{request.account_holder}</dd>
-                  </div>
-                </dl>
+            {request.emergency_contact && (
+              <div>
+                <h3 className="font-semibold mb-2">Contacto de Emergencia</h3>
+                <p>{request.emergency_contact}</p>
               </div>
             )}
 
             {request.additional_observations && (
-              <div className="space-y-4">
-                <h3 className="font-semibold">Observaciones Adicionales</h3>
-                <p className="text-sm">{request.additional_observations}</p>
+              <div>
+                <h3 className="font-semibold mb-2">Observaciones Adicionales</h3>
+                <p>{request.additional_observations}</p>
               </div>
             )}
-
-            <Tabs defaultValue="expenses" className="w-full">
-              <TabsList>
-                <TabsTrigger value="expenses">Gastos</TabsTrigger>
-                <TabsTrigger value="new-expense">Nuevo Gasto</TabsTrigger>
-              </TabsList>
-              <TabsContent value="expenses">
-                <TravelExpenseList travelRequestId={request.id} />
-              </TabsContent>
-              <TabsContent value="new-expense">
-                <TravelExpenseForm travelRequestId={request.id} />
-              </TabsContent>
-            </Tabs>
           </div>
-        </ScrollArea>
+        )}
       </DialogContent>
     </Dialog>
   );
