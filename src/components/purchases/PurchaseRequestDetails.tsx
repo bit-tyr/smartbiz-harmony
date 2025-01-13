@@ -36,11 +36,9 @@ export const PurchaseRequestDetails = ({ request, onClose }: PurchaseRequestDeta
     try {
       setIsSubmitting(true);
 
-      // Obtener la sesión del usuario actual y su perfil
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData?.session?.user) throw new Error("No hay sesión de usuario");
 
-      // Obtener el nombre del usuario que realiza el cambio
       const { data: userProfile, error: userError } = await supabase
         .from('profiles')
         .select('first_name, last_name')
@@ -51,7 +49,6 @@ export const PurchaseRequestDetails = ({ request, onClose }: PurchaseRequestDeta
 
       const userName = `${userProfile.first_name} ${userProfile.last_name}`;
 
-      // Identificar qué campos han cambiado
       const changedFields = [];
       if (values.laboratoryId !== request.laboratory?.id) changedFields.push('laboratorio');
       if (values.budgetCodeId !== request.budget_code?.id) changedFields.push('código presupuestal');
@@ -63,7 +60,6 @@ export const PurchaseRequestDetails = ({ request, onClose }: PurchaseRequestDeta
         if (values.currency !== request.purchase_request_items[0].currency) changedFields.push('moneda');
       }
 
-      // Actualizar la solicitud principal
       const { error: requestError } = await supabase
         .from('purchase_requests')
         .update({
@@ -75,7 +71,6 @@ export const PurchaseRequestDetails = ({ request, onClose }: PurchaseRequestDeta
 
       if (requestError) throw requestError;
 
-      // Actualizar el item de la solicitud
       if (request.purchase_request_items?.[0]) {
         const { error: itemError } = await supabase
           .from('purchase_request_items')
@@ -90,7 +85,6 @@ export const PurchaseRequestDetails = ({ request, onClose }: PurchaseRequestDeta
         if (itemError) throw itemError;
       }
 
-      // Crear notificación para el creador de la solicitud si hubo cambios
       if (sessionData.session.user.id !== request.user_id && changedFields.length > 0) {
         const changedFieldsText = changedFields.join(', ');
         const { error: notificationError } = await supabase
@@ -108,8 +102,8 @@ export const PurchaseRequestDetails = ({ request, onClose }: PurchaseRequestDeta
         }
       }
 
+      await queryClient.invalidateQueries({ queryKey: ['purchaseRequests'] });
       toast.success("Solicitud actualizada exitosamente");
-      queryClient.invalidateQueries({ queryKey: ['purchaseRequests'] });
       setIsEditing(false);
       onClose();
     } catch (error) {
@@ -131,9 +125,17 @@ export const PurchaseRequestDetails = ({ request, onClose }: PurchaseRequestDeta
     observations: request.observations || ''
   } : null;
 
+  const statusConfig = {
+    pending: { label: "Pendiente", className: "bg-yellow-100 text-yellow-800" },
+    in_process: { label: "En Proceso", className: "bg-blue-100 text-blue-800" },
+    purchased: { label: "Comprado", className: "bg-green-100 text-green-800" },
+    ready_for_delivery: { label: "Listo para Entrega", className: "bg-purple-100 text-purple-800" },
+    delivered: { label: "Entregado", className: "bg-gray-100 text-gray-800" }
+  };
+
   return (
     <Dialog open={!!request} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
           <div className="flex justify-between items-center">
             <DialogTitle>Detalles de la Solicitud #{request.number}</DialogTitle>
@@ -162,16 +164,20 @@ export const PurchaseRequestDetails = ({ request, onClose }: PurchaseRequestDeta
           />
         ) : (
           <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-6">
               <div>
-                <h3 className="font-semibold mb-2">Información General</h3>
-                <dl className="space-y-2">
+                <h3 className="font-semibold mb-4">Información General</h3>
+                <dl className="space-y-3">
                   <div>
                     <dt className="text-sm text-gray-500">Estado</dt>
-                    <dd>{request.status}</dd>
+                    <dd>
+                      <span className={`inline-block px-2 py-1 rounded-full text-sm ${statusConfig[request.status]?.className}`}>
+                        {statusConfig[request.status]?.label || request.status}
+                      </span>
+                    </dd>
                   </div>
                   <div>
-                    <dt className="text-sm text-gray-500">Fecha</dt>
+                    <dt className="text-sm text-gray-500">Fecha de Creación</dt>
                     <dd>{format(new Date(request.created_at), "PPP", { locale: es })}</dd>
                   </div>
                   <div>
@@ -192,12 +198,20 @@ export const PurchaseRequestDetails = ({ request, onClose }: PurchaseRequestDeta
                       ) : "-"}
                     </dd>
                   </div>
+                  <div>
+                    <dt className="text-sm text-gray-500">Creado por</dt>
+                    <dd>
+                      {request.profiles ? (
+                        `${request.profiles.first_name} ${request.profiles.last_name}`
+                      ) : "-"}
+                    </dd>
+                  </div>
                 </dl>
               </div>
               <div>
-                <h3 className="font-semibold mb-2">Detalles del Producto</h3>
+                <h3 className="font-semibold mb-4">Detalles del Producto</h3>
                 {request.purchase_request_items?.[0] && (
-                  <dl className="space-y-2">
+                  <dl className="space-y-3">
                     <div>
                       <dt className="text-sm text-gray-500">Producto</dt>
                       <dd>{request.purchase_request_items[0].product?.name || "-"}</dd>
@@ -214,7 +228,24 @@ export const PurchaseRequestDetails = ({ request, onClose }: PurchaseRequestDeta
                       <dt className="text-sm text-gray-500">Precio Unitario</dt>
                       <dd>
                         {request.purchase_request_items[0].unit_price
-                          ? `${request.purchase_request_items[0].currency} ${request.purchase_request_items[0].unit_price}`
+                          ? `${request.purchase_request_items[0].currency} ${request.purchase_request_items[0].unit_price.toLocaleString('es-PE', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2
+                            })}`
+                          : "-"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm text-gray-500">Precio Total</dt>
+                      <dd>
+                        {request.purchase_request_items[0].unit_price
+                          ? `${request.purchase_request_items[0].currency} ${(
+                              request.purchase_request_items[0].unit_price * 
+                              request.purchase_request_items[0].quantity
+                            ).toLocaleString('es-PE', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2
+                            })}`
                           : "-"}
                       </dd>
                     </div>
@@ -222,12 +253,14 @@ export const PurchaseRequestDetails = ({ request, onClose }: PurchaseRequestDeta
                 )}
               </div>
             </div>
+            
             {request.observations && (
               <div>
                 <h3 className="font-semibold mb-2">Observaciones</h3>
-                <p className="text-gray-700">{request.observations}</p>
+                <p className="text-gray-700 whitespace-pre-wrap">{request.observations}</p>
               </div>
             )}
+
             <div>
               <h3 className="font-semibold mb-4">Archivos Adjuntos</h3>
               <div className="space-y-4">
