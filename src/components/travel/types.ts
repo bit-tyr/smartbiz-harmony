@@ -44,4 +44,4 @@ export interface TravelRequest {
   additional_observations?: string;
 }
 
-export type TravelRequestStatus = 'pendiente' | 'en_proceso' | 'aprobado' | 'rechazado';
+export type TravelRequestStatus = 'pendiente' | 'aprobado_por_gerente' | 'aprobado_por_finanzas' | 'rechazado' | 'completado';

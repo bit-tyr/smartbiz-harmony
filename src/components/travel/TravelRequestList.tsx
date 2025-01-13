@@ -48,7 +48,7 @@ export const TravelRequestList = ({ onSelectRequest }: TravelRequestListProps) =
     getUserProfile();
   }, []);
 
-  const { data: requests, isLoading, refetch } = useQuery({
+  const { data: requests, isLoading } = useQuery({
     queryKey: ['travelRequests'],
     queryFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -124,10 +124,9 @@ export const TravelRequestList = ({ onSelectRequest }: TravelRequestListProps) =
         return;
       }
 
-      await refetch();
       toast.success('Estado actualizado exitosamente');
     } catch (error) {
-      console.error('Error al actualizar estado:', error);
+      console.error('Error:', error);
       toast.error('Error al actualizar el estado');
     }
   };
@@ -135,11 +134,6 @@ export const TravelRequestList = ({ onSelectRequest }: TravelRequestListProps) =
   if (isLoading) {
     return <div>Cargando solicitudes...</div>;
   }
-
-  const canUpdateStatus = userProfile?.roles?.name?.toLowerCase() === 'manager' ||
-                         userProfile?.roles?.name?.toLowerCase() === 'finance' ||
-                         userProfile?.is_admin ||
-                         userProfile?.roles?.name?.toLowerCase() === 'purchases';
 
   return (
     <Table>
@@ -173,7 +167,7 @@ export const TravelRequestList = ({ onSelectRequest }: TravelRequestListProps) =
               <TravelStatusSelector
                 status={request.status as TravelRequestStatus}
                 onStatusChange={(status) => handleStatusChange(request.id, status)}
-                disabled={!canUpdateStatus}
+                disabled={!userProfile?.roles?.name?.toLowerCase() || userProfile?.roles?.name?.toLowerCase() === 'user'}
               />
             </TableCell>
             <TableCell>
