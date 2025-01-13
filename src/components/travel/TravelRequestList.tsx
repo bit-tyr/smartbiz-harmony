@@ -119,7 +119,7 @@ export const TravelRequestList = ({ onSelectRequest }: TravelRequestListProps) =
         .eq('id', requestId);
 
       if (error) {
-        console.error('Error al actualizar estado:', error);
+        console.error('Error:', error);
         toast.error("Error al actualizar el estado");
         return;
       }
