@@ -12,7 +12,7 @@ export interface BudgetCode {
 export interface Profile {
   first_name: string;
   last_name: string;
-  email: string;
+  email?: string; // Made optional since it might not come from the DB query
 }
 
 export interface PurchaseRequestItem {
