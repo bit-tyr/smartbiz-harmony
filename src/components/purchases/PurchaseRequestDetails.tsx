@@ -3,6 +3,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -16,8 +17,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { AttachmentSection } from "./form-sections/AttachmentSection";
 import { AttachmentList } from "./form-sections/AttachmentList";
-import { useForm } from "react-hook-form";
 import { AttachmentUploader } from "./form-sections/AttachmentUploader";
+import { useForm } from "react-hook-form";
 
 interface PurchaseRequestDetailsProps {
   request: PurchaseRequest | null;
@@ -151,6 +152,9 @@ export const PurchaseRequestDetails = ({ request, onClose }: PurchaseRequestDeta
               </Button>
             )}
           </div>
+          <DialogDescription>
+            Información detallada de la solicitud
+          </DialogDescription>
         </DialogHeader>
 
         {isEditing && initialValues ? (
@@ -171,8 +175,8 @@ export const PurchaseRequestDetails = ({ request, onClose }: PurchaseRequestDeta
                   <div>
                     <dt className="text-sm text-gray-500">Estado</dt>
                     <dd>
-                      <span className={`inline-block px-2 py-1 rounded-full text-sm ${statusConfig[request.status]?.className}`}>
-                        {statusConfig[request.status]?.label || request.status}
+                      <span className={`inline-block px-2 py-1 rounded-full text-sm ${statusConfig[request.status as keyof typeof statusConfig]?.className}`}>
+                        {statusConfig[request.status as keyof typeof statusConfig]?.label || request.status}
                       </span>
                     </dd>
                   </div>
