@@ -22,31 +22,31 @@ export const TravelDetailsSection = ({ request }: TravelDetailsSectionProps) => 
         </div>
         <div>
           <dt className="text-sm text-gray-500">Fecha de Salida</dt>
-          <dd>{formatDate(request.departureDate)}</dd>
+          <dd>{formatDate(request.departure_date)}</dd>
         </div>
         <div>
           <dt className="text-sm text-gray-500">Fecha de Retorno</dt>
-          <dd>{formatDate(request.returnDate)}</dd>
+          <dd>{formatDate(request.return_date)}</dd>
         </div>
         <div>
           <dt className="text-sm text-gray-500">Propósito del Viaje</dt>
-          <dd>{request.travelPurpose || '-'}</dd>
+          <dd>{request.travel_purpose || '-'}</dd>
         </div>
         <div>
           <dt className="text-sm text-gray-500">Requiere Pasaje</dt>
-          <dd>{request.needsPassage ? 'Sí' : 'No'}</dd>
+          <dd>{request.needs_passage ? 'Sí' : 'No'}</dd>
         </div>
         <div>
           <dt className="text-sm text-gray-500">Requiere Seguro</dt>
-          <dd>{request.needsInsurance ? 'Sí' : 'No'}</dd>
+          <dd>{request.needs_insurance ? 'Sí' : 'No'}</dd>
         </div>
         <div>
           <dt className="text-sm text-gray-500">Horario Preferido</dt>
-          <dd>{request.preferredSchedule || '-'}</dd>
+          <dd>{request.preferred_schedule || '-'}</dd>
         </div>
         <div>
           <dt className="text-sm text-gray-500">Contacto de Emergencia</dt>
-          <dd>{request.emergencyContact || '-'}</dd>
+          <dd>{request.emergency_contact || '-'}</dd>
         </div>
       </dl>
     </div>

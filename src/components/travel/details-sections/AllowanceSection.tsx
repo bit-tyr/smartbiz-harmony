@@ -5,7 +5,7 @@ interface AllowanceSectionProps {
 }
 
 export const AllowanceSection = ({ request }: AllowanceSectionProps) => {
-  if (!request.requiresAllowance) {
+  if (!request.requires_allowance) {
     return (
       <div>
         <h3 className="font-semibold mb-4">Viáticos</h3>
@@ -20,7 +20,7 @@ export const AllowanceSection = ({ request }: AllowanceSectionProps) => {
       <dl className="space-y-3">
         <div>
           <dt className="text-sm text-gray-500">Monto</dt>
-          <dd>{request.allowanceAmount} {request.currency}</dd>
+          <dd>{request.allowance_amount} {request.currency}</dd>
         </div>
         <div>
           <dt className="text-sm text-gray-500">Banco</dt>
@@ -28,11 +28,11 @@ export const AllowanceSection = ({ request }: AllowanceSectionProps) => {
         </div>
         <div>
           <dt className="text-sm text-gray-500">Número de Cuenta</dt>
-          <dd>{request.accountNumber || '-'}</dd>
+          <dd>{request.account_number || '-'}</dd>
         </div>
         <div>
           <dt className="text-sm text-gray-500">Titular de la Cuenta</dt>
-          <dd>{request.accountHolder || '-'}</dd>
+          <dd>{request.account_holder || '-'}</dd>
         </div>
       </dl>
     </div>
