@@ -12,6 +12,7 @@ export interface BudgetCode {
 export interface Profile {
   first_name: string;
   last_name: string;
+  email: string; // Added missing email field
 }
 
 export interface PurchaseRequestItem {
@@ -45,4 +46,7 @@ export interface PurchaseRequest {
   budget_code?: BudgetCode;
   profiles?: Profile;
   purchase_request_items?: PurchaseRequestItem[];
+  bank?: string;
+  account_number?: string;
+  account_holder?: string;
 }

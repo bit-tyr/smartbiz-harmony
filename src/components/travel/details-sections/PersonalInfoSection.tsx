@@ -18,19 +18,19 @@ export const PersonalInfoSection = ({ request }: PersonalInfoSectionProps) => {
       <dl className="space-y-3">
         <div>
           <dt className="text-sm text-gray-500">Nombre Completo</dt>
-          <dd>{request.first_name} {request.last_name}</dd>
+          <dd>{request.firstName} {request.lastName}</dd>
         </div>
         <div>
           <dt className="text-sm text-gray-500">Documento</dt>
-          <dd>{request.document_number || '-'}</dd>
+          <dd>{request.documentNumber || '-'}</dd>
         </div>
         <div>
           <dt className="text-sm text-gray-500">Fecha de Nacimiento</dt>
-          <dd>{formatDate(request.birth_date)}</dd>
+          <dd>{formatDate(request.birthDate)}</dd>
         </div>
         <div>
           <dt className="text-sm text-gray-500">Vencimiento del Documento</dt>
-          <dd>{formatDate(request.document_expiry)}</dd>
+          <dd>{formatDate(request.documentExpiry)}</dd>
         </div>
         <div>
           <dt className="text-sm text-gray-500">Teléfono</dt>

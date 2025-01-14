@@ -28,19 +28,6 @@ export interface TravelRequest {
   checkIn: string | null;
   checkOut: string | null;
   numberOfDays: number;
-  deleted_at?: string | null;
-  departure_date: string;
-  return_date: string;
-  travel_purpose: string;
-  emergency_contact: string;
-  requires_allowance: boolean;
-  allowance_amount: number;
-  account_number: string;
-  account_holder: string;
-  hotel_name: string;
-  check_in: string | null;
-  check_out: string | null;
-  number_of_days: number;
   additional_observations?: string;
 }
 
