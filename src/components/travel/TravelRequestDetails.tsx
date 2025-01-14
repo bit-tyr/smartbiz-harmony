@@ -30,29 +30,6 @@ export const TravelRequestDetails = ({ request, onClose }: TravelRequestDetailsP
 
   if (!request) return null;
 
-  const formattedRequest = {
-    ...request,
-    birthDate: request.birth_date ? new Date(request.birth_date) : undefined,
-    documentExpiry: request.document_expiry ? new Date(request.document_expiry) : undefined,
-    checkIn: request.check_in ? new Date(request.check_in) : undefined,
-    checkOut: request.check_out ? new Date(request.check_out) : undefined,
-    // Map other snake_case to camelCase properties
-    hotelName: request.hotel_name,
-    accountNumber: request.account_number,
-    accountHolder: request.account_holder,
-    requiresAllowance: request.requires_allowance,
-    allowanceAmount: request.allowance_amount,
-    numberOfDays: request.number_of_days,
-    needsPassage: request.needs_passage,
-    needsInsurance: request.needs_insurance,
-    preferredSchedule: request.preferred_schedule,
-    documentNumber: request.document_number,
-    firstName: request.first_name,
-    lastName: request.last_name,
-    laboratoryId: request.laboratory_id,
-    budgetCodeId: request.budget_code_id
-  };
-
   const handleSubmit = async (values: any) => {
     try {
       setIsSubmitting(true);
@@ -99,8 +76,8 @@ export const TravelRequestDetails = ({ request, onClose }: TravelRequestDetailsP
             </Button>
           </div>
           <DialogDescription>
-            Estado: <span className={`inline-block px-2 py-1 rounded-full text-sm ${statusConfig[request.status]?.className}`}>
-              {statusConfig[request.status]?.label}
+            Estado: <span className={`inline-block px-2 py-1 rounded-full text-sm ${statusConfig[request.status as keyof typeof statusConfig]?.className}`}>
+              {statusConfig[request.status as keyof typeof statusConfig]?.label}
             </span>
           </DialogDescription>
         </DialogHeader>

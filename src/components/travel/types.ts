@@ -22,7 +22,7 @@ export interface TravelRequest {
   last_name?: string;
   second_last_name?: string;
   document_number?: string;
-  birth_date?: string; // Changed from Date to string to match DB
+  birth_date?: string;
   document_expiry?: string;
   phone?: string;
   email?: string;
