@@ -7,13 +7,18 @@ interface AccommodationSectionProps {
 }
 
 export const AccommodationSection = ({ request }: AccommodationSectionProps) => {
-  const formatDate = (date: string | null) => {
+  const formatDate = (date: string | null | undefined) => {
     if (!date) return '-';
     return format(new Date(date), "PPP", { locale: es });
   };
 
   if (!request.hotel_name) {
-    return null;
+    return (
+      <div>
+        <h3 className="font-semibold mb-4">Alojamiento</h3>
+        <p className="text-gray-500">No requiere alojamiento</p>
+      </div>
+    );
   }
 
   return (
@@ -34,7 +39,7 @@ export const AccommodationSection = ({ request }: AccommodationSectionProps) => 
         </div>
         <div>
           <dt className="text-sm text-gray-500">Número de Días</dt>
-          <dd>{request.number_of_days}</dd>
+          <dd>{request.number_of_days || '-'}</dd>
         </div>
       </dl>
     </div>

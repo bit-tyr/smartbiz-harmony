@@ -14,13 +14,21 @@ export const AllowanceSection = ({ request }: AllowanceSectionProps) => {
     );
   }
 
+  const formatCurrency = (amount: number | null | undefined) => {
+    if (amount == null) return '-';
+    return new Intl.NumberFormat('es-UY', {
+      style: 'currency',
+      currency: request.currency || 'USD'
+    }).format(amount);
+  };
+
   return (
     <div>
       <h3 className="font-semibold mb-4">Viáticos</h3>
       <dl className="space-y-3">
         <div>
           <dt className="text-sm text-gray-500">Monto</dt>
-          <dd>{request.allowance_amount} {request.currency}</dd>
+          <dd>{formatCurrency(request.allowance_amount)}</dd>
         </div>
         <div>
           <dt className="text-sm text-gray-500">Banco</dt>

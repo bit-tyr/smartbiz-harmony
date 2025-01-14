@@ -7,7 +7,7 @@ interface PersonalInfoSectionProps {
 }
 
 export const PersonalInfoSection = ({ request }: PersonalInfoSectionProps) => {
-  const formatDate = (date: string | null) => {
+  const formatDate = (date: string | null | undefined) => {
     if (!date) return '-';
     return format(new Date(date), "PPP", { locale: es });
   };
@@ -18,7 +18,7 @@ export const PersonalInfoSection = ({ request }: PersonalInfoSectionProps) => {
       <dl className="space-y-3">
         <div>
           <dt className="text-sm text-gray-500">Nombre Completo</dt>
-          <dd>{request.first_name} {request.last_name}</dd>
+          <dd>{request.first_name} {request.last_name} {request.second_last_name}</dd>
         </div>
         <div>
           <dt className="text-sm text-gray-500">Documento</dt>

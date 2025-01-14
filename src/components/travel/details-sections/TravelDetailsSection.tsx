@@ -7,7 +7,7 @@ interface TravelDetailsSectionProps {
 }
 
 export const TravelDetailsSection = ({ request }: TravelDetailsSectionProps) => {
-  const formatDate = (date: string | null) => {
+  const formatDate = (date: string | null | undefined) => {
     if (!date) return '-';
     return format(new Date(date), "PPP", { locale: es });
   };
@@ -39,6 +39,10 @@ export const TravelDetailsSection = ({ request }: TravelDetailsSectionProps) => 
         <div>
           <dt className="text-sm text-gray-500">Requiere Seguro</dt>
           <dd>{request.needs_insurance ? 'Sí' : 'No'}</dd>
+        </div>
+        <div>
+          <dt className="text-sm text-gray-500">Período de Seguro</dt>
+          <dd>{request.insurance_period || '-'}</dd>
         </div>
         <div>
           <dt className="text-sm text-gray-500">Horario Preferido</dt>
