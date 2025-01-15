@@ -13,7 +13,7 @@ import { PurchaseRequestView } from "@/components/purchases/PurchaseRequestView"
 import { FormsTab } from "@/components/purchases/tabs/FormsTab";
 import { FaqTab } from "@/components/purchases/tabs/FaqTab";
 import { usePurchaseRequests } from "@/hooks/usePurchaseRequests";
-import { PurchaseRequest } from "@/components/purchases/types";
+import { PurchaseRequest, TravelRequest } from "@/components/purchases/types";
 import { AttachmentSection } from "@/components/purchases/form-sections/AttachmentSection";
 import { sanitizeFileName } from "@/components/purchases/form-sections/AttachmentSection";
 import { CreateTravelRequestDialog } from "@/components/travel/CreateTravelRequestDialog";
@@ -22,7 +22,8 @@ import { TravelRequestList } from "@/components/travel/TravelRequestList";
 const Compras = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentView, setCurrentView] = useState<'current' | 'history'>('current');
-  const [selectedRequest, setSelectedRequest] = useState<PurchaseRequest | null>(null);
+  const [selectedPurchaseRequest, setSelectedPurchaseRequest] = useState<PurchaseRequest | null>(null);
+  const [selectedTravelRequest, setSelectedTravelRequest] = useState<TravelRequest | null>(null);
   const [showPurchaseForm, setShowPurchaseForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -254,7 +255,7 @@ const Compras = () => {
               <PurchaseRequestList 
                 requests={purchaseRequests || []} 
                 isLoading={isLoading}
-                onSelectRequest={setSelectedRequest}
+                onSelectRequest={setSelectedPurchaseRequest}
               />
             </CardContent>
           </Card>
@@ -272,7 +273,7 @@ const Compras = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
-              <TravelRequestList onSelectRequest={setSelectedRequest} />
+              <TravelRequestList onSelectRequest={setSelectedTravelRequest} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -367,10 +368,10 @@ const Compras = () => {
         </TabsContent>
       </Tabs>
 
-      {selectedRequest && (
+      {selectedPurchaseRequest && (
         <PurchaseRequestView 
-          request={selectedRequest} 
-          onClose={() => setSelectedRequest(null)} 
+          request={selectedPurchaseRequest} 
+          onClose={() => setSelectedPurchaseRequest(null)} 
         />
       )}
 
