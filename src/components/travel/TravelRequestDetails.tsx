@@ -35,7 +35,13 @@ export const TravelRequestDetails = ({ request, onClose }: TravelRequestDetailsP
       setIsSubmitting(true);
       const { error } = await supabase
         .from('travel_requests')
-        .update(values)
+        .update({
+          ...values,
+          allowance_amount: values.allowanceAmount,
+          account_number: values.accountNumber,
+          account_holder: values.accountHolder,
+          hotel_name: values.hotelName
+        })
         .eq('id', request.id);
 
       if (error) throw error;
