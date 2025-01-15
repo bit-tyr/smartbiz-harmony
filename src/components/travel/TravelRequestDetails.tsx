@@ -34,23 +34,10 @@ export const TravelRequestDetails = ({ request, onClose }: TravelRequestDetailsP
     try {
       setIsSubmitting(true);
       
-      // Map form values to database column names
-      const mappedValues = {
-        ...values,
-        account_holder: values.accountHolder,
-        account_number: values.accountNumber,
-        allowance_amount: values.allowanceAmount,
-        hotel_name: values.hotelName,
-        // Remove the camelCase properties to avoid conflicts
-        accountHolder: undefined,
-        accountNumber: undefined,
-        allowanceAmount: undefined,
-        hotelName: undefined
-      };
-
+      // Keep the values as they are, since the database columns match the form field names
       const { error } = await supabase
         .from('travel_requests')
-        .update(mappedValues)
+        .update(values)
         .eq('id', request.id);
 
       if (error) throw error;
