@@ -13,7 +13,8 @@ import { PurchaseRequestView } from "@/components/purchases/PurchaseRequestView"
 import { FormsTab } from "@/components/purchases/tabs/FormsTab";
 import { FaqTab } from "@/components/purchases/tabs/FaqTab";
 import { usePurchaseRequests } from "@/hooks/usePurchaseRequests";
-import { PurchaseRequest, TravelRequest } from "@/components/purchases/types";
+import { PurchaseRequest } from "@/components/purchases/types";
+import { TravelRequest } from "@/components/travel/types";
 import { AttachmentSection } from "@/components/purchases/form-sections/AttachmentSection";
 import { sanitizeFileName } from "@/components/purchases/form-sections/AttachmentSection";
 import { CreateTravelRequestDialog } from "@/components/travel/CreateTravelRequestDialog";
