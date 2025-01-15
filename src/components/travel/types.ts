@@ -36,9 +36,9 @@ export interface TravelRequest {
   requires_allowance?: boolean;
   allowance_amount?: number;
   bank?: string;
-  account_number?: string;
-  account_holder?: string;
-  hotel_name?: string;
+  accountNumber?: string;
+  accountHolder?: string;
+  hotelName?: string;
   check_in?: string;
   check_out?: string;
   number_of_days?: number;

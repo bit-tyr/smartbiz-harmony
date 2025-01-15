@@ -805,8 +805,6 @@ export type Database = {
       }
       travel_requests: {
         Row: {
-          accountholder: string | null
-          accountnumber: string | null
           additional_observations: string | null
           allowance_amount: number | null
           bank: string | null
@@ -826,7 +824,6 @@ export type Database = {
           finance_approver_id: string | null
           finance_notes: string | null
           first_name: string | null
-          hotelname: string | null
           id: string
           insurance_period: string | null
           laboratory_id: string
@@ -851,8 +848,6 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          accountholder?: string | null
-          accountnumber?: string | null
           additional_observations?: string | null
           allowance_amount?: number | null
           bank?: string | null
@@ -872,7 +867,6 @@ export type Database = {
           finance_approver_id?: string | null
           finance_notes?: string | null
           first_name?: string | null
-          hotelname?: string | null
           id?: string
           insurance_period?: string | null
           laboratory_id: string
@@ -897,8 +891,6 @@ export type Database = {
           user_id: string
         }
         Update: {
-          accountholder?: string | null
-          accountnumber?: string | null
           additional_observations?: string | null
           allowance_amount?: number | null
           bank?: string | null
@@ -918,7 +910,6 @@ export type Database = {
           finance_approver_id?: string | null
           finance_notes?: string | null
           first_name?: string | null
-          hotelname?: string | null
           id?: string
           insurance_period?: string | null
           laboratory_id?: string
@@ -1025,8 +1016,6 @@ export type Database = {
           notes?: string
         }
         Returns: {
-          accountholder: string | null
-          accountnumber: string | null
           additional_observations: string | null
           allowance_amount: number | null
           bank: string | null
@@ -1046,7 +1035,6 @@ export type Database = {
           finance_approver_id: string | null
           finance_notes: string | null
           first_name: string | null
-          hotelname: string | null
           id: string
           insurance_period: string | null
           laboratory_id: string

@@ -61,9 +61,9 @@ export const CreateTravelRequestDialog = ({
           requires_allowance: values.requiresAllowance,
           allowance_amount: values.allowanceAmount,
           bank: values.bank,
-          account_number: values.accountNumber,
-          account_holder: values.accountHolder,
-          hotel_name: values.hotelName,
+          accountNumber: values.accountNumber,
+          accountHolder: values.accountHolder,
+          hotelName: values.hotelName,
           check_in: values.checkIn?.toISOString().split('T')[0],
           check_out: values.checkOut?.toISOString().split('T')[0],
           number_of_days: values.numberOfDays
