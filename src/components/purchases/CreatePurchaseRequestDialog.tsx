@@ -27,7 +27,6 @@ export const CreatePurchaseRequestDialog = ({
 
   useEffect(() => {
     if (open && !purchaseRequestId) {
-      // Generar un UUID para la nueva solicitud
       setPurchaseRequestId(crypto.randomUUID());
     }
     if (!open) {
@@ -40,14 +39,12 @@ export const CreatePurchaseRequestDialog = ({
     setIsSubmitting(true);
 
     try {
-      // Obtener la sesión del usuario
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
         toast.error("No hay sesión de usuario");
         return;
       }
 
-      // Crear la solicitud principal
       const { error: requestError } = await supabase
         .from('purchase_requests')
         .insert({
@@ -56,7 +53,11 @@ export const CreatePurchaseRequestDialog = ({
           budget_code_id: values.budgetCodeId,
           observations: values.observations || null,
           status: 'pending',
-          user_id: session.user.id
+          user_id: session.user.id,
+          allowance_amount: values.allowanceAmount,
+          account_number: values.accountNumber,
+          account_holder: values.accountHolder,
+          hotel_name: values.hotelName
         });
 
       if (requestError) {
@@ -65,7 +66,6 @@ export const CreatePurchaseRequestDialog = ({
         return;
       }
 
-      // Crear el item de la solicitud
       const { error: itemError } = await supabase
         .from('purchase_request_items')
         .insert({
@@ -78,7 +78,6 @@ export const CreatePurchaseRequestDialog = ({
 
       if (itemError) {
         console.error('Error al crear el item de la solicitud:', itemError);
-        // Eliminar la solicitud principal si falla la creación del item
         await supabase
           .from('purchase_requests')
           .delete()
