@@ -187,19 +187,19 @@ const TravelRequestDetailsView = ({ request }: TravelRequestDetailsViewProps) =>
                     <p className="text-sm text-gray-500">Número de Cuenta</p>
                     <div className="flex gap-2 items-center">
                       <CreditCard className="h-4 w-4 text-gray-500" />
-                      <p className="font-medium">{request.account_number || '-'}</p>
+                      <p className="font-medium">{request.accountNumber || '-'}</p>
                     </div>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Titular de la Cuenta</p>
-                    <p className="font-medium">{request.account_holder || '-'}</p>
+                    <p className="font-medium">{request.accountHolder || '-'}</p>
                   </div>
                 </div>
               </section>
             )}
 
             {/* Alojamiento */}
-            {request.hotel_name && (
+            {request.hotelName && (
               <section className="space-y-4">
                 <div className="flex items-center gap-2">
                   <Hotel className="h-5 w-5 text-corporate-500" />
@@ -209,7 +209,7 @@ const TravelRequestDetailsView = ({ request }: TravelRequestDetailsViewProps) =>
                 <div className="grid gap-3">
                   <div>
                     <p className="text-sm text-gray-500">Hotel</p>
-                    <p className="font-medium">{request.hotel_name}</p>
+                    <p className="font-medium">{request.hotelName}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Check-in</p>

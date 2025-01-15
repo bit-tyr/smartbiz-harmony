@@ -36,11 +36,11 @@ export const AllowanceSection = ({ request }: AllowanceSectionProps) => {
         </div>
         <div>
           <dt className="text-sm text-gray-500">Número de Cuenta</dt>
-          <dd>{request.account_number || '-'}</dd>
+          <dd>{request.accountNumber || '-'}</dd>
         </div>
         <div>
           <dt className="text-sm text-gray-500">Titular de la Cuenta</dt>
-          <dd>{request.account_holder || '-'}</dd>
+          <dd>{request.accountHolder || '-'}</dd>
         </div>
       </dl>
     </div>

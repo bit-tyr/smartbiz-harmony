@@ -12,7 +12,7 @@ export const AccommodationSection = ({ request }: AccommodationSectionProps) => 
     return format(new Date(date), "PPP", { locale: es });
   };
 
-  if (!request.hotel_name) {
+  if (!request.hotelName) {
     return (
       <div>
         <h3 className="font-semibold mb-4">Alojamiento</h3>
@@ -27,7 +27,7 @@ export const AccommodationSection = ({ request }: AccommodationSectionProps) => 
       <dl className="space-y-3">
         <div>
           <dt className="text-sm text-gray-500">Hotel</dt>
-          <dd>{request.hotel_name}</dd>
+          <dd>{request.hotelName}</dd>
         </div>
         <div>
           <dt className="text-sm text-gray-500">Check-in</dt>
