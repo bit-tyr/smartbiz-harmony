@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Search, Filter, Loader2, FileDown, FileSpreadsheet, CheckSquare, ShoppingCart, History } from "lucide-react";
+import { Search, Filter, Loader2, FileDown, FileSpreadsheet, CheckSquare, ShoppingCart, History, Trash2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -69,6 +69,21 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
     const getUserRole = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
+        console.log('User ID:', session.user.id);
+        // Primero verificamos si es un admin
+        const { data: adminData } = await supabase
+          .from('admin_users')
+          .select('user_id')
+          .eq('user_id', session.user.id)
+          .single();
+
+        if (adminData) {
+          setUserRole('admin');
+          setInitialLoadDone(true);
+          return;
+        }
+
+        // Si no es admin, verificamos su rol normal
         const { data: profile } = await supabase
           .from('profiles')
           .select(`
@@ -78,6 +93,7 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
           .eq('id', session.user.id)
           .single();
         
+        console.log('User Role:', profile?.roles?.name);
         setUserRole(profile?.roles?.name?.toLowerCase());
         setInitialLoadDone(true);
       }
@@ -277,73 +293,88 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
   };
 
   const handleDeleteConfirm = async () => {
-    if (!selectedRequestId) return;
+    if (selectedRequestId === 'bulk') {
+      // Eliminación masiva
+      try {
+        if (currentView === 'history') {
+          // Eliminar permanentemente las solicitudes seleccionadas
+          for (const requestId of selectedRequests) {
+            const { error: itemsError } = await supabase
+              .from('purchase_request_items')
+              .delete()
+              .eq('purchase_request_id', requestId);
 
-    try {
-      if (currentView === 'history') {
-        console.log('Intentando eliminar solicitud:', selectedRequestId);
-        
-        // Primero verificamos los items asociados
-        const { data: items, error: checkError } = await supabase
-          .from('purchase_request_items')
-          .select('id')
-          .eq('purchase_request_id', selectedRequestId);
-          
-        console.log('Items asociados:', items);
+            if (itemsError) throw itemsError;
 
-        if (checkError) {
-          console.error('Error al verificar items:', checkError);
-          throw checkError;
+            const { error } = await supabase
+              .from('purchase_requests')
+              .delete()
+              .eq('id', requestId);
+
+            if (error) throw error;
+          }
+          toast.success(`${selectedRequests.length} solicitudes eliminadas permanentemente`);
+        } else {
+          // Mover al histórico las solicitudes seleccionadas
+          const { error } = await supabase
+            .from('purchase_requests')
+            .update({ deleted_at: new Date().toISOString() })
+            .in('id', selectedRequests);
+
+          if (error) throw error;
+          toast.success(`${selectedRequests.length} solicitudes movidas al histórico`);
         }
 
-        // Primero eliminamos los items asociados
-        const { error: itemsError } = await supabase
-          .from('purchase_request_items')
-          .delete()
-          .eq('purchase_request_id', selectedRequestId);
-
-        if (itemsError) {
-          console.error('Error al eliminar items:', itemsError);
-          throw itemsError;
-        }
-
-        console.log('Items eliminados exitosamente');
-
-        // Luego eliminamos la solicitud principal
-        const { error } = await supabase
-          .from('purchase_requests')
-          .delete()
-          .eq('id', selectedRequestId);
-
-        if (error) {
-          console.error('Error al eliminar solicitud principal:', error);
-          throw error;
-        }
-
-        console.log('Solicitud principal eliminada exitosamente');
-        toast.success("Solicitud eliminada permanentemente");
-      } else {
-        // Mover al histórico para solicitudes actuales
-        const { error } = await supabase
-          .from('purchase_requests')
-          .update({ deleted_at: new Date().toISOString() })
-          .eq('id', selectedRequestId);
-
-        if (error) throw error;
-        toast.success("Solicitud movida al histórico exitosamente");
+        queryClient.invalidateQueries({ queryKey: ['purchaseRequests'] });
+        setSelectedRequests([]);
+      } catch (error) {
+        console.error('Error al procesar las solicitudes:', error);
+        toast.error(currentView === 'history' 
+          ? "Error al eliminar las solicitudes permanentemente"
+          : "Error al mover las solicitudes al histórico"
+        );
       }
+    } else if (selectedRequestId) {
+      // Eliminación individual (código existente)
+      try {
+        if (currentView === 'history') {
+          const { error: itemsError } = await supabase
+            .from('purchase_request_items')
+            .delete()
+            .eq('purchase_request_id', selectedRequestId);
 
-      queryClient.invalidateQueries({ queryKey: ['purchaseRequests'] });
-    } catch (error) {
-      console.error('Error completo al procesar la solicitud:', error);
-      toast.error(currentView === 'history' 
-        ? "Error al eliminar la solicitud permanentemente"
-        : "Error al mover la solicitud al histórico"
-      );
-    } finally {
-      setIsDeleteDialogOpen(false);
-      setSelectedRequestId(null);
+          if (itemsError) throw itemsError;
+
+          const { error } = await supabase
+            .from('purchase_requests')
+            .delete()
+            .eq('id', selectedRequestId);
+
+          if (error) throw error;
+
+          toast.success("Solicitud eliminada permanentemente");
+        } else {
+          const { error } = await supabase
+            .from('purchase_requests')
+            .update({ deleted_at: new Date().toISOString() })
+            .eq('id', selectedRequestId);
+
+          if (error) throw error;
+          toast.success("Solicitud movida al histórico exitosamente");
+        }
+
+        queryClient.invalidateQueries({ queryKey: ['purchaseRequests'] });
+      } catch (error) {
+        console.error('Error al procesar la solicitud:', error);
+        toast.error(currentView === 'history' 
+          ? "Error al eliminar la solicitud permanentemente"
+          : "Error al mover la solicitud al histórico"
+        );
+      }
     }
+
+    setIsDeleteDialogOpen(false);
+    setSelectedRequestId(null);
   };
 
   const handleStatusChange = async (requestId: string, newStatus: string) => {
@@ -361,9 +392,15 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
         return;
       }
 
+      // Si el nuevo estado es "delivered", también actualizamos deleted_at
+      const updateData = {
+        status: newStatus,
+        ...(newStatus === 'delivered' ? { deleted_at: new Date().toISOString() } : {})
+      };
+
       const { data, error } = await supabase
         .from('purchase_requests')
-        .update({ status: newStatus })
+        .update(updateData)
         .eq('id', requestId)
         .select();
 
@@ -373,7 +410,12 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
         return;
       }
 
-      toast.success(`Estado actualizado a: ${statusConfig[newStatus].label}`);
+      if (newStatus === 'delivered') {
+        toast.success("Solicitud marcada como entregada y movida al histórico");
+      } else {
+        toast.success(`Estado actualizado a: ${statusConfig[newStatus].label}`);
+      }
+      
       await queryClient.invalidateQueries({ queryKey: ['purchaseRequests'] });
     } catch (error) {
       console.error('Error:', error);
@@ -489,6 +531,18 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
           </Button>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant="destructive"
+            onClick={() => {
+              setSelectedRequestId('bulk');
+              setIsDeleteDialogOpen(true);
+            }}
+            disabled={selectedRequests.length === 0}
+            className="flex items-center gap-2"
+          >
+            <Trash2 className="h-4 w-4" />
+            Eliminar Seleccionados ({selectedRequests.length})
+          </Button>
           <Button
             variant="outline"
             onClick={exportToExcel}

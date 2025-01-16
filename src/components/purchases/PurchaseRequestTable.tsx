@@ -22,6 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // ... otros imports y código existente ...
 
@@ -60,7 +61,7 @@ const formatCurrency = (amount: number, currency: string) => {
 
 export const PurchaseRequestTable = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
+  const [selectedRequestIds, setSelectedRequestIds] = useState<string[]>([]);
   const queryClient = useQueryClient();
 
   const { data: purchaseRequests } = useQuery<PurchaseRequest[]>({
@@ -87,38 +88,78 @@ export const PurchaseRequestTable = () => {
     }
   });
 
-  const handleDeleteClick = (requestId: string) => {
-    setSelectedRequestId(requestId);
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = purchaseRequests?.map(request => request.id) || [];
+      setSelectedRequestIds(allIds);
+    } else {
+      setSelectedRequestIds([]);
+    }
+  };
+
+  const handleSelectOne = (requestId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedRequestIds(prev => [...prev, requestId]);
+    } else {
+      setSelectedRequestIds(prev => prev.filter(id => id !== requestId));
+    }
+  };
+
+  const handleDeleteClick = () => {
     setIsDeleteDialogOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
-    if (!selectedRequestId) return;
+    if (selectedRequestIds.length === 0) return;
 
     try {
       const { error } = await supabase
         .from('purchase_requests')
         .delete()
-        .eq('id', selectedRequestId);
+        .in('id', selectedRequestIds);
 
       if (error) throw error;
 
-      toast.success("Solicitud eliminada exitosamente");
+      toast.success(
+        selectedRequestIds.length === 1 
+          ? "Solicitud eliminada exitosamente"
+          : "Solicitudes eliminadas exitosamente"
+      );
       queryClient.invalidateQueries({ queryKey: ['purchaseRequests'] });
+      setSelectedRequestIds([]);
     } catch (error) {
-      console.error('Error deleting purchase request:', error);
-      toast.error("Error al eliminar la solicitud");
+      console.error('Error deleting purchase requests:', error);
+      toast.error("Error al eliminar las solicitudes");
     } finally {
       setIsDeleteDialogOpen(false);
-      setSelectedRequestId(null);
     }
   };
 
   return (
-    <>
+    <div className="space-y-4">
+      <Button
+        variant="destructive"
+        onClick={handleDeleteClick}
+        className="flex items-center gap-2"
+        disabled={selectedRequestIds.length === 0}
+      >
+        <Trash2 className="h-4 w-4" />
+        <span>
+          {selectedRequestIds.length === 0
+            ? "Eliminar seleccionados"
+            : `Eliminar seleccionados (${selectedRequestIds.length})`}
+        </span>
+      </Button>
+      
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-[50px]">
+              <Checkbox
+                checked={selectedRequestIds.length === purchaseRequests?.length}
+                onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
+              />
+            </TableHead>
             <TableHead>Número</TableHead>
             <TableHead>Laboratorio</TableHead>
             <TableHead>Código Presupuestal</TableHead>
@@ -130,12 +171,19 @@ export const PurchaseRequestTable = () => {
             <TableHead>Estado</TableHead>
             <TableHead>Fecha</TableHead>
             <TableHead>Observaciones</TableHead>
-            <TableHead>Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {purchaseRequests?.map((request) => (
             <TableRow key={request.id}>
+              <TableCell>
+                <Checkbox
+                  checked={selectedRequestIds.includes(request.id)}
+                  onCheckedChange={(checked) => 
+                    handleSelectOne(request.id, checked as boolean)
+                  }
+                />
+              </TableCell>
               <TableCell>#{request.number}</TableCell>
               <TableCell>{request.laboratory?.name}</TableCell>
               <TableCell>{`${request.budget_code?.code} - ${request.budget_code?.description}`}</TableCell>
@@ -161,21 +209,6 @@ export const PurchaseRequestTable = () => {
               <TableCell>{request.status}</TableCell>
               <TableCell>{request.created_at}</TableCell>
               <TableCell>{request.observations}</TableCell>
-              <TableCell>
-                <div className="flex gap-2">
-                  {!request.deleted_at && (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDeleteClick(request.id)}
-                      className="flex items-center gap-2"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span>Eliminar</span>
-                    </Button>
-                  )}
-                </div>
-              </TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -186,7 +219,9 @@ export const PurchaseRequestTable = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminará permanentemente la solicitud de compra.
+              {selectedRequestIds.length === 1
+                ? "Esta acción no se puede deshacer. Se eliminará permanentemente la solicitud de compra."
+                : `Esta acción no se puede deshacer. Se eliminarán permanentemente ${selectedRequestIds.length} solicitudes de compra.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -197,6 +232,6 @@ export const PurchaseRequestTable = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   );
 }; 

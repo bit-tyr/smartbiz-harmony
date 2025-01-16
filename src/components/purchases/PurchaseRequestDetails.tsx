@@ -257,18 +257,6 @@ export const PurchaseRequestDetails = ({ request, onClose }: PurchaseRequestDeta
                           : "-"}
                       </dd>
                     </div>
-                    <div>
-                      <dt className="text-sm text-gray-500">Banco</dt>
-                      <dd>{request.bank || "-"}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm text-gray-500">Número de Cuenta</dt>
-                      <dd>{request.account_number || "-"}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm text-gray-500">Titular de la Cuenta</dt>
-                      <dd>{request.account_holder || "-"}</dd>
-                    </div>
                   </dl>
                 )}
               </div>

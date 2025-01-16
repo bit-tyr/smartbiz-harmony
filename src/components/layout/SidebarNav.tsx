@@ -51,9 +51,9 @@ export const SidebarNav = ({ isAdmin }: SidebarNavProps) => {
         Menu
       </h2>
       <div className="space-y-1">
-        <Link to="/">
+        <Link to="/dashboard">
           <Button
-            variant={location.pathname === "/" ? "secondary" : "ghost"}
+            variant={location.pathname === "/dashboard" ? "secondary" : "ghost"}
             className="w-full justify-start"
           >
             <Home className="mr-2 h-4 w-4" />

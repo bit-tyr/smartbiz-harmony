@@ -14,13 +14,15 @@ const useAuth = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isBlocked, setIsBlocked] = useState<boolean>(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [adminCheckComplete, setAdminCheckComplete] = useState<boolean>(false);
 
   useEffect(() => {
     let mounted = true;
 
     const checkSession = async () => {
       try {
+        setAdminCheckComplete(false);
         // Get initial session
         const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
         
@@ -32,6 +34,7 @@ const useAuth = () => {
             await supabase.auth.signOut();
             setSession(null);
             setLoading(false);
+            setAdminCheckComplete(true);
           }
           return;
         }
@@ -40,11 +43,30 @@ const useAuth = () => {
           setSession(initialSession);
 
           if (initialSession?.user) {
+            // Verificar si es admin en la tabla admin_users
+            const { data: adminData, error: adminError } = await supabase
+              .from('admin_users')
+              .select('user_id')
+              .eq('user_id', initialSession.user.id)
+              .maybeSingle();
+
+            console.log('Admin check:', {
+              userId: initialSession.user.id,
+              adminData,
+              adminError
+            });
+
             const { data: profileData, error: profileError } = await supabase
               .from('profiles')
               .select('is_admin, is_blocked')
               .eq('id', initialSession.user.id)
               .maybeSingle();
+
+            console.log('Profile check:', {
+              userId: initialSession.user.id,
+              profileData,
+              profileError
+            });
 
             if (profileError) {
               console.error('Error checking profile:', profileError);
@@ -65,10 +87,20 @@ const useAuth = () => {
               return;
             }
 
+            const isUserAdmin = !!adminData || !!profileData.is_admin;
+            console.log('Admin status:', {
+              hasAdminData: !!adminData,
+              profileIsAdmin: !!profileData.is_admin,
+              finalIsAdmin: isUserAdmin
+            });
+
             if (mounted) {
-              setIsAdmin(!!profileData.is_admin);
+              setIsAdmin(isUserAdmin);
               setIsBlocked(!!profileData.is_blocked);
+              setAdminCheckComplete(true);
             }
+          } else {
+            setAdminCheckComplete(true);
           }
         }
       } catch (error) {
@@ -77,6 +109,9 @@ const useAuth = () => {
         // Clear local storage and session on error
         localStorage.clear();
         await supabase.auth.signOut();
+        if (mounted) {
+          setAdminCheckComplete(true);
+        }
       } finally {
         if (mounted) {
           setLoading(false);
@@ -92,14 +127,34 @@ const useAuth = () => {
       if (!mounted) return;
 
       if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') {
+        setAdminCheckComplete(false);
         setSession(session);
         
         if (session?.user) {
+          // Verificar si es admin en la tabla admin_users
+          const { data: adminData, error: adminError } = await supabase
+            .from('admin_users')
+            .select('user_id')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+
+          console.log('Auth change - Admin check:', {
+            userId: session.user.id,
+            adminData,
+            adminError
+          });
+
           const { data: profiles, error: profileError } = await supabase
             .from('profiles')
             .select('is_admin, is_blocked')
             .eq('id', session.user.id)
             .maybeSingle();
+
+          console.log('Auth change - Profile check:', {
+            userId: session.user.id,
+            profiles,
+            profileError
+          });
 
           if (profileError) {
             console.error('Error fetching profile after auth change:', profileError);
@@ -120,13 +175,24 @@ const useAuth = () => {
             return;
           }
 
-          setIsAdmin(!!profiles.is_admin);
+          const isUserAdmin = !!adminData || !!profiles.is_admin;
+          console.log('Auth change - Admin status:', {
+            hasAdminData: !!adminData,
+            profileIsAdmin: !!profiles.is_admin,
+            finalIsAdmin: isUserAdmin
+          });
+
+          setIsAdmin(isUserAdmin);
           setIsBlocked(!!profiles.is_blocked);
+          setAdminCheckComplete(true);
+        } else {
+          setAdminCheckComplete(true);
         }
       } else if (event === 'SIGNED_OUT') {
         setSession(null);
         setIsAdmin(false);
         setIsBlocked(false);
+        setAdminCheckComplete(true);
         // Clear local storage on sign out
         localStorage.clear();
       }
@@ -139,13 +205,13 @@ const useAuth = () => {
     };
   }, []);
 
-  return { session, isAdmin, isBlocked, loading };
+  return { session, isAdmin, isBlocked, loading, adminCheckComplete };
 };
 
 const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
-  const { session, isAdmin, isBlocked, loading } = useAuth();
+  const { session, isAdmin, isBlocked, loading, adminCheckComplete } = useAuth();
 
-  if (loading) {
+  if (loading || !adminCheckComplete) {
     return <div className="flex justify-center items-center h-screen"><LoadingSpinner /></div>;
   }
 
@@ -159,8 +225,8 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
     return <Navigate to="/login" replace />;
   }
 
-  if (requireAdmin && (!isAdmin || (session?.user?.role === 'Purchases'))) {
-    console.log('Admin access denied. Is admin:', isAdmin);
+  if (requireAdmin && !isAdmin) {
+    console.log('Admin access denied. Is admin:', isAdmin, 'Admin check complete:', adminCheckComplete);
     toast.error("No tienes permisos de administrador");
     return <Navigate to="/" replace />;
   }
