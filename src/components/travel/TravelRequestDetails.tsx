@@ -34,19 +34,52 @@ export const TravelRequestDetails = ({ request, onClose }: TravelRequestDetailsP
     try {
       setIsSubmitting(true);
       
-      // Map form values to database column names
+      // Map form values to match database column names
       const mappedValues = {
         ...values,
         account_holder: values.accountHolder,
         account_number: values.accountNumber,
         allowance_amount: values.allowanceAmount,
         hotel_name: values.hotelName,
-        // Remove the camelCase properties to avoid conflicts
-        accountHolder: undefined,
-        accountNumber: undefined,
-        allowanceAmount: undefined,
-        hotelName: undefined
+        check_in: values.checkIn?.toISOString().split('T')[0],
+        check_out: values.checkOut?.toISOString().split('T')[0],
+        birth_date: values.birthDate?.toISOString().split('T')[0],
+        document_expiry: values.documentExpiry?.toISOString().split('T')[0],
+        departure_date: values.departureDate?.toISOString().split('T')[0],
+        return_date: values.returnDate?.toISOString().split('T')[0],
+        travel_purpose: values.travelPurpose,
+        document_number: values.documentNumber,
+        emergency_contact: values.emergencyContact,
+        preferred_schedule: values.preferredSchedule,
+        requires_allowance: values.requiresAllowance,
+        needs_passage: values.needsPassage,
+        needs_insurance: values.needsInsurance,
+        number_of_days: values.numberOfDays,
+        first_name: values.firstName,
+        last_name: values.lastName,
       };
+
+      // Remove camelCase properties to avoid conflicts
+      delete mappedValues.accountHolder;
+      delete mappedValues.accountNumber;
+      delete mappedValues.allowanceAmount;
+      delete mappedValues.hotelName;
+      delete mappedValues.checkIn;
+      delete mappedValues.checkOut;
+      delete mappedValues.birthDate;
+      delete mappedValues.documentExpiry;
+      delete mappedValues.departureDate;
+      delete mappedValues.returnDate;
+      delete mappedValues.travelPurpose;
+      delete mappedValues.documentNumber;
+      delete mappedValues.emergencyContact;
+      delete mappedValues.preferredSchedule;
+      delete mappedValues.requiresAllowance;
+      delete mappedValues.needsPassage;
+      delete mappedValues.needsInsurance;
+      delete mappedValues.numberOfDays;
+      delete mappedValues.firstName;
+      delete mappedValues.lastName;
 
       const { error } = await supabase
         .from('travel_requests')
