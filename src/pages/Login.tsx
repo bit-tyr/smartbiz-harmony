@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import LoginForm from "@/components/auth/LoginForm";
 import RegisterForm from "@/components/auth/RegisterForm";
+import { motion } from "framer-motion";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const Login = () => {
+  const navigate = useNavigate();
   const [isRegistering, setIsRegistering] = useState(false);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
@@ -41,59 +44,101 @@ const Login = () => {
     }
   };
 
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const username = (document.getElementById('username') as HTMLInputElement).value;
+    const password = (document.getElementById('password') as HTMLInputElement).value;
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: username,
+        password: password,
+      });
+
+      if (error) throw error;
+
+      toast.success("Inicio de sesión exitoso");
+      navigate("/dashboard");
+    } catch (error) {
+      toast.error("Error al iniciar sesión");
+      console.error("Login error:", error);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="mx-auto w-full max-w-[350px] space-y-6">
-        <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-bold">
-            {isRegistering ? "Registro" : "Iniciar Sesión"}
-          </h1>
-          <p className="text-gray-500">
-            {isRegistering
-              ? "Crea una nueva cuenta"
-              : "Ingresa tus credenciales para acceder al sistema"}
-          </p>
+    <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
+      <div className="w-full max-w-6xl bg-white rounded-2xl shadow-xl flex overflow-hidden">
+        {/* Lado izquierdo con ilustración */}
+        <div className="hidden lg:block lg:w-1/2 bg-blue-600 relative">
+          <img 
+            src="/images/scientist.png" 
+            alt="Scientist illustration" 
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-blue-600/90 to-transparent p-12">
+            <h3 className="text-xl font-medium mb-4 text-white">Sistema de Gestión</h3>
+            <p className="text-sm text-white/80">
+              Bienvenido al sistema de gestión del Institut Pasteur de Montevideo
+            </p>
+          </div>
         </div>
 
-        {isRegistering ? (
-          <RegisterForm onToggleRegister={() => setIsRegistering(false)} />
-        ) : (
-          <LoginForm
-            onToggleRegister={() => setIsRegistering(true)}
-            onForgotPassword={() => setIsResetDialogOpen(true)}
-          />
-        )}
-
-        <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Restablecer contraseña</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleResetPassword} className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="reset-email" className="text-sm font-medium">
-                  Correo electrónico
-                </label>
-                <input
-                  id="reset-email"
-                  type="email"
-                  value={resetEmail}
-                  onChange={(e) => setResetEmail(e.target.value)}
-                  className="w-full rounded-md border px-3 py-2"
-                  placeholder="Ingresa tu correo electrónico"
-                  required
+        {/* Lado derecho con formulario */}
+        <div className="w-full lg:w-1/2 p-12">
+          <div className="max-w-md mx-auto">
+            <div className="flex justify-center mb-8">
+              <img 
+                src="/images/institut-pasteur-logo.png" 
+                alt="Logo" 
+                className="h-32"
+              />
+            </div>
+            
+            <h2 className="text-2xl font-bold text-center mb-8">Iniciar Sesión</h2>
+            
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div>
+                <input 
+                  type="text" 
+                  id="username"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 transition-colors placeholder-gray-400"
+                  placeholder="Correo electrónico"
                 />
               </div>
-              <button
+              
+              <div>
+                <input 
+                  type="password" 
+                  id="password"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 transition-colors placeholder-gray-400"
+                  placeholder="Contraseña"
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-sm">
+                <label className="flex items-center text-gray-600">
+                  <input type="checkbox" className="mr-2" />
+                  Recordarme
+                </label>
+                <a href="#" className="text-blue-600 hover:text-blue-700">¿Olvidaste tu contraseña?</a>
+              </div>
+
+              <button 
                 type="submit"
-                className="w-full rounded-md bg-primary px-4 py-2 text-white"
-                disabled={isResetting}
+                className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
               >
-                {isResetting ? "Enviando..." : "Enviar correo de recuperación"}
+                Ingresar
               </button>
             </form>
-          </DialogContent>
-        </Dialog>
+
+            <div className="mt-6 text-center">
+              <span className="text-gray-600">¿No tienes una cuenta?</span>
+              <a href="#" className="text-blue-600 hover:text-blue-700 ml-1 font-medium">
+                Regístrate aquí
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
