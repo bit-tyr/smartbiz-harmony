@@ -181,16 +181,51 @@ export const PurchaseRequestList = ({ searchQuery, onSelect, view, onSearchChang
     }));
   };
 
-  const handleDeleteClick = (requestId: string) => {
+  const handleDeleteClick = async (requestId: string) => {
+    // Verificar si el usuario es el creador de la solicitud
+    const request = requests.find(r => r.id === requestId);
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.user) {
+      toast.error("No hay sesión de usuario");
+      return;
+    }
+
+    // Si estamos en la vista de historial, solo admin, manager y purchases pueden borrar
+    if (view === 'history') {
+      if (!['admin', 'manager', 'Purchases'].includes(userRole)) {
+        toast.error("No tienes permisos para eliminar solicitudes del historial");
+        return;
+      }
+    } else {
+      // En la vista actual, los usuarios solo pueden borrar sus propias solicitudes
+      if (request?.user_id !== session.user.id && !['admin', 'manager', 'Purchases'].includes(userRole)) {
+        toast.error("Solo puedes eliminar tus propias solicitudes");
+        return;
+      }
+    }
+
     setSelectedRequestId(requestId);
     setIsDeleteDialogOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
+    // Doble verificación de seguridad para el historial
+    if (view === 'history' && !['admin', 'manager', 'Purchases'].includes(userRole)) {
+      toast.error("No tienes permisos para eliminar solicitudes del historial");
+      setIsDeleteDialogOpen(false);
+      return;
+    }
+
     if (selectedRequestId === 'bulk') {
       // Eliminación masiva
       try {
         if (view === 'history') {
+          // Verificar que el usuario tenga permisos para borrar del histórico
+          if (!['admin', 'manager', 'Purchases'].includes(userRole)) {
+            toast.error("No tienes permisos para eliminar solicitudes del historial");
+            return;
+          }
           // Eliminar permanentemente las solicitudes seleccionadas
           for (const requestId of selectedRequests) {
             const { error: itemsError } = await supabase
@@ -229,9 +264,14 @@ export const PurchaseRequestList = ({ searchQuery, onSelect, view, onSearchChang
         );
       }
     } else if (selectedRequestId) {
-      // Eliminación individual (código existente)
+      // Eliminación individual
       try {
         if (view === 'history') {
+          // Verificar que el usuario tenga permisos para borrar del histórico
+          if (!['admin', 'manager', 'Purchases'].includes(userRole)) {
+            toast.error("No tienes permisos para eliminar solicitudes del historial");
+            return;
+          }
           const { error: itemsError } = await supabase
             .from('purchase_request_items')
             .delete()
@@ -274,7 +314,7 @@ export const PurchaseRequestList = ({ searchQuery, onSelect, view, onSearchChang
   const handleStatusChange = async (requestId: string, newStatus: string) => {
     try {
       // Verificar si el usuario tiene permisos para cambiar el estado
-      if (!userRole || !['admin', 'manager', 'purchases'].includes(userRole)) {
+      if (!userRole || !['admin', 'manager', 'Purchases'].includes(userRole)) {
         toast.error("No tienes permisos para cambiar el estado de las solicitudes");
         return;
       }
@@ -424,7 +464,7 @@ export const PurchaseRequestList = ({ searchQuery, onSelect, view, onSearchChang
           .single();
         
         console.log('User Role:', profile?.roles?.name);
-        setUserRole(profile?.roles?.name?.toLowerCase());
+        setUserRole(profile?.roles?.name || null);
         setInitialLoadDone(true);
       }
     };

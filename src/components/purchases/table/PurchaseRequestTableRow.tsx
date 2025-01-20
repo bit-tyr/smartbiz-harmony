@@ -159,7 +159,7 @@ export const PurchaseRequestTableRow = ({
       
       {visibleColumns.status && (
         <TableCell onClick={handleStatusClick} className="min-w-[180px]">
-          {userRole && ['admin', 'manager', 'purchases'].includes(userRole) ? (
+          {userRole && ['admin', 'manager', 'Purchases'].includes(userRole) ? (
             <Select
               value={request.status}
               onValueChange={(value) => onStatusChange(request.id, value)}

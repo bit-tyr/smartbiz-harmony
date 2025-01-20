@@ -40,7 +40,7 @@ export const SidebarNav = ({ isAdmin }: SidebarNavProps) => {
     getUserRole();
   }, []);
 
-  const showPurchasesLink = isAdmin || userRole?.toLowerCase() === 'purchases';
+  const showPurchasesLink = isAdmin || userRole?.toLowerCase() === 'purchases' || userRole?.toLowerCase() === 'user';
   const showMaintenanceLink = isAdmin || userRole?.toLowerCase() === 'maintenance';
   const showSecretaryLink = isAdmin || userRole?.toLowerCase() === 'secretary';
   const showMasterDataLink = isAdmin || userRole?.toLowerCase() === 'purchases';
