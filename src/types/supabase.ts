@@ -113,6 +113,17 @@ export type Database = {
         }
         Returns: void
       }
+      get_supplier_products: {
+        Args: {
+          p_supplier_id: string
+        }
+        Returns: {
+          id: string;
+          name: string;
+          code: string | null;
+          description: string | null;
+        }[]
+      }
     }
     Views: {
       budget_code_products_mv: {

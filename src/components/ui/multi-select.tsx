@@ -44,6 +44,23 @@ export function MultiSelect({
     options.find(opt => opt.value === v)?.label || v
   );
 
+  const handleSelect = React.useCallback((currentValue: string) => {
+    const newValue = value.includes(currentValue)
+      ? value.filter(v => v !== currentValue)
+      : [...value, currentValue];
+    
+    console.log('Seleccionando:', currentValue, 'Nuevo valor:', newValue);
+    onChange(newValue);
+  }, [value, onChange]);
+
+  const handleRemove = React.useCallback((label: string) => {
+    const newValue = value.filter(v => 
+      options.find(opt => opt.value === v)?.label !== label
+    );
+    console.log('Removiendo:', label, 'Nuevo valor:', newValue);
+    onChange(newValue);
+  }, [value, options, onChange]);
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -62,9 +79,7 @@ export function MultiSelect({
                   className="mr-1 mb-1"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onChange(value.filter(v => 
-                      options.find(opt => opt.value === v)?.label !== label
-                    ));
+                    handleRemove(label);
                   }}
                 >
                   {label}
@@ -86,22 +101,25 @@ export function MultiSelect({
             {options.map((option) => (
               <CommandItem
                 key={option.value}
-                onSelect={() => {
-                  onChange(
-                    value.includes(option.value)
-                      ? value.filter(v => v !== option.value)
-                      : [...value, option.value]
-                  );
-                  setOpen(true);
+                value={option.value}
+                onSelect={(currentValue) => {
+                  handleSelect(option.value);
                 }}
+                className="cursor-pointer"
               >
-                <Check
-                  className={cn(
-                    'mr-2 h-4 w-4',
-                    value.includes(option.value) ? 'opacity-100' : 'opacity-0'
-                  )}
-                />
-                {option.label}
+                <div className="flex items-center gap-2" onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleSelect(option.value);
+                }}>
+                  <Check
+                    className={cn(
+                      'mr-2 h-4 w-4',
+                      value.includes(option.value) ? 'opacity-100' : 'opacity-0'
+                    )}
+                  />
+                  {option.label}
+                </div>
               </CommandItem>
             ))}
           </CommandGroup>

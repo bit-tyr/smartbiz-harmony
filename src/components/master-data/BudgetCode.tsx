@@ -45,6 +45,7 @@ import { Card, CardContent, CardHeader } from '../ui/card';
 import { Label } from '../ui/label';
 import { useBudgetCodeProducts } from '../../hooks/useBudgetCodeProducts';
 import { MultiSelect } from '@/components/ui/multi-select';
+import React from "react";
 
 type Tables = Database['public']['Tables'];
 type Functions = Database['public']['Functions'];
@@ -74,6 +75,7 @@ export const BudgetCode = () => {
   const [newCode, setNewCode] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const queryClient = useQueryClient();
   const { getProducts, updateProducts } = useBudgetCodeProducts(selectedBudgetCode?.id);
 
@@ -121,6 +123,15 @@ export const BudgetCode = () => {
       return data || [];
     },
   });
+
+  const filteredProducts = React.useMemo(() => {
+    if (!products) return [];
+    if (!searchTerm) return products;
+    
+    return products.filter(product => 
+      product.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [products, searchTerm]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -241,6 +252,25 @@ export const BudgetCode = () => {
     setNewCode(budgetCode.code);
     setNewDescription(budgetCode.description || "");
     setIsDialogOpen(true);
+
+    // Cargar productos asociados
+    const loadProducts = async () => {
+      const { data, error } = await supabase
+        .rpc('get_budget_code_product_list', {
+          p_budget_code_id: budgetCode.id
+        });
+      
+      if (error) {
+        console.error('Error loading products:', error);
+        return;
+      }
+      
+      if (data) {
+        setSelectedProducts(data);
+      }
+    };
+
+    loadProducts();
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -362,15 +392,42 @@ export const BudgetCode = () => {
                 </div>
                 <div>
                   <Label htmlFor="products">Productos Asociados</Label>
-                  <MultiSelect
-                    options={products?.map(p => ({ value: p.id, label: p.name })) || []}
-                    value={selectedProducts}
-                    onChange={(newValue: string[]) => {
-                      console.log('Productos seleccionados:', newValue);
-                      setSelectedProducts(newValue);
-                    }}
-                    placeholder="Selecciona los productos..."
-                  />
+                  <div className="border rounded-md p-4 space-y-2 max-h-60 overflow-y-auto">
+                    <div className="mb-2">
+                      <Input
+                        type="text"
+                        placeholder="Buscar productos..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                    </div>
+                    {filteredProducts.map((product) => (
+                      <div key={product.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={product.id}
+                          checked={selectedProducts.includes(product.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedProducts([...selectedProducts, product.id]);
+                            } else {
+                              setSelectedProducts(selectedProducts.filter(id => id !== product.id));
+                            }
+                          }}
+                        />
+                        <label
+                          htmlFor={product.id}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
+                          {product.name}
+                        </label>
+                      </div>
+                    ))}
+                    {filteredProducts.length === 0 && (
+                      <div className="text-center text-sm text-gray-500 py-2">
+                        No se encontraron productos
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <Button type="submit">
                   {selectedBudgetCode ? 'Actualizar' : 'Crear'}

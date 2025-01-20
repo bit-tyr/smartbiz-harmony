@@ -15,14 +15,27 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { FormSection } from "./FormSection";
+import { useSupplierProducts } from "@/hooks/useSupplierProducts";
+import { useEffect } from "react";
+import { Database } from "@/types/supabase";
 
 interface ProductDetailsProps {
   form: UseFormReturn<any>;
   suppliers: any[];
-  products: any[];
 }
 
-export const ProductDetails = ({ form, suppliers, products }: ProductDetailsProps) => {
+type Product = Database['public']['Functions']['get_supplier_products']['Returns'][number];
+
+export const ProductDetails = ({ form, suppliers }: ProductDetailsProps) => {
+  const supplierId = form.watch("supplierId");
+  const { data } = useSupplierProducts(supplierId);
+  const products = data || [];
+
+  // Limpiar el producto seleccionado cuando cambia el proveedor
+  useEffect(() => {
+    form.setValue("productId", "");
+  }, [supplierId, form]);
+
   return (
     <FormSection title="Datos de Producto">
       <div className="grid grid-cols-2 gap-4">
@@ -57,14 +70,18 @@ export const ProductDetails = ({ form, suppliers, products }: ProductDetailsProp
           render={({ field }) => (
             <FormItem>
               <FormLabel>Producto *</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select 
+                onValueChange={field.onChange} 
+                value={field.value}
+                disabled={!supplierId}
+              >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Seleccione un producto" />
+                    <SelectValue placeholder={supplierId ? "Seleccione un producto" : "Primero seleccione un proveedor"} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {products?.map((product) => (
+                  {products.map((product) => (
                     <SelectItem key={product.id} value={product.id}>
                       {product.name}
                     </SelectItem>
