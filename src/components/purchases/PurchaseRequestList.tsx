@@ -1,5 +1,5 @@
 import { Table, TableBody } from "@/components/ui/table";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { PurchaseRequestTableHeader } from "./table/PurchaseRequestTableHeader";
 import { PurchaseRequestTableRow } from "./table/PurchaseRequestTableRow";
 import { ColumnSelector } from "./table/ColumnSelector";
@@ -25,9 +25,10 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
 interface PurchaseRequestListProps {
-  requests: PurchaseRequest[];
-  isLoading: boolean;
-  onSelectRequest?: (request: PurchaseRequest | null) => void;
+  searchQuery: string;
+  onSelect: (request: PurchaseRequest | null) => void;
+  view: 'current' | 'history';
+  onSearchChange?: (value: string) => void;
 }
 
 const statusConfig = {
@@ -38,25 +39,23 @@ const statusConfig = {
   delivered: { label: "Entregado", className: "bg-gray-100 text-gray-800 border-gray-200" }
 };
 
-export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProps) => {
+export const PurchaseRequestList = ({ searchQuery, onSelect, view, onSearchChange }: PurchaseRequestListProps) => {
   const [visibleColumns, setVisibleColumns] = useState({
     number: true,
-    laboratory: true,
+    laboratory: false,
     budgetCode: true,
     product: true,
-    supplier: true,
-    quantity: true,
+    supplier: false,
+    quantity: false,
     unitPrice: true,
-    currency: true,
+    currency: false,
     status: true,
-    date: true,
-    observations: true,
+    date: false,
+    observations: false,
     creator: true,
   });
 
-  const [currentView, setCurrentView] = useState<'current' | 'history'>('current');
   const [selectedRequest, setSelectedRequest] = useState<PurchaseRequest | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
@@ -65,45 +64,8 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
   const [initialLoadDone, setInitialLoadDone] = useState(false);
   const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
 
-  useEffect(() => {
-    const getUserRole = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        console.log('User ID:', session.user.id);
-        // Primero verificamos si es un admin
-        const { data: adminData } = await supabase
-          .from('admin_users')
-          .select('user_id')
-          .eq('user_id', session.user.id)
-          .single();
-
-        if (adminData) {
-          setUserRole('admin');
-          setInitialLoadDone(true);
-          return;
-        }
-
-        // Si no es admin, verificamos su rol normal
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select(`
-            role_id,
-            roles:roles(name)
-          `)
-          .eq('id', session.user.id)
-          .single();
-        
-        console.log('User Role:', profile?.roles?.name);
-        setUserRole(profile?.roles?.name?.toLowerCase());
-        setInitialLoadDone(true);
-      }
-    };
-    
-    getUserRole();
-  }, []);
-
   const { data: requests = [], isLoading } = useQuery({
-    queryKey: ['purchaseRequests', userRole, currentView],
+    queryKey: ['purchaseRequests', userRole, view],
     queryFn: async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -144,9 +106,9 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
           `)
           .order('created_at', { ascending: false });
 
-        if (currentView === 'current') {
+        if (view === 'current') {
           query = query.is('deleted_at', null);
-        } else if (currentView === 'history') {
+        } else if (view === 'history') {
           query = query.not('deleted_at', 'is', null);
         }
 
@@ -177,74 +139,40 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
     enabled: initialLoadDone
   });
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div className="flex gap-2">
-            <Button
-              variant={currentView === 'current' ? "secondary" : "ghost"}
-              onClick={() => setCurrentView('current')}
-              className="flex items-center gap-2"
-            >
-              <ShoppingCart className="h-4 w-4" />
-              Solicitudes Actuales
-            </Button>
-            <Button
-              variant={currentView === 'history' ? "secondary" : "ghost"}
-              onClick={() => setCurrentView('history')}
-              className="flex items-center gap-2"
-            >
-              <History className="h-4 w-4" />
-              Histórico
-            </Button>
-          </div>
-        </div>
-        <div className="flex flex-col items-center justify-center h-[400px] bg-muted/10 rounded-lg">
-          <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-          <p className="text-muted-foreground">Cargando solicitudes...</p>
-        </div>
-      </div>
-    );
-  }
+  const filteredRequests = useMemo(() => {
+    return requests.filter(request => {
+      const searchTerms = searchQuery.toLowerCase().trim();
+      if (!searchTerms) return true;
 
-  if (!requests?.length) {
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div className="flex gap-2">
-            <Button
-              variant={currentView === 'current' ? "secondary" : "ghost"}
-              onClick={() => setCurrentView('current')}
-              className="flex items-center gap-2"
-            >
-              <ShoppingCart className="h-4 w-4" />
-              Solicitudes Actuales
-            </Button>
-            <Button
-              variant={currentView === 'history' ? "secondary" : "ghost"}
-              onClick={() => setCurrentView('history')}
-              className="flex items-center gap-2"
-            >
-              <History className="h-4 w-4" />
-              Histórico
-            </Button>
-          </div>
-        </div>
-        <div className="flex flex-col items-center justify-center h-[400px] bg-muted/10 rounded-lg">
-          <div className="text-center space-y-4">
-            <p className="text-2xl font-semibold text-primary">No hay solicitudes</p>
-            <p className="text-muted-foreground">
-              {currentView === 'current' 
-                ? "No se encontraron solicitudes de compra activas"
-                : "No se encontraron solicitudes en el histórico"
-              }
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+      const searchableFields = [
+        request.number?.toString(),
+        request.laboratory?.name,
+        request.budget_code?.code,
+        request.budget_code?.description,
+        request.purchase_request_items?.[0]?.product?.name,
+        request.purchase_request_items?.[0]?.product?.supplier?.name,
+        request.observations,
+        request.profiles?.first_name,
+        request.profiles?.last_name,
+        statusConfig[request.status]?.label
+      ];
+
+      return searchableFields.some(field => 
+        field?.toLowerCase().includes(searchTerms)
+      );
+    }).filter(request => {
+      return statusFilter === "all" || !statusFilter || request.status === statusFilter;
+    });
+  }, [requests, searchQuery, statusFilter]);
+
+  const handleSelectAll = useCallback(() => {
+    if (!filteredRequests) return;
+    if (selectedRequests.length === filteredRequests.length) {
+      setSelectedRequests([]);
+    } else {
+      setSelectedRequests(filteredRequests.map(request => request.id));
+    }
+  }, [filteredRequests, selectedRequests]);
 
   const handleColumnChange = (column: string, checked: boolean) => {
     setVisibleColumns((prev) => ({
@@ -252,40 +180,6 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
       [column]: checked,
     }));
   };
-
-  const filteredRequests = requests.filter(request => {
-    const searchTerms = searchQuery.toLowerCase().trim();
-    
-    if (!searchTerms) return true;
-
-    // Log temporal para debugging
-    if (currentView === 'history') {
-      console.log('Solicitudes en histórico:', requests.filter(r => r.deleted_at).map(r => ({
-        id: r.id,
-        number: r.number,
-        deleted_at: r.deleted_at
-      })));
-    }
-
-    const searchableFields = [
-      request.number?.toString(),
-      request.laboratory?.name,
-      request.budget_code?.code,
-      request.budget_code?.description,
-      request.purchase_request_items?.[0]?.product?.name,
-      request.purchase_request_items?.[0]?.product?.supplier?.name,
-      request.observations,
-      request.profiles?.first_name,
-      request.profiles?.last_name,
-      statusConfig[request.status]?.label
-    ];
-
-    return searchableFields.some(field => 
-      field?.toLowerCase().includes(searchTerms)
-    );
-  }).filter(request => {
-    return statusFilter === "all" || !statusFilter || request.status === statusFilter;
-  });
 
   const handleDeleteClick = (requestId: string) => {
     setSelectedRequestId(requestId);
@@ -296,7 +190,7 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
     if (selectedRequestId === 'bulk') {
       // Eliminación masiva
       try {
-        if (currentView === 'history') {
+        if (view === 'history') {
           // Eliminar permanentemente las solicitudes seleccionadas
           for (const requestId of selectedRequests) {
             const { error: itemsError } = await supabase
@@ -329,7 +223,7 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
         setSelectedRequests([]);
       } catch (error) {
         console.error('Error al procesar las solicitudes:', error);
-        toast.error(currentView === 'history' 
+        toast.error(view === 'history' 
           ? "Error al eliminar las solicitudes permanentemente"
           : "Error al mover las solicitudes al histórico"
         );
@@ -337,7 +231,7 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
     } else if (selectedRequestId) {
       // Eliminación individual (código existente)
       try {
-        if (currentView === 'history') {
+        if (view === 'history') {
           const { error: itemsError } = await supabase
             .from('purchase_request_items')
             .delete()
@@ -366,7 +260,7 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
         queryClient.invalidateQueries({ queryKey: ['purchaseRequests'] });
       } catch (error) {
         console.error('Error al procesar la solicitud:', error);
-        toast.error(currentView === 'history' 
+        toast.error(view === 'history' 
           ? "Error al eliminar la solicitud permanentemente"
           : "Error al mover la solicitud al histórico"
         );
@@ -431,14 +325,6 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
     );
   };
 
-  const handleSelectAll = () => {
-    if (selectedRequests.length === filteredRequests.length) {
-      setSelectedRequests([]);
-    } else {
-      setSelectedRequests(filteredRequests.map(request => request.id));
-    }
-  };
-
   const exportToExcel = () => {
     if (selectedRequests.length === 0) {
       toast.error("Por favor selecciona al menos una solicitud");
@@ -480,7 +366,7 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
     doc.setFontSize(16);
     doc.text("Reporte de Solicitudes de Compra", 14, 15);
     doc.setFontSize(10);
-    doc.text(`Fecha de generación: ${new Date().toLocaleDateString()}`, 14, 25);
+    doc.text(`Fecha de generación: ${new Date().toISOString()}`, 14, 25);
 
     const selectedData = filteredRequests
       .filter(request => selectedRequests.includes(request.id))
@@ -509,28 +395,67 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
     toast.success("Archivo PDF exportado exitosamente");
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="flex gap-2">
-          <Button
-            variant={currentView === 'current' ? "secondary" : "ghost"}
-            onClick={() => setCurrentView('current')}
-            className="flex items-center gap-2"
-          >
-            <ShoppingCart className="h-4 w-4" />
-            Solicitudes Actuales
-          </Button>
-          <Button
-            variant={currentView === 'history' ? "secondary" : "ghost"}
-            onClick={() => setCurrentView('history')}
-            className="flex items-center gap-2"
-          >
-            <History className="h-4 w-4" />
-            Histórico
-          </Button>
-        </div>
-        <div className="flex gap-2">
+  useEffect(() => {
+    const getUserRole = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        console.log('User ID:', session.user.id);
+        // Primero verificamos si es un admin
+        const { data: adminData } = await supabase
+          .from('admin_users')
+          .select('user_id')
+          .eq('user_id', session.user.id)
+          .single();
+
+        if (adminData) {
+          setUserRole('admin');
+          setInitialLoadDone(true);
+          return;
+        }
+
+        // Si no es admin, verificamos su rol normal
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select(`
+            role_id,
+            roles:roles(name)
+          `)
+          .eq('id', session.user.id)
+          .single();
+        
+        console.log('User Role:', profile?.roles?.name);
+        setUserRole(profile?.roles?.name?.toLowerCase());
+        setInitialLoadDone(true);
+      }
+    };
+    
+    getUserRole();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={exportToExcel}
+              disabled={selectedRequests.length === 0}
+              className="flex items-center gap-2 transition-all hover:scale-105"
+            >
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Exportar Excel
+            </Button>
+            <Button
+              variant="outline"
+              onClick={exportToPDF}
+              disabled={selectedRequests.length === 0}
+              className="flex items-center gap-2 transition-all hover:scale-105"
+            >
+              <FileDown className="h-4 w-4 mr-2" />
+              Exportar PDF
+            </Button>
+          </div>
           <Button
             variant="destructive"
             onClick={() => {
@@ -538,15 +463,83 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
               setIsDeleteDialogOpen(true);
             }}
             disabled={selectedRequests.length === 0}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 transition-all hover:scale-105"
           >
             <Trash2 className="h-4 w-4" />
             Eliminar Seleccionados ({selectedRequests.length})
           </Button>
+        </div>
+
+        <div className="flex flex-col items-center justify-center h-[400px] bg-muted/10 rounded-lg">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+          <p className="text-muted-foreground">Cargando solicitudes...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!requests?.length) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={exportToExcel}
+              disabled={selectedRequests.length === 0}
+              className="flex items-center gap-2 transition-all hover:scale-105"
+            >
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Exportar Excel
+            </Button>
+            <Button
+              variant="outline"
+              onClick={exportToPDF}
+              disabled={selectedRequests.length === 0}
+              className="flex items-center gap-2 transition-all hover:scale-105"
+            >
+              <FileDown className="h-4 w-4 mr-2" />
+              Exportar PDF
+            </Button>
+          </div>
+          <Button
+            variant="destructive"
+            onClick={() => {
+              setSelectedRequestId('bulk');
+              setIsDeleteDialogOpen(true);
+            }}
+            disabled={selectedRequests.length === 0}
+            className="flex items-center gap-2 transition-all hover:scale-105"
+          >
+            <Trash2 className="h-4 w-4" />
+            Eliminar Seleccionados ({selectedRequests.length})
+          </Button>
+        </div>
+
+        <div className="flex flex-col items-center justify-center h-[400px] bg-muted/10 rounded-lg">
+          <div className="text-center space-y-4">
+            <p className="text-2xl font-semibold text-primary">No hay solicitudes</p>
+            <p className="text-muted-foreground">
+              {view === 'current' 
+                ? "No se encontraron solicitudes de compra activas"
+                : "No se encontraron solicitudes en el histórico"
+              }
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div className="flex gap-2">
           <Button
             variant="outline"
             onClick={exportToExcel}
             disabled={selectedRequests.length === 0}
+            className="flex items-center gap-2 transition-all hover:scale-105"
           >
             <FileSpreadsheet className="h-4 w-4 mr-2" />
             Exportar Excel
@@ -555,26 +548,39 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
             variant="outline"
             onClick={exportToPDF}
             disabled={selectedRequests.length === 0}
+            className="flex items-center gap-2 transition-all hover:scale-105"
           >
             <FileDown className="h-4 w-4 mr-2" />
             Exportar PDF
           </Button>
         </div>
+        <Button
+          variant="destructive"
+          onClick={() => {
+            setSelectedRequestId('bulk');
+            setIsDeleteDialogOpen(true);
+          }}
+          disabled={selectedRequests.length === 0}
+          className="flex items-center gap-2 transition-all hover:scale-105"
+        >
+          <Trash2 className="h-4 w-4" />
+          Eliminar Seleccionados ({selectedRequests.length})
+        </Button>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 bg-muted/30 p-4 rounded-lg">
+      <div className="flex flex-col sm:flex-row gap-4 bg-card p-4 rounded-lg border shadow-sm">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar solicitud..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 bg-background"
+            onChange={(e) => onSearchChange?.(e.target.value)}
+            className="pl-9 bg-background transition-all focus:ring-2 focus:ring-primary"
           />
         </div>
         <div className="flex gap-4">
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[200px] bg-background">
+            <SelectTrigger className="w-[200px] bg-background transition-all hover:bg-accent">
               <SelectValue placeholder="Filtrar por estado" />
             </SelectTrigger>
             <SelectContent>
@@ -589,7 +595,7 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
           <Button
             variant="outline"
             onClick={handleSelectAll}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 transition-all hover:bg-accent"
           >
             <CheckSquare className="h-4 w-4" />
             {selectedRequests.length === filteredRequests.length ? "Deseleccionar Todo" : "Seleccionar Todo"}
@@ -638,7 +644,7 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
           <AlertDialogHeader>
             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              {currentView === 'history' 
+              {view === 'history' 
                 ? "Esta acción eliminará permanentemente la solicitud de compra. Esta acción no se puede deshacer."
                 : "Esta acción moverá la solicitud de compra al histórico. Podrás consultarla en la pestaña de histórico."
               }
@@ -650,7 +656,7 @@ export const PurchaseRequestList = ({ onSelectRequest }: PurchaseRequestListProp
               onClick={handleDeleteConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {currentView === 'history' ? 'Eliminar permanentemente' : 'Mover al histórico'}
+              {view === 'history' ? 'Eliminar permanentemente' : 'Mover al histórico'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -73,7 +73,6 @@ export const PurchaseRequestTableRow = ({
   };
 
   const handleRowClick = (e: React.MouseEvent) => {
-    // Evitar que el clic en la casilla de selección active el onClick de la fila
     if ((e.target as HTMLElement).closest('.checkbox-cell')) {
       return;
     }
@@ -81,16 +80,16 @@ export const PurchaseRequestTableRow = ({
   };
 
   const handleStatusClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Evitar que el clic en el selector active el onClick de la fila
+    e.stopPropagation();
   };
 
   return (
     <TableRow 
-      className="cursor-pointer hover:bg-muted/50"
+      className="cursor-pointer hover:bg-muted/50 h-16"
       onClick={handleRowClick}
     >
       {showSelection && (
-        <TableCell className="checkbox-cell">
+        <TableCell className="checkbox-cell w-[50px] pl-4">
           <Checkbox
             checked={isSelected}
             onCheckedChange={onSelect}
@@ -98,47 +97,68 @@ export const PurchaseRequestTableRow = ({
           />
         </TableCell>
       )}
+      
       {visibleColumns.number && (
-        <TableCell className="font-medium">#{request.number}</TableCell>
+        <TableCell className="font-medium w-[100px] whitespace-nowrap">
+          #{request.number}
+        </TableCell>
       )}
+      
       {visibleColumns.laboratory && (
-        <TableCell>{request.laboratory?.name}</TableCell>
+        <TableCell className="min-w-[150px] max-w-[200px] whitespace-nowrap overflow-hidden text-ellipsis">
+          {request.laboratory?.name}
+        </TableCell>
       )}
+      
       {visibleColumns.budgetCode && (
-        <TableCell>
-          {request.budget_code?.code} - {request.budget_code?.description}
+        <TableCell className="min-w-[200px] max-w-[300px]">
+          <div className="truncate">
+            <span className="font-medium">{request.budget_code?.code}</span>
+            <span className="text-muted-foreground"> - </span>
+            <span className="text-sm">{request.budget_code?.description}</span>
+          </div>
         </TableCell>
       )}
+      
       {visibleColumns.product && (
-        <TableCell>
-          {request.purchase_request_items?.[0]?.product?.name}
+        <TableCell className="min-w-[200px] max-w-[300px]">
+          <div className="truncate font-medium">
+            {request.purchase_request_items?.[0]?.product?.name}
+          </div>
         </TableCell>
       )}
+      
       {visibleColumns.supplier && (
-        <TableCell>
-          {request.purchase_request_items?.[0]?.product?.supplier?.name}
+        <TableCell className="min-w-[150px] max-w-[200px]">
+          <div className="truncate text-muted-foreground">
+            {request.purchase_request_items?.[0]?.product?.supplier?.name}
+          </div>
         </TableCell>
       )}
+      
       {visibleColumns.quantity && (
-        <TableCell className="text-center">
+        <TableCell className="text-center w-[100px]">
           {request.purchase_request_items?.[0]?.quantity}
         </TableCell>
       )}
+      
       {visibleColumns.unitPrice && (
-        <TableCell className="text-right">
+        <TableCell className="text-right min-w-[120px] whitespace-nowrap">
           {formatCurrency(
             request.purchase_request_items?.[0]?.unit_price || 0,
             request.purchase_request_items?.[0]?.currency || 'PEN'
           )}
         </TableCell>
       )}
+      
       {visibleColumns.currency && (
-        <TableCell className="text-center">
+        <TableCell className="text-center w-[80px]">
           {request.purchase_request_items?.[0]?.currency}
         </TableCell>
       )}
+      
       {visibleColumns.status && (
-        <TableCell onClick={handleStatusClick}>
+        <TableCell onClick={handleStatusClick} className="min-w-[180px]">
           {userRole && ['admin', 'manager', 'purchases'].includes(userRole) ? (
             <Select
               value={request.status}
@@ -156,16 +176,17 @@ export const PurchaseRequestTableRow = ({
               </SelectContent>
             </Select>
           ) : (
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusConfig[request.status]?.className}`}>
+            <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${statusConfig[request.status]?.className}`}>
               {statusConfig[request.status]?.label}
             </span>
           )}
         </TableCell>
       )}
+      
       {visibleColumns.date && (
-        <TableCell>
+        <TableCell className="min-w-[150px] whitespace-nowrap">
           <div className="space-y-1">
-            <div className="text-sm">
+            <div className="text-sm font-medium">
               {format(new Date(request.created_at), "PPP", { locale: es })}
             </div>
             <div className="text-xs text-muted-foreground">
@@ -174,17 +195,24 @@ export const PurchaseRequestTableRow = ({
           </div>
         </TableCell>
       )}
+      
       {visibleColumns.observations && (
-        <TableCell className="max-w-[200px] truncate">
-          {request.observations || '-'}
+        <TableCell className="min-w-[200px] max-w-[300px]">
+          <div className="truncate text-sm text-muted-foreground">
+            {request.observations || '-'}
+          </div>
         </TableCell>
       )}
+      
       {visibleColumns.creator && (
-        <TableCell>
-          {request.profiles?.first_name} {request.profiles?.last_name}
+        <TableCell className="min-w-[150px] whitespace-nowrap">
+          <div className="font-medium">
+            {request.profiles?.first_name} {request.profiles?.last_name}
+          </div>
         </TableCell>
       )}
-      <TableCell>
+      
+      <TableCell className="w-[50px] pr-4">
         <div className="flex justify-end">
           <Button
             variant="ghost"
@@ -193,7 +221,7 @@ export const PurchaseRequestTableRow = ({
               e.stopPropagation();
               onDelete(request.id);
             }}
-            className="h-8 w-8"
+            className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
           >
             <Archive className="h-4 w-4" />
           </Button>

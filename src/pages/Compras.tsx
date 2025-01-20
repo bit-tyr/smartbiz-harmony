@@ -19,6 +19,7 @@ import { AttachmentSection } from "@/components/purchases/form-sections/Attachme
 import { sanitizeFileName } from "@/components/purchases/form-sections/AttachmentSection";
 import { CreateTravelRequestDialog } from "@/components/travel/CreateTravelRequestDialog";
 import { TravelRequestList } from "@/components/travel/TravelRequestList";
+import { motion, AnimatePresence } from "framer-motion";
 
 const Compras = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -206,183 +207,283 @@ const Compras = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center bg-gradient-to-r from-primary/10 via-primary/5 to-background p-6 rounded-lg">
-        <div>
-          <h1 className="text-3xl font-bold text-primary">Sistema de Compras</h1>
-          <p className="text-muted-foreground mt-2">Gestión integral de solicitudes y procesos de compra</p>
-        </div>
-        <Button 
-          onClick={() => setShowPurchaseForm(true)}
-          className="bg-primary hover:bg-primary/90"
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="container mx-auto p-6 max-w-7xl"
+    >
+      <div className="flex flex-col space-y-6">
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="flex justify-between items-center"
         >
-          <Plus className="h-5 w-5 mr-2" />
-          Nueva Solicitud
-        </Button>
+          <div>
+            <motion.h1 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-3xl font-bold text-primary"
+            >
+              Sistema de Compras
+            </motion.h1>
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="text-muted-foreground mt-2"
+            >
+              Gestiona tus solicitudes de compra y viajes de manera eficiente
+            </motion.p>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.1 }}
+        >
+          <Card className="shadow-lg">
+            <CardHeader>
+              <Tabs defaultValue="purchases" className="w-full">
+                <TabsList className="grid w-full grid-cols-4 rounded-lg bg-muted p-1">
+                  {[
+                    { value: "purchases", icon: ShoppingCart, label: "Compras" },
+                    { value: "travel", icon: Plane, label: "Viajes" },
+                    { value: "forms", icon: FileText, label: "Formularios" },
+                    { value: "faq", icon: BookOpen, label: "FAQ" }
+                  ].map((tab) => (
+                    <motion.div
+                      key={tab.value}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <TabsTrigger value={tab.value} className="data-[state=active]:bg-white">
+                        <tab.icon className="mr-2 h-4 w-4" />
+                        {tab.label}
+                      </TabsTrigger>
+                    </motion.div>
+                  ))}
+                </TabsList>
+
+                <AnimatePresence mode="wait">
+                  <TabsContent value="purchases" className="mt-6">
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      className="space-y-4"
+                    >
+                      <div className="flex justify-between items-center">
+                        <div className="flex space-x-4">
+                          {["current", "history"].map((view) => (
+                            <motion.div
+                              key={view}
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                            >
+                              <Button
+                                variant={currentView === view ? 'default' : 'outline'}
+                                onClick={() => setCurrentView(view as 'current' | 'history')}
+                              >
+                                {view === 'current' ? 'Actuales' : 'Historial'}
+                              </Button>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                      <PurchaseRequestList
+                        searchQuery={searchQuery}
+                        onSelect={setSelectedPurchaseRequest}
+                        view={currentView}
+                        onSearchChange={setSearchQuery}
+                      />
+                    </motion.div>
+                  </TabsContent>
+
+                  <TabsContent value="travel">
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                    >
+                      <Card className="border-none shadow-md">
+                        <CardHeader className="bg-muted/30 rounded-t-lg">
+                          <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                          >
+                            <CardTitle className="text-xl flex items-center">
+                              <Plane className="h-5 w-5 mr-2 text-primary" />
+                              Solicitudes de Viajes y Viáticos
+                            </CardTitle>
+                            <CardDescription>
+                              Gestiona y monitorea todas tus solicitudes de viajes
+                            </CardDescription>
+                          </motion.div>
+                        </CardHeader>
+                        <CardContent className="pt-6">
+                          <TravelRequestList onSelectRequest={setSelectedTravelRequest} />
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  </TabsContent>
+
+                  <TabsContent value="forms">
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                    >
+                      <Card className="border-none shadow-md">
+                        <CardHeader className="bg-muted/30 rounded-t-lg">
+                          <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                          >
+                            <CardTitle className="text-xl flex items-center">
+                              <FileText className="h-5 w-5 mr-2 text-primary" />
+                              Formularios de Solicitudes
+                            </CardTitle>
+                            <CardDescription>
+                              Selecciona el tipo de solicitud que deseas realizar
+                            </CardDescription>
+                          </motion.div>
+                        </CardHeader>
+                        <CardContent className="pt-6">
+                          {showPurchaseForm ? (
+                            <motion.div 
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -20 }}
+                              className="space-y-6"
+                            >
+                              <motion.div 
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className="flex justify-between items-center"
+                              >
+                                <motion.h2 
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  className="text-2xl font-semibold text-primary"
+                                >
+                                  Nueva Solicitud de Compra
+                                </motion.h2>
+                                <motion.div
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                >
+                                  <Button variant="outline" onClick={() => setShowPurchaseForm(false)}>
+                                    Volver
+                                  </Button>
+                                </motion.div>
+                              </motion.div>
+                              <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.2 }}
+                              >
+                                <PurchaseRequestForm
+                                  onSubmit={handleSubmit}
+                                  isSubmitting={isSubmitting}
+                                  onCancel={() => setShowPurchaseForm(false)}
+                                  purchaseRequestId={tempRequestId || undefined}
+                                />
+                              </motion.div>
+                            </motion.div>
+                          ) : (
+                            <motion.div 
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              className="grid gap-4"
+                            >
+                              {[
+                                {
+                                  icon: ShoppingCart,
+                                  label: "Solicitud de Compra",
+                                  onClick: () => setShowPurchaseForm(true)
+                                },
+                                {
+                                  icon: Plane,
+                                  label: "Pasajes/Viáticos/Alojamiento",
+                                  onClick: () => setShowTravelForm(true)
+                                },
+                                {
+                                  icon: CreditCard,
+                                  label: "Inscripción a Evento/Curso"
+                                },
+                                {
+                                  icon: FileText,
+                                  label: "Publicación Académica"
+                                },
+                                {
+                                  icon: BookOpen,
+                                  label: "Suscripción"
+                                }
+                              ].map((item, index) => (
+                                <motion.div
+                                  key={item.label}
+                                  initial={{ opacity: 0, x: -20 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ delay: index * 0.1 }}
+                                  whileHover={{ 
+                                    scale: 1.02,
+                                    backgroundColor: "var(--primary-5)",
+                                    transition: { duration: 0.2 }
+                                  }}
+                                  whileTap={{ scale: 0.98 }}
+                                >
+                                  <Button 
+                                    variant="outline" 
+                                    className="w-full justify-start hover:bg-primary/5 hover:text-primary transition-all"
+                                    onClick={item.onClick}
+                                  >
+                                    <item.icon className="h-5 w-5 mr-2" />
+                                    {item.label}
+                                  </Button>
+                                </motion.div>
+                              ))}
+                            </motion.div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  </TabsContent>
+                </AnimatePresence>
+              </Tabs>
+            </CardHeader>
+          </Card>
+        </motion.div>
       </div>
 
-      <Tabs defaultValue="inbox" className="w-full">
-        <TabsList className="mb-4 bg-muted/50 p-1 rounded-lg">
-          <TabsTrigger value="inbox" className="data-[state=active]:bg-background">
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            Bandeja de Entrada
-          </TabsTrigger>
-          <TabsTrigger value="travel" className="data-[state=active]:bg-background">
-            <Plane className="h-4 w-4 mr-2" />
-            Viajes y Viáticos
-          </TabsTrigger>
-          <TabsTrigger value="forms" className="data-[state=active]:bg-background">
-            <FileText className="h-4 w-4 mr-2" />
-            Formularios
-          </TabsTrigger>
-          <TabsTrigger value="faq" className="data-[state=active]:bg-background">
-            <BookOpen className="h-4 w-4 mr-2" />
-            Ayuda
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="inbox">
-          <Card className="border-none shadow-md">
-            <CardHeader className="bg-muted/30 rounded-t-lg">
-              <CardTitle className="text-xl flex items-center">
-                <ShoppingCart className="h-5 w-5 mr-2 text-primary" />
-                Solicitudes de Compra
-              </CardTitle>
-              <CardDescription>
-                Gestiona y monitorea todas tus solicitudes de compra
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <PurchaseRequestList 
-                requests={purchaseRequests || []} 
-                isLoading={isLoading}
-                onSelectRequest={setSelectedPurchaseRequest}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="travel">
-          <Card className="border-none shadow-md">
-            <CardHeader className="bg-muted/30 rounded-t-lg">
-              <CardTitle className="text-xl flex items-center">
-                <Plane className="h-5 w-5 mr-2 text-primary" />
-                Solicitudes de Viajes y Viáticos
-              </CardTitle>
-              <CardDescription>
-                Gestiona y monitorea todas tus solicitudes de viajes
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <TravelRequestList onSelectRequest={setSelectedTravelRequest} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="forms">
-          <Card className="border-none shadow-md">
-            <CardHeader className="bg-muted/30 rounded-t-lg">
-              <CardTitle className="text-xl flex items-center">
-                <FileText className="h-5 w-5 mr-2 text-primary" />
-                Formularios de Solicitudes
-              </CardTitle>
-              <CardDescription>
-                Selecciona el tipo de solicitud que deseas realizar
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              {showPurchaseForm ? (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-semibold text-primary">Nueva Solicitud de Compra</h2>
-                    <Button variant="outline" onClick={() => setShowPurchaseForm(false)}>
-                      Volver
-                    </Button>
-                  </div>
-                  <PurchaseRequestForm
-                    onSubmit={handleSubmit}
-                    isSubmitting={isSubmitting}
-                    onCancel={() => setShowPurchaseForm(false)}
-                    purchaseRequestId={tempRequestId || undefined}
-                  />
-                </div>
-              ) : (
-                <div className="grid gap-4">
-                  <Button 
-                    variant="outline" 
-                    className="justify-start hover:bg-primary/5 hover:text-primary transition-colors"
-                    onClick={() => setShowPurchaseForm(true)}
-                  >
-                    <ShoppingCart className="h-5 w-5 mr-2" />
-                    Solicitud de Compra
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="justify-start hover:bg-primary/5 hover:text-primary transition-colors"
-                    onClick={() => setShowTravelForm(true)}
-                  >
-                    <Plane className="h-5 w-5 mr-2" />
-                    Pasajes/Viáticos/Alojamiento
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="justify-start hover:bg-primary/5 hover:text-primary transition-colors"
-                  >
-                    <CreditCard className="h-5 w-5 mr-2" />
-                    Inscripción a Evento/Curso
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="justify-start hover:bg-primary/5 hover:text-primary transition-colors"
-                  >
-                    <FileText className="h-5 w-5 mr-2" />
-                    Publicación Académica
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="justify-start hover:bg-primary/5 hover:text-primary transition-colors"
-                  >
-                    <BookOpen className="h-5 w-5 mr-2" />
-                    Suscripción
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="faq">
-          <Card className="border-none shadow-md">
-            <CardHeader className="bg-muted/30 rounded-t-lg">
-              <CardTitle className="text-xl flex items-center">
-                <BookOpen className="h-5 w-5 mr-2 text-primary" />
-                Preguntas Frecuentes
-              </CardTitle>
-              <CardDescription>
-                Encuentra respuestas a las preguntas más comunes
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <FaqTab />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {selectedPurchaseRequest && (
-        <PurchaseRequestView 
-          request={selectedPurchaseRequest} 
-          onClose={() => setSelectedPurchaseRequest(null)} 
-        />
-      )}
+      <AnimatePresence>
+        {selectedPurchaseRequest && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+          >
+            <PurchaseRequestView 
+              request={selectedPurchaseRequest} 
+              onClose={() => setSelectedPurchaseRequest(null)} 
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {showTravelForm && (
-        <CreateTravelRequestDialog
-          open={showTravelForm}
-          onOpenChange={setShowTravelForm}
-        />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+        >
+          <CreateTravelRequestDialog
+            open={showTravelForm}
+            onOpenChange={setShowTravelForm}
+          />
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 }
 
