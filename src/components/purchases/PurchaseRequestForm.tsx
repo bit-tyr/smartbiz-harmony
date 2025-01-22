@@ -26,7 +26,7 @@ import { Loader2 } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AttachmentSection } from "./form-sections/AttachmentSection";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export interface FormValues {
   laboratoryId: string;
@@ -58,6 +58,10 @@ export const PurchaseRequestForm = ({
   purchaseRequestId
 }: PurchaseRequestFormProps) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userLaboratory, setUserLaboratory] = useState<string | null>(null);
+  const [canSelectLaboratory, setCanSelectLaboratory] = useState(false);
+
   const form = useForm<FormValues>({
     defaultValues: initialValues,
     resolver: zodResolver(
@@ -73,6 +77,60 @@ export const PurchaseRequestForm = ({
       })
     )
   });
+
+  // Obtener el rol y laboratorio del usuario
+  useEffect(() => {
+    const getUserInfo = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        console.log('Getting user info for:', user.id);
+
+        // Obtener el perfil del usuario
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('laboratory_id, role_id')
+          .eq('user_id', user.id)
+          .single();
+
+        console.log('Profile data:', profile);
+        console.log('Profile error:', profileError);
+
+        if (profile) {
+          // Obtener el rol
+          const { data: role, error: roleError } = await supabase
+            .from('roles')
+            .select('name')
+            .eq('id', profile.role_id)
+            .single();
+
+          console.log('Role data:', role);
+          console.log('Role error:', roleError);
+
+          if (role?.name) {
+            setUserRole(role.name);
+            // Los usuarios con rol 'admin' o 'purchases' pueden seleccionar cualquier laboratorio
+            const canSelect = role.name === 'admin' || role.name === 'purchases';
+            console.log('Role name:', role.name);
+            console.log('Can select laboratory:', canSelect);
+            setCanSelectLaboratory(canSelect);
+
+            // Si es un usuario regular, establecer y bloquear su laboratorio
+            if (!canSelect && profile.laboratory_id) {
+              console.log('Setting user laboratory:', profile.laboratory_id);
+              setUserLaboratory(profile.laboratory_id);
+              form.setValue('laboratoryId', profile.laboratory_id);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error getting user info:', error);
+      }
+    };
+
+    getUserInfo();
+  }, [form]);
 
   const handleSubmit = async (values: FormValues) => {
     await onSubmit({ ...values, files: selectedFiles });
@@ -135,14 +193,16 @@ export const PurchaseRequestForm = ({
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <RequestDetails 
           form={form}
-          laboratories={laboratories}
-          budgetCodes={budgetCodes}
+          laboratories={laboratories || []}
+          budgetCodes={budgetCodes || []}
+          userLaboratory={userLaboratory}
+          canSelectLaboratory={canSelectLaboratory}
+          isEditing={isEditing}
         />
         
         <ProductDetails
           form={form}
-          suppliers={suppliers}
-          products={products}
+          suppliers={suppliers || []}
         />
 
         <FormField
