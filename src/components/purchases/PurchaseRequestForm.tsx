@@ -27,6 +27,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AttachmentSection } from "./form-sections/AttachmentSection";
 import { useState, useEffect } from "react";
+import { Database } from "@/types/database.types";
+
+type Tables = Database['public']['Tables'];
+type Laboratory = Tables['laboratories']['Row'];
+type BudgetCode = Tables['budget_codes']['Row'];
+type Supplier = Tables['suppliers']['Row'];
+type LaboratoryUser = Tables['laboratory_users']['Row'];
 
 export interface FormValues {
   laboratoryId: string;
@@ -59,7 +66,7 @@ export const PurchaseRequestForm = ({
 }: PurchaseRequestFormProps) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [userLaboratory, setUserLaboratory] = useState<string | null>(null);
+  const [userLaboratories, setUserLaboratories] = useState<string[]>([]);
   const [canSelectLaboratory, setCanSelectLaboratory] = useState(false);
 
   const form = useForm<FormValues>({
@@ -78,49 +85,54 @@ export const PurchaseRequestForm = ({
     )
   });
 
-  // Obtener el rol y laboratorio del usuario
+  // Obtener el rol y laboratorios del usuario
   useEffect(() => {
     const getUserInfo = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        console.log('Getting user info for:', user.id);
-
         // Obtener el perfil del usuario
-        const { data: profile, error: profileError } = await supabase
+        const { data: profile } = await supabase
           .from('profiles')
-          .select('laboratory_id, role_id')
+          .select('role_id')
           .eq('user_id', user.id)
           .single();
 
-        console.log('Profile data:', profile);
-        console.log('Profile error:', profileError);
-
         if (profile) {
           // Obtener el rol
-          const { data: role, error: roleError } = await supabase
+          const { data: role } = await supabase
             .from('roles')
             .select('name')
             .eq('id', profile.role_id)
             .single();
 
-          console.log('Role data:', role);
-          console.log('Role error:', roleError);
-
           if (role?.name) {
             setUserRole(role.name);
             // Los usuarios con rol 'admin' o 'purchases' pueden seleccionar cualquier laboratorio
             const canSelect = role.name === 'admin' || role.name === 'purchases';
-            console.log('Role name:', role.name);
-            console.log('Can select laboratory:', canSelect);
             setCanSelectLaboratory(canSelect);
 
-            // Si es un usuario regular, establecer y bloquear su laboratorio
-            if (!canSelect && profile.laboratory_id) {
-              console.log('Setting user laboratory:', profile.laboratory_id);
-              setUserLaboratory(profile.laboratory_id);
-              form.setValue('laboratoryId', profile.laboratory_id);
+            if (!canSelect) {
+              // Obtener los laboratorios asignados al usuario
+              const { data: laboratoryUsers } = await supabase
+                .from('laboratories')
+                .select(`
+                  id,
+                  laboratory_users!inner(user_id)
+                `)
+                .eq('laboratory_users.user_id', user.id)
+                .returns<Array<{ id: string; laboratory_users: Array<{ user_id: string }> }>>();
+
+              if (laboratoryUsers) {
+                const laboratoryIds = laboratoryUsers.map(lu => lu.id);
+                setUserLaboratories(laboratoryIds);
+                
+                // Si solo hay un laboratorio asignado, seleccionarlo automáticamente
+                if (laboratoryIds.length === 1) {
+                  form.setValue('laboratoryId', laboratoryIds[0]);
+                }
+              }
             }
           }
         }
@@ -140,19 +152,27 @@ export const PurchaseRequestForm = ({
     setSelectedFiles(files);
   };
 
-  const { data: laboratories } = useQuery({
+  const { data: laboratories } = useQuery<Laboratory[]>({
     queryKey: ['laboratories'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('laboratories')
         .select('*')
         .order('name');
+      
+      // Si el usuario no es admin ni purchases, filtrar solo los laboratorios asignados
+      if (!canSelectLaboratory && userLaboratories.length > 0) {
+        query = query.in('id', userLaboratories);
+      }
+      
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
+    enabled: canSelectLaboratory || userLaboratories.length > 0
   });
 
-  const { data: budgetCodes } = useQuery({
+  const { data: budgetCodes } = useQuery<BudgetCode[]>({
     queryKey: ['budgetCodes'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -164,23 +184,11 @@ export const PurchaseRequestForm = ({
     },
   });
 
-  const { data: suppliers } = useQuery({
+  const { data: suppliers } = useQuery<Supplier[]>({
     queryKey: ['suppliers'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('suppliers')
-        .select('*')
-        .order('name');
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const { data: products } = useQuery({
-    queryKey: ['products'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('products')
         .select('*')
         .order('name');
       if (error) throw error;
@@ -195,7 +203,7 @@ export const PurchaseRequestForm = ({
           form={form}
           laboratories={laboratories || []}
           budgetCodes={budgetCodes || []}
-          userLaboratory={userLaboratory}
+          userLaboratories={userLaboratories}
           canSelectLaboratory={canSelectLaboratory}
           isEditing={isEditing}
         />

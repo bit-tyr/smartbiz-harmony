@@ -19,16 +19,15 @@ import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-const supabaseTyped = supabase as any;
-
-type Laboratory = Database['public']['Tables']['laboratories']['Row'];
-type BudgetCode = Database['public']['Tables']['budget_codes']['Row'];
+type Tables = Database['public']['Tables'];
+type Laboratory = Tables['laboratories']['Row'];
+type BudgetCode = Tables['budget_codes']['Row'];
 
 export interface RequestDetailsProps {
   form: UseFormReturn<FormValues>;
   laboratories: Laboratory[];
   budgetCodes: BudgetCode[];
-  userLaboratory: string | null;
+  userLaboratories: string[];
   canSelectLaboratory: boolean;
   isEditing: boolean;
 }
@@ -37,40 +36,44 @@ export const RequestDetails = ({
   form,
   laboratories,
   budgetCodes,
-  userLaboratory,
+  userLaboratories,
   canSelectLaboratory,
   isEditing
 }: RequestDetailsProps) => {
   const selectedLaboratoryId = form.watch("laboratoryId");
 
   // Obtener los códigos presupuestales asociados al laboratorio seleccionado
-  const { data: laboratoryBudgetCodes } = useQuery({
+  const { data: laboratoryBudgetCodes = [] } = useQuery({
     queryKey: ['laboratoryBudgetCodes', selectedLaboratoryId],
     queryFn: async () => {
       if (!selectedLaboratoryId) return [];
       
-      const { data, error } = await supabaseTyped
-        .from('laboratory_budget_codes')
-        .select('budget_code_id')
-        .eq('laboratory_id', selectedLaboratoryId);
+      const { data, error } = await supabase
+        .from('laboratories')
+        .select(`
+          laboratory_budget_codes:laboratory_budget_codes(budget_code_id)
+        `)
+        .eq('id', selectedLaboratoryId)
+        .returns<Array<{ laboratory_budget_codes: Array<{ budget_code_id: string }> }>>();
 
       if (error) throw error;
-      return data;
+      const budgetCodes = data?.[0]?.laboratory_budget_codes || [];
+      return budgetCodes;
     },
     enabled: !!selectedLaboratoryId
   });
 
   // Filtrar los códigos presupuestales según el laboratorio seleccionado
   const filteredBudgetCodes = budgetCodes.filter(code => 
-    laboratoryBudgetCodes?.some(lbc => lbc.budget_code_id === code.id)
+    laboratoryBudgetCodes.some(lbc => lbc.budget_code_id === code.id)
   );
 
-  // Establecer el laboratorio del usuario cuando se carga el componente
+  // Si el usuario solo tiene un laboratorio asignado, seleccionarlo automáticamente
   useEffect(() => {
-    if (!canSelectLaboratory && userLaboratory) {
-      form.setValue('laboratoryId', userLaboratory);
+    if (!canSelectLaboratory && userLaboratories.length === 1) {
+      form.setValue('laboratoryId', userLaboratories[0]);
     }
-  }, [userLaboratory, canSelectLaboratory, form]);
+  }, [userLaboratories, canSelectLaboratory, form]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -84,7 +87,7 @@ export const RequestDetails = ({
               <Select
                 onValueChange={field.onChange}
                 value={field.value || ''}
-                disabled={!canSelectLaboratory}
+                disabled={!canSelectLaboratory && userLaboratories.length === 1}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona un laboratorio" />

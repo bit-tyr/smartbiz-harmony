@@ -3,8 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Pencil, Trash2 } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Plus, Pencil, Trash2, Settings } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -32,6 +31,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Database } from "@/types/database.types";
+import { LaboratoryBudgetCodesDialog } from "@/components/laboratories/LaboratoryBudgetCodesDialog";
 
 type Tables = Database['public']['Tables'];
 type Laboratory = Tables['laboratories']['Row'];
@@ -44,9 +44,8 @@ export const Laboratory = () => {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [selectedLaboratory, setSelectedLaboratory] = useState<Laboratory | null>(
-    null
-  );
+  const [isBudgetCodesOpen, setIsBudgetCodesOpen] = useState(false);
+  const [selectedLaboratory, setSelectedLaboratory] = useState<Laboratory | null>(null);
   const [selectedBudgetCodes, setSelectedBudgetCodes] = useState<string[]>([]);
 
   const { data: laboratories } = useQuery({
@@ -91,9 +90,7 @@ export const Laboratory = () => {
         .select("*");
 
       if (error) {
-        toast.error(
-          "Error al cargar las relaciones entre laboratorios y códigos presupuestarios"
-        );
+        toast.error("Error al cargar las relaciones entre laboratorios y códigos presupuestarios");
         return [];
       }
 
@@ -130,41 +127,7 @@ export const Laboratory = () => {
         );
 
       if (relationError) {
-        toast.error(
-          "Error al crear las relaciones con los códigos presupuestarios"
-        );
-        return;
-      }
-    }
-
-    // Eliminar las relaciones existentes
-    const { error: deleteError } = await supabaseTyped
-      .from("laboratory_budget_codes")
-      .delete()
-      .eq("laboratory_id", selectedLaboratory.id);
-
-    if (deleteError) {
-      toast.error(
-        "Error al eliminar las relaciones con los códigos presupuestarios"
-      );
-      return;
-    }
-
-    // Crear las nuevas relaciones
-    if (selectedBudgetCodes.length > 0) {
-      const { error: relationError } = await supabaseTyped
-        .from("laboratory_budget_codes")
-        .insert(
-          selectedBudgetCodes.map((budgetCodeId) => ({
-            laboratory_id: selectedLaboratory.id,
-            budget_code_id: budgetCodeId,
-          }))
-        );
-
-      if (relationError) {
-        toast.error(
-          "Error al crear las relaciones con los códigos presupuestarios"
-        );
+        toast.error("Error al crear las relaciones con los códigos presupuestarios");
         return;
       }
     }
@@ -194,61 +157,14 @@ export const Laboratory = () => {
       return;
     }
 
-    // Eliminar las relaciones existentes
-    const { error: deleteError } = await supabaseTyped
-      .from("laboratory_budget_codes")
-      .delete()
-      .eq("laboratory_id", selectedLaboratory.id);
-
-    if (deleteError) {
-      toast.error(
-        "Error al eliminar las relaciones con los códigos presupuestarios"
-      );
-      return;
-    }
-
-    // Crear las nuevas relaciones
-    if (selectedBudgetCodes.length > 0) {
-      const { error: relationError } = await supabaseTyped
-        .from("laboratory_budget_codes")
-        .insert(
-          selectedBudgetCodes.map((budgetCodeId) => ({
-            laboratory_id: selectedLaboratory.id,
-            budget_code_id: budgetCodeId,
-          }))
-        );
-
-      if (relationError) {
-        toast.error(
-          "Error al crear las relaciones con los códigos presupuestarios"
-        );
-        return;
-      }
-    }
-
     queryClient.invalidateQueries({ queryKey: ["laboratories"] });
-    queryClient.invalidateQueries({ queryKey: ["laboratory_budget_codes"] });
     setIsOpen(false);
     setSelectedLaboratory(null);
-    setSelectedBudgetCodes([]);
     toast.success("Laboratorio actualizado exitosamente");
   };
 
   const handleDelete = async () => {
     if (!selectedLaboratory) return;
-
-    // Eliminar las relaciones primero
-    const { error: relationError } = await supabaseTyped
-      .from("laboratory_budget_codes")
-      .delete()
-      .eq("laboratory_id", selectedLaboratory.id);
-
-    if (relationError) {
-      toast.error(
-        "Error al eliminar las relaciones con los códigos presupuestarios"
-      );
-      return;
-    }
 
     const { error } = await supabase
       .from("laboratories")
@@ -261,7 +177,6 @@ export const Laboratory = () => {
     }
 
     queryClient.invalidateQueries({ queryKey: ["laboratories"] });
-    queryClient.invalidateQueries({ queryKey: ["laboratory_budget_codes"] });
     setIsDeleteOpen(false);
     setSelectedLaboratory(null);
     toast.success("Laboratorio eliminado exitosamente");
@@ -269,32 +184,70 @@ export const Laboratory = () => {
 
   const handleEdit = (laboratory: Laboratory) => {
     setSelectedLaboratory(laboratory);
-    // Obtener los códigos presupuestarios asociados al laboratorio
-    const associatedBudgetCodes =
-      laboratoryBudgetCodes?.filter(
-        (relation) => relation.laboratory_id === laboratory.id
-      ) || [];
-    setSelectedBudgetCodes(
-      associatedBudgetCodes.map((relation) => relation.budget_code_id)
-    );
+    // Cargar los códigos presupuestales asociados al laboratorio
+    const associatedBudgetCodes = laboratoryBudgetCodes
+      ?.filter((lbc) => lbc.laboratory_id === laboratory.id)
+      .map((lbc) => lbc.budget_code_id);
+    setSelectedBudgetCodes(associatedBudgetCodes || []);
     setIsOpen(true);
   };
 
-  const handleCheckboxChange = (budgetCodeId: string) => {
-    setSelectedBudgetCodes((prev) =>
-      prev.includes(budgetCodeId)
-        ? prev.filter((id) => id !== budgetCodeId)
-        : [...prev, budgetCodeId]
-    );
+  const handleBudgetCodesChange = async (budgetCodes: string[]) => {
+    if (!selectedLaboratory) return;
+
+    // Eliminar las relaciones existentes
+    const { error: deleteError } = await supabaseTyped
+      .from("laboratory_budget_codes")
+      .delete()
+      .eq("laboratory_id", selectedLaboratory.id);
+
+    if (deleteError) {
+      toast.error("Error al eliminar las relaciones con los códigos presupuestarios");
+      return;
+    }
+
+    // Crear las nuevas relaciones
+    if (budgetCodes.length > 0) {
+      const { error: relationError } = await supabaseTyped
+        .from("laboratory_budget_codes")
+        .insert(
+          budgetCodes.map((budgetCodeId) => ({
+            laboratory_id: selectedLaboratory.id,
+            budget_code_id: budgetCodeId,
+          }))
+        );
+
+      if (relationError) {
+        toast.error("Error al crear las relaciones con los códigos presupuestarios");
+        return;
+      }
+    }
+
+    queryClient.invalidateQueries({ queryKey: ["laboratory_budget_codes"] });
+    setSelectedBudgetCodes(budgetCodes);
+    toast.success("Códigos presupuestales actualizados exitosamente");
+  };
+
+  const handleOpenBudgetCodes = (laboratory: Laboratory) => {
+    setSelectedLaboratory(laboratory);
+    const associatedBudgetCodes = laboratoryBudgetCodes
+      ?.filter((lbc) => lbc.laboratory_id === laboratory.id)
+      .map((lbc) => lbc.budget_code_id);
+    setSelectedBudgetCodes(associatedBudgetCodes || []);
+    setIsBudgetCodesOpen(true);
   };
 
   return (
-    <div className="container mx-auto py-10">
-      <div className="flex justify-between items-center mb-8">
-        <h2 className="text-3xl font-bold">Laboratorios</h2>
-        <Button onClick={() => setIsOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Agregar
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Laboratorios</h2>
+        <Button onClick={() => {
+          setSelectedLaboratory(null);
+          setSelectedBudgetCodes([]);
+          setIsOpen(true);
+        }}>
+          <Plus className="w-4 h-4 mr-2" />
+          Nuevo Laboratorio
         </Button>
       </div>
 
@@ -303,7 +256,6 @@ export const Laboratory = () => {
           <TableRow>
             <TableHead>Código</TableHead>
             <TableHead>Nombre</TableHead>
-            <TableHead>Códigos Presupuestarios</TableHead>
             <TableHead>Acciones</TableHead>
           </TableRow>
         </TableHeader>
@@ -312,36 +264,30 @@ export const Laboratory = () => {
             <TableRow key={laboratory.id}>
               <TableCell>{laboratory.code}</TableCell>
               <TableCell>{laboratory.name}</TableCell>
-              <TableCell>
-                {laboratoryBudgetCodes
-                  ?.filter(
-                    (relation) => relation.laboratory_id === laboratory.id
-                  )
-                  .map((relation) => {
-                    const budgetCode = budgetCodes?.find(
-                      (code) => code.id === relation.budget_code_id
-                    );
-                    return budgetCode?.code;
-                  })
-                  .join(", ")}
-              </TableCell>
-              <TableCell className="flex gap-2">
+              <TableCell className="space-x-2">
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="icon"
                   onClick={() => handleEdit(laboratory)}
                 >
-                  <Pencil className="h-4 w-4" />
+                  <Pencil className="w-4 h-4" />
                 </Button>
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="icon"
                   onClick={() => {
                     setSelectedLaboratory(laboratory);
                     setIsDeleteOpen(true);
                   }}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleOpenBudgetCodes(laboratory)}
+                >
+                  <Settings className="w-4 h-4" />
                 </Button>
               </TableCell>
             </TableRow>
@@ -353,58 +299,34 @@ export const Laboratory = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {selectedLaboratory
-                ? "Editar Laboratorio"
-                : "Agregar Nuevo Laboratorio"}
+              {selectedLaboratory ? "Editar Laboratorio" : "Nuevo Laboratorio"}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={selectedLaboratory ? handleUpdate : handleCreate}>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <label htmlFor="code" className="text-right">
-                  Código
-                </label>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="code">Código</label>
                 <Input
                   id="code"
                   name="code"
                   defaultValue={selectedLaboratory?.code}
-                  className="col-span-3"
                   required
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <label htmlFor="name" className="text-right">
-                  Nombre
-                </label>
+              <div className="space-y-2">
+                <label htmlFor="name">Nombre</label>
                 <Input
                   id="name"
                   name="name"
                   defaultValue={selectedLaboratory?.name}
-                  className="col-span-3"
                   required
                 />
               </div>
-              <div className="grid grid-cols-4 items-start gap-4">
-                <label className="text-right">
-                  Códigos Presupuestarios
-                </label>
-                <div className="col-span-3 space-y-2">
-                  {budgetCodes?.map((budgetCode) => (
-                    <div key={budgetCode.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={budgetCode.id}
-                        checked={selectedBudgetCodes.includes(budgetCode.id)}
-                        onCheckedChange={() => handleCheckboxChange(budgetCode.id)}
-                      />
-                      <label htmlFor={budgetCode.id}>
-                        {budgetCode.code} - {budgetCode.description}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className="mt-4">
+              <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
+                Cancelar
+              </Button>
               <Button type="submit">
                 {selectedLaboratory ? "Actualizar" : "Crear"}
               </Button>
@@ -418,18 +340,24 @@ export const Laboratory = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Esto eliminará permanentemente el
-              laboratorio y sus relaciones con los códigos presupuestarios.
+              Esta acción no se puede deshacer. Se eliminará permanentemente el laboratorio
+              y todas sus relaciones.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>
-              Eliminar
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleDelete}>Eliminar</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <LaboratoryBudgetCodesDialog
+        isOpen={isBudgetCodesOpen}
+        onClose={() => setIsBudgetCodesOpen(false)}
+        selectedBudgetCodes={selectedBudgetCodes}
+        onBudgetCodesChange={handleBudgetCodesChange}
+        availableBudgetCodes={budgetCodes || []}
+      />
     </div>
   );
 }; 
