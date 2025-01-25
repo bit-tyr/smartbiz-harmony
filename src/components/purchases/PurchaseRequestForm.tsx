@@ -173,15 +173,25 @@ export const PurchaseRequestForm = ({
   });
 
   const { data: budgetCodes } = useQuery<BudgetCode[]>({
-    queryKey: ['budgetCodes'],
+    queryKey: ['budgetCodes', form.watch('laboratoryId')],
     queryFn: async () => {
+      const laboratoryId = form.watch('laboratoryId');
+      if (!laboratoryId) return [];
+
       const { data, error } = await supabase
         .from('budget_codes')
-        .select('*')
+        .select(`
+          *,
+          laboratory_budget_codes!inner (
+            laboratory_id
+          )
+        `)
+        .eq('laboratory_budget_codes.laboratory_id', laboratoryId)
         .order('code');
       if (error) throw error;
       return data;
     },
+    enabled: !!form.watch('laboratoryId')
   });
 
   const { data: suppliers } = useQuery<Supplier[]>({

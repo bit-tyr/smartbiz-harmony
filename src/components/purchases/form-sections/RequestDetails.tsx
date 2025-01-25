@@ -16,8 +16,6 @@ import { UseFormReturn } from "react-hook-form";
 import { FormValues } from "../PurchaseRequestForm";
 import { Database } from "@/types/database.types";
 import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 
 type Tables = Database['public']['Tables'];
 type Laboratory = Tables['laboratories']['Row'];
@@ -42,38 +40,17 @@ export const RequestDetails = ({
 }: RequestDetailsProps) => {
   const selectedLaboratoryId = form.watch("laboratoryId");
 
-  // Obtener los códigos presupuestales asociados al laboratorio seleccionado
-  const { data: laboratoryBudgetCodes = [] } = useQuery({
-    queryKey: ['laboratoryBudgetCodes', selectedLaboratoryId],
-    queryFn: async () => {
-      if (!selectedLaboratoryId) return [];
-      
-      const { data, error } = await supabase
-        .from('laboratories')
-        .select(`
-          laboratory_budget_codes:laboratory_budget_codes(budget_code_id)
-        `)
-        .eq('id', selectedLaboratoryId)
-        .returns<Array<{ laboratory_budget_codes: Array<{ budget_code_id: string }> }>>();
-
-      if (error) throw error;
-      const budgetCodes = data?.[0]?.laboratory_budget_codes || [];
-      return budgetCodes;
-    },
-    enabled: !!selectedLaboratoryId
-  });
-
-  // Filtrar los códigos presupuestales según el laboratorio seleccionado
-  const filteredBudgetCodes = budgetCodes.filter(code => 
-    laboratoryBudgetCodes.some(lbc => lbc.budget_code_id === code.id)
-  );
-
   // Si el usuario solo tiene un laboratorio asignado, seleccionarlo automáticamente
   useEffect(() => {
     if (!canSelectLaboratory && userLaboratories.length === 1) {
       form.setValue('laboratoryId', userLaboratories[0]);
     }
   }, [userLaboratories, canSelectLaboratory, form]);
+
+  // Limpiar el código presupuestal cuando cambia el laboratorio
+  useEffect(() => {
+    form.setValue('budgetCodeId', '');
+  }, [selectedLaboratoryId, form]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -122,7 +99,7 @@ export const RequestDetails = ({
                   <SelectValue placeholder={selectedLaboratoryId ? "Selecciona un código presupuestal" : "Primero selecciona un laboratorio"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {filteredBudgetCodes.map((budgetCode) => (
+                  {budgetCodes.map((budgetCode) => (
                     <SelectItem key={budgetCode.id} value={budgetCode.id}>
                       {budgetCode.code} - {budgetCode.description}
                     </SelectItem>
