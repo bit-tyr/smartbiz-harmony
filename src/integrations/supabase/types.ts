@@ -758,6 +758,7 @@ export type Database = {
         | "en_proceso"
         | "aprobado"
         | "denegado"
+      user_role: "administrador" | "compras" | "usuario"
     }
     CompositeTypes: {
       [_ in never]: never

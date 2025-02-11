@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -16,67 +17,69 @@ interface LoginFormProps {
 }
 
 const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
-  const [email, setEmail] = useState("compras@gmail.com");
-  const [password, setPassword] = useState("compras123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const createAdminUser = async () => {
-    setIsLoading(true);
-    try {
-      const hasExistingAdmin = await checkExistingAdmin();
-
-      if (hasExistingAdmin) {
-        toast.info("El usuario administrador ya existe, intentando iniciar sesión...");
-        await handleLogin(null, true);
-        return;
-      }
-
-      const authResponse = await loginUser("admin@example.com", "admin123");
-      if (!authResponse.user) throw new Error("No user data received");
-
-      const result = await createAdminProfile(authResponse.user.id);
-      if (!result.success) throw result.error;
-
-      toast.success('Usuario administrador creado exitosamente');
-      await handleLogin(null, true);
-    } catch (error) {
-      console.error('Error creating admin user:', error);
-      toast.error('Error al crear usuario administrador');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleLogin = async (e: React.FormEvent | null, isAutoLogin = false) => {
+  const handleLogin = async (e: React.FormEvent | null) => {
     if (e) e.preventDefault();
     
-    const loginEmail = isAutoLogin ? "admin@example.com" : email;
-    const loginPassword = isAutoLogin ? "admin123" : password;
-    
-    if (!isAutoLogin && !validateLoginForm(loginEmail, loginPassword)) return;
+    if (!validateLoginForm(email, password)) return;
     
     setIsLoading(true);
-    console.log("Attempting login with email:", loginEmail);
+    console.log("Attempting login with email:", email);
 
     try {
-      const authData = await loginUser(loginEmail, loginPassword);
-      if (!authData.user) throw new Error("No user data received");
-      
-      console.log("Auth successful, fetching profile for user:", authData.user.id);
+      const { data: { user }, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
 
-      const profile = await fetchUserProfile(authData.user.id);
+      if (authError) throw authError;
+      if (!user) throw new Error("No user data received");
       
-      const successMessage = profile.is_admin 
-        ? "Inicio de sesión exitoso como administrador"
-        : "Inicio de sesión exitoso";
+      console.log("Auth successful, fetching profile for user:", user.id);
+
+      // Fetch both profile and role information
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select(`
+          *,
+          roles!profiles_role_id_fkey (
+            name
+          )
+        `)
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) {
+        console.error("Error fetching profile:", profileError);
+        throw new Error("Error fetching user profile");
+      }
+
+      if (!profile) {
+        throw new Error("No profile found");
+      }
+
+      console.log("Profile fetched:", profile);
+
+      // Check if user is in admin_users table
+      const { data: adminUser } = await supabase
+        .from('admin_users')
+        .select('user_id')
+        .eq('user_id', user.id)
+        .single();
+
+      const isAdmin = profile.is_admin || !!adminUser;
       
-      toast.success(successMessage);
-      console.log("Login successful, redirecting user. Is admin:", profile.is_admin);
-      
-      if (profile.is_admin) {
+      if (isAdmin) {
+        console.log("User is admin, redirecting to admin panel");
+        toast.success("Inicio de sesión exitoso como administrador");
         navigate("/admin");
       } else {
+        console.log("User is not admin, redirecting to select area");
+        toast.success("Inicio de sesión exitoso");
         navigate("/select-area");
       }
     } catch (error: any) {
@@ -126,15 +129,6 @@ const LoginForm = ({ onToggleRegister, onForgotPassword }: LoginFormProps) => {
         disabled={isLoading}
       >
         {isLoading ? <LoadingSpinner /> : "Iniciar Sesión"}
-      </Button>
-      <Button
-        variant="outline"
-        type="button"
-        onClick={createAdminUser}
-        disabled={isLoading}
-        className="w-full"
-      >
-        Crear Usuario Administrador
       </Button>
       <div className="flex flex-col gap-2">
         <Button
