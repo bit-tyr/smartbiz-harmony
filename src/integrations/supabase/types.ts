@@ -68,6 +68,30 @@ export type Database = {
           },
         ]
       }
+      chat_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          sender_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          sender_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          sender_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       laboratories: {
         Row: {
           code: string | null
@@ -94,6 +118,47 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          purchase_request_id: string | null
+          read: boolean | null
+          title: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          purchase_request_id?: string | null
+          read?: boolean | null
+          title: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          purchase_request_id?: string | null
+          read?: boolean | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_purchase_request_id_fkey"
+            columns: ["purchase_request_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_requests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
@@ -448,6 +513,92 @@ export type Database = {
           phone?: string | null
           ruc?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      travel_expenses: {
+        Row: {
+          created_at: string | null
+          currency: string | null
+          description: string | null
+          estimated_amount: number
+          expense_type: string
+          id: string
+          receipt_path: string | null
+          status: string | null
+          travel_request_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          estimated_amount: number
+          expense_type: string
+          id?: string
+          receipt_path?: string | null
+          status?: string | null
+          travel_request_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          estimated_amount?: number
+          expense_type?: string
+          id?: string
+          receipt_path?: string | null
+          status?: string | null
+          travel_request_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "travel_expenses_travel_request_id_fkey"
+            columns: ["travel_request_id"]
+            isOneToOne: false
+            referencedRelation: "travel_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      travel_requests: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          destination: string
+          end_date: string
+          id: string
+          purpose: string
+          start_date: string
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          destination: string
+          end_date: string
+          id?: string
+          purpose: string
+          start_date: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          destination?: string
+          end_date?: string
+          id?: string
+          purpose?: string
+          start_date?: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
