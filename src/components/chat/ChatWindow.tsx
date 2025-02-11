@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ChatMessage } from "./ChatMessage";
@@ -59,7 +60,7 @@ export const ChatWindow = () => {
           const { data: profilesData, error: profilesError } = await supabase
             .from('profiles')
             .select('id, email')
-            .in('id', senderIds);
+            .in('id', senderIds.filter(Boolean));
 
           if (profilesError) throw profilesError;
 
@@ -70,9 +71,9 @@ export const ChatWindow = () => {
           const formattedMessages = messagesData.map(msg => ({
             id: msg.id,
             content: msg.content,
-            sender_id: msg.sender_id,
-            created_at: msg.created_at,
-            sender_email: emailMap.get(msg.sender_id) || 'Unknown'
+            sender_id: msg.sender_id ?? '',
+            created_at: msg.created_at ?? new Date().toISOString(),
+            sender_email: emailMap.get(msg.sender_id ?? '') || 'Unknown'
           }));
           
           setMessages(formattedMessages);
@@ -108,8 +109,8 @@ export const ChatWindow = () => {
             const newMessage: Message = {
               id: payload.new.id,
               content: payload.new.content,
-              sender_id: payload.new.sender_id,
-              created_at: payload.new.created_at,
+              sender_id: payload.new.sender_id ?? '',
+              created_at: payload.new.created_at ?? new Date().toISOString(),
               sender_email: profileData?.email || 'Unknown'
             };
 
