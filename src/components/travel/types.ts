@@ -1,3 +1,4 @@
+
 export interface TravelRequest {
   id: string;
   user_id: string;
@@ -43,4 +44,7 @@ export interface TravelRequest {
   check_out?: string;
   number_of_days?: number;
   status?: string;
+  start_date: string;
+  end_date: string;
+  description?: string;
 }

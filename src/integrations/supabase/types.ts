@@ -261,6 +261,20 @@ export type Database = {
             referencedRelation: "laboratories"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "profiles_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "user_roles_view"
+            referencedColumns: ["role_id"]
+          },
         ]
       }
       purchase_request_attachments: {

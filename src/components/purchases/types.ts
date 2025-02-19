@@ -1,3 +1,4 @@
+
 export interface Laboratory {
   id: string;
   name: string;
@@ -12,7 +13,10 @@ export interface BudgetCode {
 export interface Profile {
   first_name: string;
   last_name: string;
-  email?: string; // Made optional since it might not come from the DB query
+  email?: string;
+  roles?: {
+    name: string;
+  };
 }
 
 export interface PurchaseRequestItem {
@@ -32,16 +36,16 @@ export interface PurchaseRequestItem {
 
 export interface PurchaseRequest {
   id: string;
-  number: number;
+  number: string;
   created_at: string;
   deleted_at?: string | null;
-  creator_id: string;
+  creator_id?: string;
   user_id: string;
   laboratory_id: string;
   budget_code_id: string;
   observations: string;
   status: string;
-  actions: string;
+  actions: string[];
   laboratory?: Laboratory;
   budget_code?: BudgetCode;
   profiles?: Profile;
@@ -49,4 +53,16 @@ export interface PurchaseRequest {
   bank?: string;
   account_number?: string;
   account_holder?: string;
+}
+
+export interface Attachment {
+  id: string;
+  file_name: string;
+  file_path: string;
+  file_size: number;
+  file_type: string;
+  purchase_request_id: string;
+  uploaded_by: string;
+  created_at: string;
+  updated_at: string;
 }
