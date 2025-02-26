@@ -12,57 +12,83 @@ import {
 } from "@/components/ui/table";
 
 export const PurchaseRequestTable = () => {
-  const { data: requests } = useQuery<PurchaseRequest[]>({
+  const { data: requests = [] } = useQuery<PurchaseRequest[]>({
     queryKey: ['purchaseRequests'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('purchase_requests')
-        .select(`
-          *,
-          laboratory:laboratories!left(
+      try {
+        const { data, error } = await supabase
+          .from('purchase_requests')
+          .select(`
             id,
-            name,
+            number,
             created_at,
-            description
-          ),
-          budget_code:budget_codes!left(
-            id,
-            code,
-            description,
-            created_at
-          ),
-          purchase_request_items(
-            id,
-            quantity,
-            unit_price,
-            currency,
-            product:products(
+            deleted_at,
+            user_id,
+            laboratory_id,
+            budget_code_id,
+            observations,
+            status,
+            actions,
+            total_amount,
+            laboratory:laboratories(
               id,
               name,
-              supplier:suppliers(
+              created_at,
+              description
+            ),
+            budget_code:budget_codes(
+              id,
+              code,
+              description,
+              created_at
+            ),
+            purchase_request_items(
+              id,
+              quantity,
+              unit_price,
+              currency,
+              product:products(
                 id,
-                name
+                name,
+                supplier:suppliers(
+                  id,
+                  name
+                )
               )
             )
-          )
-        `)
-        .order('created_at', { ascending: false });
+          `)
+          .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      
-      // Transform the data to ensure it matches PurchaseRequest type
-      const transformedData = (data || []).map(item => ({
-        ...item,
-        laboratory: item.laboratory || null,
-        budget_code: item.budget_code || null,
-        purchase_request_items: item.purchase_request_items || []
-      }));
+        if (error) {
+          console.error('Error fetching purchase requests:', error);
+          return [];
+        }
 
-      return transformedData;
+        // Transform and validate the data
+        return (data || []).map(request => ({
+          id: request.id,
+          number: request.number,
+          created_at: request.created_at,
+          deleted_at: request.deleted_at,
+          user_id: request.user_id,
+          laboratory_id: request.laboratory_id,
+          budget_code_id: request.budget_code_id,
+          observations: request.observations,
+          status: request.status,
+          actions: request.actions,
+          total_amount: request.total_amount,
+          laboratory: request.laboratory || null,
+          budget_code: request.budget_code || null,
+          purchase_request_items: request.purchase_request_items || []
+        })) as PurchaseRequest[];
+      } catch (error) {
+        console.error('Unexpected error:', error);
+        return [];
+      }
     }
   });
 
-  if (!requests || requests.length === 0) {
+  if (requests.length === 0) {
     return <div>No hay solicitudes</div>;
   }
 
