@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { RequestDetails } from "./form-sections/RequestDetails";
 import { ProductDetails } from "./form-sections/ProductDetails";
 import { AttachmentSection } from "./form-sections/AttachmentSection";
-import { Laboratory, BudgetCode, FormData } from "./types";
+import { Laboratory, BudgetCodeResponse, FormData, Supplier } from "./types";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,11 +20,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { Database } from "@/types/database.types";
-
-type BudgetCodeResponse = Database['public']['Tables']['budget_codes']['Row'] & {
-  laboratory_budget_codes: Array<{ laboratory_id: string }>;
-};
 
 export interface PurchaseRequestFormProps {
   onSubmit: (values: FormData & { files: File[] }) => Promise<void>;
@@ -96,6 +91,7 @@ export const PurchaseRequestForm = ({
           code,
           description,
           created_at,
+          updated_at,
           laboratory_budget_codes!inner(laboratory_id)
         `)
         .eq('laboratory_budget_codes.laboratory_id', laboratoryId)
@@ -105,6 +101,18 @@ export const PurchaseRequestForm = ({
       return data;
     },
     enabled: !!form.watch('laboratoryId')
+  });
+
+  const { data: suppliers } = useQuery<Supplier[]>({
+    queryKey: ['suppliers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('suppliers')
+        .select('*')
+        .order('name');
+      if (error) throw error;
+      return data;
+    }
   });
 
   const handleFilesChange = (files: File[]) => {
@@ -122,7 +130,10 @@ export const PurchaseRequestForm = ({
         isEditing={isEditing}
       />
       
-      <ProductDetails form={form} />
+      <ProductDetails 
+        form={form}
+        suppliers={suppliers || []}
+      />
 
       <FormField
         control={form.control}

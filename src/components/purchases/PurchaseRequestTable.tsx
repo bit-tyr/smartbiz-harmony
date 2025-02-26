@@ -10,9 +10,10 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table";
+import { formatDate } from "@/lib/utils";
 
 export const PurchaseRequestTable = () => {
-  const { data: requests } = useQuery<PurchaseRequest[]>({
+  const { data: requests = [] } = useQuery<PurchaseRequest[]>({
     queryKey: ['purchaseRequests'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -49,38 +50,34 @@ export const PurchaseRequestTable = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data as PurchaseRequest[];
     }
   });
 
+  if (requests.length === 0) {
+    return <div>No hay solicitudes</div>;
+  }
+
   return (
-    <div className="w-full">
-      {requests && requests.length > 0 ? (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Número</TableHead>
-              <TableHead>Laboratorio</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead>Fecha</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {requests.map((request) => (
-              <TableRow key={request.id}>
-                <TableCell>{request.number}</TableCell>
-                <TableCell>{request.laboratory?.name}</TableCell>
-                <TableCell>{request.status}</TableCell>
-                <TableCell>
-                  {new Date(request.created_at || '').toLocaleDateString()}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      ) : (
-        <p>No hay solicitudes</p>
-      )}
-    </div>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Número</TableHead>
+          <TableHead>Laboratorio</TableHead>
+          <TableHead>Estado</TableHead>
+          <TableHead>Fecha</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {requests.map((request) => (
+          <TableRow key={request.id}>
+            <TableCell>{request.number}</TableCell>
+            <TableCell>{request.laboratory?.name}</TableCell>
+            <TableCell>{request.status}</TableCell>
+            <TableCell>{request.created_at ? new Date(request.created_at).toLocaleDateString() : '-'}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 };

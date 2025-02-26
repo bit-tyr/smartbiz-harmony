@@ -8,12 +8,13 @@ export interface Laboratory {
   description: string | null;
 }
 
-export interface BudgetCode {
+export interface BudgetCodeResponse {
   id: string;
   code: string;
   description: string | null;
   created_at: string;
   updated_at: string;
+  laboratory_budget_codes: { laboratory_id: string; }[];
 }
 
 export interface Profile {
@@ -65,14 +66,10 @@ export interface PurchaseRequest {
   total_amount?: number | null;
 }
 
-export interface Attachment {
+export interface BudgetCode {
   id: string;
-  file_name: string;
-  file_path: string;
-  file_size: number;
-  file_type: string;
-  purchase_request_id: string;
-  uploaded_by: string;
+  code: string;
+  description: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -88,6 +85,10 @@ export interface FormData {
   observations?: string;
 }
 
-export interface BudgetCodeWithLaboratory extends BudgetCode {
-  laboratory_budget_codes: Array<{ laboratory_id: string }>;
+export interface Supplier {
+  id: string;
+  name: string;
+  code: string;
+  description: string | null;
+  created_at: string;
 }
