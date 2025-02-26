@@ -59,3 +59,25 @@ export interface TravelRequestFormData extends Omit<TravelRequest, 'id' | 'creat
   checkIn?: Date | null;
   checkOut?: Date | null;
 }
+
+export interface Supplier {
+  id: string;
+  name: string;
+  code: string;
+  description?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface UserProfile {
+  id: string;
+  email: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  is_admin: boolean;
+  is_blocked: boolean;
+  role_id: string;
+  laboratory_id: string | null;
+  created_at: string;
+  updated_at: string;
+}

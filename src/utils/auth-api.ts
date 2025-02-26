@@ -1,46 +1,31 @@
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { supabase } from '@/integrations/supabase/client';
 
 export interface UserProfile {
+  id: string;
+  email: string | null;
   is_admin: boolean;
-  role_id: string;
+  role_id: string | null;
   laboratory_id: string | null;
   first_name: string | null;
   last_name: string | null;
 }
 
-export const fetchUserProfile = async (userId: string) => {
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('is_admin, role_id, laboratory_id, first_name, last_name')
-    .eq('id', userId)
-    .single();
-
-  if (error) {
-    console.error("Error fetching profile:", error);
-    throw error;
-  }
-
-  if (!profile) {
-    throw new Error("No profile found");
-  }
-
-  return profile as UserProfile;
-};
-
-export const loginUser = async (email: string, password: string) => {
+export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
   try {
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
-      password,
-    });
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
 
-    if (authError) throw authError;
-    if (!authData?.user) throw new Error("No user data received");
+    if (error) {
+      console.error('Error fetching user profile:', error);
+      return null;
+    }
 
-    return authData;
+    return profile as UserProfile;
   } catch (error) {
-    console.error("Login error:", error);
-    throw error;
+    console.error('Error in getUserProfile:', error);
+    return null;
   }
 };

@@ -311,32 +311,68 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          email: string | null
+          first_name: string | null
           id: string
           is_admin: boolean | null
           is_blocked: boolean | null
+          laboratory_id: string | null
+          last_name: string | null
+          role_id: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
+          email?: string | null
+          first_name?: string | null
           id: string
           is_admin?: boolean | null
           is_blocked?: boolean | null
+          laboratory_id?: string | null
+          last_name?: string | null
+          role_id?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
+          email?: string | null
+          first_name?: string | null
           id?: string
           is_admin?: boolean | null
           is_blocked?: boolean | null
+          laboratory_id?: string | null
+          last_name?: string | null
+          role_id?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_profiles_roles"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "profiles_id_fkey"
             columns: ["id"]
             isOneToOne: true
             referencedRelation: "user_laboratory_budget_codes"
             referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "profiles_laboratory_id_fkey"
+            columns: ["laboratory_id"]
+            isOneToOne: false
+            referencedRelation: "laboratories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -470,6 +506,7 @@ export type Database = {
       }
       purchase_requests: {
         Row: {
+          actions: Json | null
           budget_code_id: string | null
           created_at: string | null
           deleted_at: string | null
@@ -483,6 +520,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          actions?: Json | null
           budget_code_id?: string | null
           created_at?: string | null
           deleted_at?: string | null
@@ -496,6 +534,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          actions?: Json | null
           budget_code_id?: string | null
           created_at?: string | null
           deleted_at?: string | null
@@ -617,6 +656,7 @@ export type Database = {
           destination: string
           end_date: string
           id: string
+          laboratory_id: string | null
           purpose: string
           start_date: string
           status: string | null
@@ -629,6 +669,7 @@ export type Database = {
           destination: string
           end_date: string
           id?: string
+          laboratory_id?: string | null
           purpose: string
           start_date: string
           status?: string | null
@@ -641,6 +682,7 @@ export type Database = {
           destination?: string
           end_date?: string
           id?: string
+          laboratory_id?: string | null
           purpose?: string
           start_date?: string
           status?: string | null
@@ -648,6 +690,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "travel_requests_laboratory_id_fkey"
+            columns: ["laboratory_id"]
+            isOneToOne: false
+            referencedRelation: "laboratories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "travel_requests_user_id_fkey"
             columns: ["user_id"]
