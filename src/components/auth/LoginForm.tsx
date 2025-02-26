@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { LoadingSpinner } from "../ui/loading";
 import { createAdminProfile, handleAuthError, checkExistingAdmin } from "@/utils/auth";
-import { loginUser, fetchUserProfile } from "@/utils/auth-api";
+import { getUserProfile } from "@/utils/auth-api";
 import { validateLoginForm } from "./LoginFormValidation";
 import { supabase } from "@/integrations/supabase/client";
 

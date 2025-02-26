@@ -1,16 +1,14 @@
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { TravelRequestForm } from "./TravelRequestForm";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { TravelRequestFormValues } from "./schemas/travelRequestSchema";
+import { LoadingSpinner } from "@/components/ui/loading";
 
 interface CreateTravelRequestDialogProps {
   open: boolean;
@@ -19,13 +17,57 @@ interface CreateTravelRequestDialogProps {
 
 export const CreateTravelRequestDialog = ({
   open,
-  onOpenChange,
+  onOpenChange
 }: CreateTravelRequestDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const queryClient = useQueryClient();
+  const [formData, setFormData] = useState({
+    start_date: "",
+    end_date: "",
+    destination: "",
+    purpose: "",
+    description: "",
+    laboratory_id: "",
+    budget_code_id: ""
+  });
 
-  const handleSubmit = async (values: TravelRequestFormValues) => {
+  const { data: laboratories } = useQuery({
+    queryKey: ['laboratories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('laboratories')
+        .select('*')
+        .order('name');
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const { data: budgetCodes } = useQuery({
+    queryKey: ['budgetCodes', formData.laboratory_id],
+    queryFn: async () => {
+      if (!formData.laboratory_id) return [];
+      const { data, error } = await supabase
+        .from('budget_codes')
+        .select('*')
+        .eq('laboratory_id', formData.laboratory_id)
+        .order('code');
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!formData.laboratory_id
+  });
+
+  const handleChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsSubmitting(true);
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
@@ -33,54 +75,27 @@ export const CreateTravelRequestDialog = ({
         return;
       }
 
-      const { error: requestError } = await supabase
+      const { error } = await supabase
         .from('travel_requests')
         .insert({
           user_id: session.user.id,
-          laboratory_id: values.laboratoryId,
-          budget_code_id: values.budgetCodeId,
-          destination: values.destination,
-          departure_date: values.departureDate?.toISOString().split('T')[0],
-          return_date: values.returnDate?.toISOString().split('T')[0],
-          purpose: values.travelPurpose,
-          total_estimated_budget: Number(values.allowanceAmount || 0),
-          currency: values.currency || 'USD',
-          status: 'pendiente',
-          first_name: values.firstName,
-          last_name: values.lastName,
-          document_number: values.documentNumber,
-          birth_date: values.birthDate?.toISOString().split('T')[0],
-          document_expiry: values.documentExpiry?.toISOString().split('T')[0],
-          phone: values.phone,
-          email: values.email,
-          travel_purpose: values.travelPurpose,
-          needs_passage: values.needsPassage,
-          needs_insurance: values.needsInsurance,
-          emergency_contact: values.emergencyContact,
-          preferred_schedule: values.preferredSchedule,
-          requires_allowance: values.requiresAllowance,
-          allowance_amount: values.allowanceAmount,
-          bank: values.bank,
-          account_number: values.accountNumber,
-          account_holder: values.accountHolder,
-          hotel_name: values.hotelName,
-          check_in: values.checkIn?.toISOString().split('T')[0],
-          check_out: values.checkOut?.toISOString().split('T')[0],
-          number_of_days: values.numberOfDays
+          start_date: formData.start_date,
+          end_date: formData.end_date,
+          destination: formData.destination,
+          purpose: formData.purpose,
+          description: formData.description,
+          laboratory_id: formData.laboratory_id,
+          budget_code_id: formData.budget_code_id,
+          status: 'pending'
         });
 
-      if (requestError) {
-        console.error('Error al crear la solicitud:', requestError);
-        toast.error("Error al crear la solicitud");
-        return;
-      }
+      if (error) throw error;
 
-      toast.success("Solicitud creada exitosamente");
-      queryClient.invalidateQueries({ queryKey: ['travelRequests'] });
+      toast.success("Solicitud de viaje creada exitosamente");
       onOpenChange(false);
     } catch (error) {
-      console.error('Error inesperado al crear la solicitud:', error);
-      toast.error("Error inesperado al crear la solicitud");
+      console.error('Error creating travel request:', error);
+      toast.error("Error al crear la solicitud de viaje");
     } finally {
       setIsSubmitting(false);
     }
@@ -88,18 +103,123 @@ export const CreateTravelRequestDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Nueva Solicitud de Viaje</DialogTitle>
-          <DialogDescription>
-            Complete los detalles de la nueva solicitud de viaje
-          </DialogDescription>
         </DialogHeader>
-        <TravelRequestForm
-          onSubmit={handleSubmit}
-          isSubmitting={isSubmitting}
-          onCancel={() => onOpenChange(false)}
-        />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="start_date">Fecha de Inicio</Label>
+              <Input
+                id="start_date"
+                type="date"
+                required
+                value={formData.start_date}
+                onChange={(e) => handleChange('start_date', e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="end_date">Fecha de Fin</Label>
+              <Input
+                id="end_date"
+                type="date"
+                required
+                value={formData.end_date}
+                onChange={(e) => handleChange('end_date', e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="destination">Destino</Label>
+            <Input
+              id="destination"
+              required
+              value={formData.destination}
+              onChange={(e) => handleChange('destination', e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="purpose">Propósito</Label>
+            <Input
+              id="purpose"
+              required
+              value={formData.purpose}
+              onChange={(e) => handleChange('purpose', e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Descripción</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => handleChange('description', e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="laboratory">Laboratorio</Label>
+            <Select
+              value={formData.laboratory_id}
+              onValueChange={(value) => handleChange('laboratory_id', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona un laboratorio" />
+              </SelectTrigger>
+              <SelectContent>
+                {laboratories?.map((lab) => (
+                  <SelectItem key={lab.id} value={lab.id}>
+                    {lab.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="budget_code">Código Presupuestal</Label>
+            <Select
+              value={formData.budget_code_id}
+              onValueChange={(value) => handleChange('budget_code_id', value)}
+              disabled={!formData.laboratory_id}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona un código presupuestal" />
+              </SelectTrigger>
+              <SelectContent>
+                {budgetCodes?.map((code) => (
+                  <SelectItem key={code.id} value={code.id}>
+                    {code.code} - {code.description}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex justify-end gap-4 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <LoadingSpinner className="mr-2" />
+                  Guardando...
+                </>
+              ) : (
+                'Crear Solicitud'
+              )}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

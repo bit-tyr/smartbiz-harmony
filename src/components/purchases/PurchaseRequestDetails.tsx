@@ -1,3 +1,4 @@
+
 import {
   Dialog,
   DialogContent,
@@ -6,7 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { PurchaseRequest } from "../types";
+import { PurchaseRequest } from "./types";
 import React from "react";
 
 interface PurchaseRequestDetailsProps {

@@ -1,152 +1,51 @@
-import { TableCell, TableRow } from "@/components/ui/table";
+import { TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { MoreVertical, Edit, Trash2, CheckCircle, Loader2 } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { statusConfig } from "../PurchaseRequestList";
-import { PurchaseRequest } from "@/components/purchases/types";
+import { PurchaseRequest } from "../types";
+import { Plane } from "lucide-react";
 
 interface PurchaseRequestTableRowProps {
   request: PurchaseRequest;
-  visibleColumns: {
-    number: boolean;
-    laboratory: boolean;
-    budgetCode: boolean;
-    product: boolean;
-    supplier: boolean;
-    quantity: boolean;
-    unitPrice: boolean;
-    currency: boolean;
-    status: boolean;
-    date: boolean;
-    observations: boolean;
-    creator: boolean;
-  };
-  onClick: () => void;
-  onDelete: (requestId: string) => void;
-  onStatusChange: (requestId: string, newStatus: string) => void;
-  userRole: string | null;
-  isSelected: boolean;
-  onSelect: () => void;
-  showSelection: boolean;
+  onSelect: (request: PurchaseRequest) => void;
 }
 
-export const PurchaseRequestTableRow = ({
-  request,
-  visibleColumns,
-  onClick,
-  onDelete,
-  onStatusChange,
-  userRole,
-  isSelected,
-  onSelect,
-  showSelection,
-}: PurchaseRequestTableRowProps) => {
-  const handleClick = () => {
-    onClick();
-  };
+const statusConfig = {
+  pending: { label: "Pendiente", className: "bg-yellow-100 text-yellow-800 border-yellow-200" },
+  in_process: { label: "En Proceso", className: "bg-blue-100 text-blue-800 border-blue-200" },
+  purchased: { label: "Comprado", className: "bg-green-100 text-green-800 border-green-200" },
+  ready_for_delivery: { label: "Listo para Entrega", className: "bg-purple-100 text-purple-800 border-purple-200" },
+  delivered: { label: "Entregado", className: "bg-gray-100 text-gray-800 border-gray-200" }
+};
+
+export const PurchaseRequestTableRow: React.FC<PurchaseRequestTableRowProps> = ({ request, onSelect }) => {
+  const itemLimit = 3;
+  const hasMoreItems = request.purchase_request_items && request.purchase_request_items.length > itemLimit;
+  const displayedItems = request.purchase_request_items ? request.purchase_request_items.slice(0, itemLimit) : [];
 
   return (
-    <TableRow
-      onClick={handleClick}
-      className={cn(
-        "cursor-pointer hover:bg-muted/50",
-        isSelected && "bg-muted/50"
-      )}
-    >
-      {showSelection && (
-        <TableCell className="pl-5">
-          <input
-            type="checkbox"
-            checked={isSelected}
-            onChange={onSelect}
-            className="h-4 w-4 rounded accent-primary"
-          />
-        </TableCell>
-      )}
-      {visibleColumns.number && <TableCell>{request.number}</TableCell>}
-      {visibleColumns.laboratory && <TableCell>{request.laboratory?.name}</TableCell>}
-      {visibleColumns.budgetCode && (
-        <TableCell>
-          {request.budget_code?.code} - {request.budget_code?.description}
-        </TableCell>
-      )}
-      {visibleColumns.product && (
-        <TableCell>
-          {request.purchase_request_items?.[0]?.product?.name}
-        </TableCell>
-      )}
-      {visibleColumns.supplier && (
-        <TableCell>
-          {request.purchase_request_items?.[0]?.product?.supplier?.name}
-        </TableCell>
-      )}
-      {visibleColumns.quantity && (
-        <TableCell>{request.purchase_request_items?.[0]?.quantity}</TableCell>
-      )}
-      {visibleColumns.unitPrice && (
-        <TableCell>{request.purchase_request_items?.[0]?.unit_price}</TableCell>
-      )}
-      {visibleColumns.currency && (
-        <TableCell>{request.purchase_request_items?.[0]?.currency}</TableCell>
-      )}
-      {visibleColumns.status && (
-        <TableCell>
-          <Badge className={statusConfig[request.status]?.className}>
-            {statusConfig[request.status]?.label}
-          </Badge>
-        </TableCell>
-      )}
-      {visibleColumns.date && <TableCell>{request.created_at}</TableCell>}
-      {visibleColumns.observations && <TableCell>{request.observations}</TableCell>}
-      {visibleColumns.creator && (
-        <TableCell>
-          {request.profile && (
-            <div className="text-sm text-muted-foreground">
-              {request.profile.first_name} {request.profile.last_name}
-            </div>
-          )}
-        </TableCell>
-      )}
+    <TableRow>
+      <TableCell className="font-medium">{request.number}</TableCell>
+      <TableCell>{request.created_at}</TableCell>
+      <TableCell>{request.laboratory?.name}</TableCell>
+      <TableCell>
+        {displayedItems.map((item, index) => (
+          <div key={item.id}>
+            {item.product?.name}
+            {index < displayedItems.length - 1 && ", "}
+          </div>
+        ))}
+        {hasMoreItems && "..."}
+      </TableCell>
+      <TableCell>
+        <Badge className={statusConfig[request.status || 'pending']?.className}>
+          {statusConfig[request.status || 'pending']?.label}
+        </Badge>
+      </TableCell>
       <TableCell className="text-right">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={onClick}>
-              <Edit className="mr-2 h-4 w-4" /> Ver Detalles
-            </DropdownMenuItem>
-            {userRole && ['admin', 'manager', 'Purchases'].includes(userRole) && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => onDelete(request.id)}>
-                  <Trash2 className="mr-2 h-4 w-4" /> Eliminar
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                {request.status !== 'purchased' && (
-                  <DropdownMenuItem onClick={() => onStatusChange(request.id, 'purchased')}>
-                    <CheckCircle className="mr-2 h-4 w-4" /> Marcar como Comprado
-                  </DropdownMenuItem>
-                )}
-                {request.status !== 'ready_for_delivery' && (
-                  <DropdownMenuItem onClick={() => onStatusChange(request.id, 'ready_for_delivery')}>
-                    <Plane className="mr-2 h-4 w-4" /> Marcar como Listo para Entrega
-                  </DropdownMenuItem>
-                )}
-                {request.status !== 'delivered' && (
-                  <DropdownMenuItem onClick={() => onStatusChange(request.id, 'delivered')}>
-                    <Loader2 className="mr-2 h-4 w-4" /> Marcar como Entregado
-                  </DropdownMenuItem>
-                )}
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Button variant="outline" size="sm" onClick={() => onSelect(request)}>
+          Ver Detalles
+        </Button>
       </TableCell>
     </TableRow>
   );

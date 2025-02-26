@@ -1,4 +1,6 @@
 
+import { Json } from "@/types/supabase";
+
 export interface Laboratory {
   id: string;
   name: string;
@@ -7,7 +9,7 @@ export interface Laboratory {
 export interface BudgetCode {
   id: string;
   code: string;
-  description: string;
+  description: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -46,23 +48,20 @@ export interface PurchaseRequestItem {
 export interface PurchaseRequest {
   id: string;
   number: string;
-  created_at: string;
+  created_at: string | null;
   deleted_at?: string | null;
   creator_id?: string;
   user_id: string;
-  laboratory_id: string;
-  budget_code_id: string;
-  observations: string;
-  status: string;
-  actions: string[] | null;
-  laboratory?: Laboratory;
-  budget_code?: BudgetCode;
-  profile?: Profile;
+  laboratory_id: string | null;
+  budget_code_id: string | null;
+  observations: string | null;
+  status: string | null;
+  actions: Json | null;
+  laboratory?: Laboratory | null;
+  budget_code?: BudgetCode | null;
+  profile?: Profile | null;
   purchase_request_items?: PurchaseRequestItem[];
-  bank?: string;
-  account_number?: string;
-  account_holder?: string;
-  total_amount?: number;
+  total_amount?: number | null;
 }
 
 export interface Attachment {
@@ -80,3 +79,14 @@ export interface Attachment {
 export type JsonError = {
   error: true;
 } & string;
+
+export interface Laboratory {
+  id: string;
+  name: string;
+  created_at: string;
+  description: string | null;
+}
+
+export interface BudgetCodeWithLaboratory extends BudgetCode {
+  laboratory_budget_codes: Array<{ laboratory_id: string }>;
+}
