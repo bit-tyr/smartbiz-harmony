@@ -19,16 +19,17 @@ export const PurchaseRequestTable = () => {
         .from('purchase_requests')
         .select(`
           *,
-          laboratory:laboratories(
+          laboratory:laboratories!left(
             id,
             name,
             created_at,
             description
           ),
-          budget_code:budget_codes(
+          budget_code:budget_codes!left(
             id,
             code,
-            description
+            description,
+            created_at
           ),
           purchase_request_items(
             id,
@@ -48,7 +49,16 @@ export const PurchaseRequestTable = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return (data || []) as PurchaseRequest[];
+      
+      // Transform the data to ensure it matches PurchaseRequest type
+      const transformedData = (data || []).map(item => ({
+        ...item,
+        laboratory: item.laboratory || null,
+        budget_code: item.budget_code || null,
+        purchase_request_items: item.purchase_request_items || []
+      }));
+
+      return transformedData;
     }
   });
 

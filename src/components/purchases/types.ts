@@ -1,3 +1,4 @@
+
 import { Json } from "@/types/supabase";
 
 export interface Laboratory {
@@ -7,12 +8,12 @@ export interface Laboratory {
   description: string | null;
 }
 
-export interface BudgetCodeResponse {
+export interface BudgetCode {
   id: string;
   code: string;
   description: string | null;
   created_at: string;
-  laboratory_budget_codes: { laboratory_id: string; }[];
+  laboratory_budget_codes?: { laboratory_id: string; }[];
 }
 
 export interface Profile {
@@ -62,14 +63,6 @@ export interface PurchaseRequest {
   profile?: Profile | null;
   purchase_request_items?: PurchaseRequestItem[];
   total_amount?: number | null;
-}
-
-export interface BudgetCode {
-  id: string;
-  code: string;
-  description: string | null;
-  created_at: string;
-  updated_at: string;
 }
 
 export interface FormData {

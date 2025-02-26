@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { RequestDetails } from "./form-sections/RequestDetails";
 import { ProductDetails } from "./form-sections/ProductDetails";
 import { AttachmentSection } from "./form-sections/AttachmentSection";
-import { Laboratory, BudgetCodeResponse, FormData, Supplier } from "./types";
+import { Laboratory, BudgetCode, FormData, Supplier } from "./types";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -77,7 +78,7 @@ export const PurchaseRequestForm = ({
     enabled: canSelectLaboratory || userLaboratories.length > 0
   });
 
-  const { data: budgetCodes } = useQuery<BudgetCodeResponse[]>({
+  const { data: budgetCodes } = useQuery<BudgetCode[]>({
     queryKey: ['budgetCodes', form.watch('laboratoryId')],
     queryFn: async () => {
       const laboratoryId = form.watch('laboratoryId');
