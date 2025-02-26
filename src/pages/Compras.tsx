@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Plus, ShoppingCart, FileText, Plane, BookOpen, CreditCard } from "lucide-react";
-import { PurchaseRequestList } from "@/components/purchases/PurchaseRequestList";
+import PurchaseRequestList from "@/components/purchases/PurchaseRequestList";
 import { PurchaseRequestForm, FormValues } from "@/components/purchases/PurchaseRequestForm";
 import { toast } from "sonner";
 import { CreatePurchaseRequestDialog } from "@/components/purchases/CreatePurchaseRequestDialog";

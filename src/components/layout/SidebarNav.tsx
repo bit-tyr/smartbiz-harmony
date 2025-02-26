@@ -1,3 +1,4 @@
+
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, FileText, Wrench, Home, Users, Database } from "lucide-react";
@@ -19,9 +20,7 @@ export const SidebarNav = ({ isAdmin }: SidebarNavProps) => {
         const { data: profile, error } = await supabase
           .from('profiles')
           .select(`
-            roles (
-              name
-            )
+            role:roles!role_id(name)
           `)
           .eq('id', user.id)
           .single();
@@ -31,8 +30,8 @@ export const SidebarNav = ({ isAdmin }: SidebarNavProps) => {
           return;
         }
 
-        if (profile?.roles) {
-          setUserRole(profile.roles.name);
+        if (profile?.role) {
+          setUserRole(profile.role.name);
         }
       }
     };

@@ -27,7 +27,12 @@ export const Header = () => {
         if (user) {
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
-            .select('first_name, last_name, is_admin, roles (name)')
+            .select(`
+              first_name,
+              last_name,
+              is_admin,
+              role:roles!role_id(name)
+            `)
             .eq('id', user.id)
             .single();
 
@@ -44,7 +49,7 @@ export const Header = () => {
             setUserFullName(fullName || 'Usuario');
             setIsAdmin(!!profile.is_admin);
             
-            console.log('User role:', profile.roles?.name);
+            console.log('User role:', profile.role?.name);
             console.log('Is admin:', profile.is_admin);
           }
         }

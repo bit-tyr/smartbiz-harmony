@@ -28,14 +28,13 @@ import { z } from "zod";
 import { AttachmentSection } from "./form-sections/AttachmentSection";
 import { useState, useEffect } from "react";
 import { Database } from "@/types/database.types";
+import { Laboratory, BudgetCode } from "./types";
 
 type Tables = Database['public']['Tables'];
-type Laboratory = Tables['laboratories']['Row'];
-type BudgetCode = Tables['budget_codes']['Row'];
 type Supplier = Tables['suppliers']['Row'];
 type LaboratoryUser = Tables['laboratory_users']['Row'];
 
-export interface FormValues {
+interface FormData {
   laboratoryId: string;
   budgetCodeId: string;
   supplierId: string;
@@ -44,14 +43,13 @@ export interface FormValues {
   unitPrice: number;
   currency: string;
   observations?: string;
-  files?: File[];
 }
 
-interface PurchaseRequestFormProps {
-  onSubmit: (values: FormValues & { files: File[] }) => Promise<void>;
+export interface PurchaseRequestFormProps {
+  onSubmit: (values: FormData & { files: File[] }) => Promise<void>;
   isSubmitting: boolean;
   onCancel: () => void;
-  initialValues?: FormValues;
+  initialValues?: Partial<FormData>;
   isEditing?: boolean;
   purchaseRequestId?: string;
 }
@@ -69,7 +67,7 @@ export const PurchaseRequestForm = ({
   const [userLaboratories, setUserLaboratories] = useState<string[]>([]);
   const [canSelectLaboratory, setCanSelectLaboratory] = useState(false);
 
-  const form = useForm<FormValues>({
+  const form = useForm<FormData>({
     defaultValues: initialValues,
     resolver: zodResolver(
       z.object({
@@ -144,7 +142,7 @@ export const PurchaseRequestForm = ({
     getUserInfo();
   }, [form]);
 
-  const handleSubmit = async (values: FormValues) => {
+  const handleSubmit = async (values: FormData) => {
     await onSubmit({ ...values, files: selectedFiles });
   };
 
