@@ -77,6 +77,6 @@ export interface Attachment {
   updated_at: string;
 }
 
-export interface JsonError {
+export type JsonError = {
   error: true;
-} & String;
+} & string;
