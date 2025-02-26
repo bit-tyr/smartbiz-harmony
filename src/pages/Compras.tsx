@@ -1,19 +1,20 @@
-import { useState, useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Plus, ShoppingCart, FileText, Plane, BookOpen, CreditCard } from "lucide-react";
 import PurchaseRequestList from "@/components/purchases/PurchaseRequestList";
-import { PurchaseRequestForm, FormValues } from "@/components/purchases/PurchaseRequestForm";
+import { PurchaseRequestForm } from "@/components/purchases/PurchaseRequestForm";
 import { toast } from "sonner";
 import { CreatePurchaseRequestDialog } from "@/components/purchases/CreatePurchaseRequestDialog";
-import { PurchaseRequestView } from "@/components/purchases/PurchaseRequestView";
+import PurchaseRequestView from "@/components/purchases/PurchaseRequestView";
 import { FormsTab } from "@/components/purchases/tabs/FormsTab";
 import { FaqTab } from "@/components/purchases/tabs/FaqTab";
 import { usePurchaseRequests } from "@/hooks/usePurchaseRequests";
-import { PurchaseRequest } from "@/components/purchases/types";
+import { PurchaseRequest, FormData } from "@/components/purchases/types";
+// ... keep rest of imports
 import { TravelRequest } from "@/components/travel/types";
 import { AttachmentSection } from "@/components/purchases/form-sections/AttachmentSection";
 import { sanitizeFileName } from "@/components/purchases/form-sections/AttachmentSection";
@@ -107,7 +108,7 @@ const Compras = () => {
     retryDelay: 1000,
   });
 
-  const handleSubmit = async (values: FormValues) => {
+  const handleSubmit = async (values: FormData & { files: File[] }) => {
     if (!tempRequestId) return;
     try {
       setIsSubmitting(true);

@@ -13,16 +13,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { UseFormReturn } from "react-hook-form";
-import { FormValues } from "../PurchaseRequestForm";
-import { Database } from "@/types/database.types";
+import { FormData, Laboratory, BudgetCode } from "../types";
 import { useEffect } from "react";
 
-type Tables = Database['public']['Tables'];
-type Laboratory = Tables['laboratories']['Row'];
-type BudgetCode = Tables['budget_codes']['Row'];
-
 export interface RequestDetailsProps {
-  form: UseFormReturn<FormValues>;
+  form: UseFormReturn<FormData>;
   laboratories: Laboratory[];
   budgetCodes: BudgetCode[];
   userLaboratories: string[];

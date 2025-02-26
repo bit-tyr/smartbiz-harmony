@@ -4,6 +4,8 @@ import { Json } from "@/types/supabase";
 export interface Laboratory {
   id: string;
   name: string;
+  created_at: string;
+  description: string | null;
 }
 
 export interface BudgetCode {
@@ -47,11 +49,10 @@ export interface PurchaseRequestItem {
 
 export interface PurchaseRequest {
   id: string;
-  number: string;
+  number: string | null;
   created_at: string | null;
   deleted_at?: string | null;
-  creator_id?: string;
-  user_id: string;
+  user_id: string | null;
   laboratory_id: string | null;
   budget_code_id: string | null;
   observations: string | null;
@@ -76,15 +77,15 @@ export interface Attachment {
   updated_at: string;
 }
 
-export type JsonError = {
-  error: true;
-} & string;
-
-export interface Laboratory {
-  id: string;
-  name: string;
-  created_at: string;
-  description: string | null;
+export interface FormData {
+  laboratoryId: string;
+  budgetCodeId: string;
+  supplierId: string;
+  productId: string;
+  quantity: number;
+  unitPrice: number;
+  currency: string;
+  observations?: string;
 }
 
 export interface BudgetCodeWithLaboratory extends BudgetCode {

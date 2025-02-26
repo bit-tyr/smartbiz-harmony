@@ -1,49 +1,21 @@
 import { useForm } from "react-hook-form";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { FormSection } from "./form-sections/FormSection";
 import { RequestDetails } from "./form-sections/RequestDetails";
 import { ProductDetails } from "./form-sections/ProductDetails";
-import { Loader2 } from "lucide-react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { AttachmentSection } from "./form-sections/AttachmentSection";
+import { Laboratory, BudgetCode, FormData } from "./types";
+import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Database } from "@/types/database.types";
-import { Laboratory, BudgetCode } from "./types";
 
 type Tables = Database['public']['Tables'];
 type Supplier = Tables['suppliers']['Row'];
 type LaboratoryUser = Tables['laboratory_users']['Row'];
-
-interface FormData {
-  laboratoryId: string;
-  budgetCodeId: string;
-  supplierId: string;
-  productId: string;
-  quantity: number;
-  unitPrice: number;
-  currency: string;
-  observations?: string;
-}
 
 export interface PurchaseRequestFormProps {
   onSubmit: (values: FormData & { files: File[] }) => Promise<void>;
@@ -83,14 +55,12 @@ export const PurchaseRequestForm = ({
     )
   });
 
-  // Obtener el rol y laboratorios del usuario
   useEffect(() => {
     const getUserInfo = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        // Obtener el perfil del usuario
         const { data: profile } = await supabase
           .from('profiles')
           .select('role_id')
@@ -98,7 +68,6 @@ export const PurchaseRequestForm = ({
           .single();
 
         if (profile) {
-          // Obtener el rol
           const { data: role } = await supabase
             .from('roles')
             .select('name')
@@ -107,12 +76,10 @@ export const PurchaseRequestForm = ({
 
           if (role?.name) {
             setUserRole(role.name);
-            // Los usuarios con rol 'admin' o 'purchases' pueden seleccionar cualquier laboratorio
             const canSelect = role.name === 'admin' || role.name === 'purchases';
             setCanSelectLaboratory(canSelect);
 
             if (!canSelect) {
-              // Obtener los laboratorios asignados al usuario
               const { data: laboratoryUsers } = await supabase
                 .from('laboratories')
                 .select(`
@@ -126,7 +93,6 @@ export const PurchaseRequestForm = ({
                 const laboratoryIds = laboratoryUsers.map(lu => lu.id);
                 setUserLaboratories(laboratoryIds);
                 
-                // Si solo hay un laboratorio asignado, seleccionarlo automáticamente
                 if (laboratoryIds.length === 1) {
                   form.setValue('laboratoryId', laboratoryIds[0]);
                 }
@@ -142,14 +108,6 @@ export const PurchaseRequestForm = ({
     getUserInfo();
   }, [form]);
 
-  const handleSubmit = async (values: FormData) => {
-    await onSubmit({ ...values, files: selectedFiles });
-  };
-
-  const handleFilesChange = (files: File[]) => {
-    setSelectedFiles(files);
-  };
-
   const { data: laboratories } = useQuery<Laboratory[]>({
     queryKey: ['laboratories'],
     queryFn: async () => {
@@ -158,7 +116,6 @@ export const PurchaseRequestForm = ({
         .select('*')
         .order('name');
       
-      // Si el usuario no es admin ni purchases, filtrar solo los laboratorios asignados
       if (!canSelectLaboratory && userLaboratories.length > 0) {
         query = query.in('id', userLaboratories);
       }
@@ -180,9 +137,7 @@ export const PurchaseRequestForm = ({
         .from('budget_codes')
         .select(`
           *,
-          laboratory_budget_codes!inner (
-            laboratory_id
-          )
+          laboratory_budget_codes!inner(laboratory_id)
         `)
         .eq('laboratory_budget_codes.laboratory_id', laboratoryId)
         .order('code');
@@ -204,68 +159,74 @@ export const PurchaseRequestForm = ({
     },
   });
 
+  const handleSubmit = async (values: FormData) => {
+    await onSubmit({ ...values, files: selectedFiles });
+  };
+
+  const handleFilesChange = (files: File[]) => {
+    setSelectedFiles(files);
+  };
+
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <RequestDetails 
-          form={form}
-          laboratories={laboratories || []}
-          budgetCodes={budgetCodes || []}
-          userLaboratories={userLaboratories}
-          canSelectLaboratory={canSelectLaboratory}
-          isEditing={isEditing}
-        />
-        
-        <ProductDetails
-          form={form}
-          suppliers={suppliers || []}
-        />
+    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+      <RequestDetails 
+        form={form}
+        laboratories={laboratories || []}
+        budgetCodes={budgetCodes || []}
+        userLaboratories={userLaboratories}
+        canSelectLaboratory={canSelectLaboratory}
+        isEditing={isEditing}
+      />
+      
+      <ProductDetails
+        form={form}
+        suppliers={suppliers || []}
+      />
 
-        <FormField
-          control={form.control}
-          name="observations"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Observaciones</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="Ingrese observaciones adicionales" 
-                  {...field} 
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {purchaseRequestId && (
-          <AttachmentSection
-            purchaseRequestId={purchaseRequestId}
-            onFilesChange={handleFilesChange}
-          />
+      <FormField
+        control={form.control}
+        name="observations"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Observaciones</FormLabel>
+            <FormControl>
+              <Textarea 
+                placeholder="Ingrese observaciones adicionales" 
+                {...field} 
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
         )}
+      />
 
-        <div className="flex justify-end gap-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-            disabled={isSubmitting}
-          >
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Guardando...
-              </>
-            ) : (
-              'Guardar'
-            )}
-          </Button>
-        </div>
-      </form>
-    </Form>
+      {purchaseRequestId && (
+        <AttachmentSection
+          purchaseRequestId={purchaseRequestId}
+          onFilesChange={handleFilesChange}
+        />
+      )}
+
+      <div className="flex justify-end gap-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          disabled={isSubmitting}
+        >
+          Cancelar
+        </Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Guardando...
+            </>
+          ) : (
+            'Guardar'
+          )}
+        </Button>
+      </div>
+    </form>
   );
 };

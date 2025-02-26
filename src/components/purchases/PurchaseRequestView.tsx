@@ -8,7 +8,7 @@ interface PurchaseRequestViewProps {
   onClose: () => void;
 }
 
-const PurchaseRequestView: React.FC<PurchaseRequestViewProps> = ({ request, onClose }) => {
+export const PurchaseRequestView: React.FC<PurchaseRequestViewProps> = ({ request, onClose }) => {
   return <PurchaseRequestDetails request={request} onClose={onClose} />;
 };
 
