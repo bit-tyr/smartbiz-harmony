@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,7 +11,15 @@ import { AttachmentSection } from "./form-sections/AttachmentSection";
 import { Laboratory, BudgetCode, FormData } from "./types";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
 import { Database } from "@/types/database.types";
 
 type Tables = Database['public']['Tables'];
@@ -136,27 +145,24 @@ export const PurchaseRequestForm = ({
       const { data, error } = await supabase
         .from('budget_codes')
         .select(`
-          *,
+          id,
+          code,
+          description,
+          created_at,
+          updated_at,
           laboratory_budget_codes!inner(laboratory_id)
         `)
         .eq('laboratory_budget_codes.laboratory_id', laboratoryId)
         .order('code');
+
       if (error) throw error;
-      return data;
+
+      return data.map(budgetCode => ({
+        ...budgetCode,
+        laboratory_budget_codes: budgetCode.laboratory_budget_codes || []
+      }));
     },
     enabled: !!form.watch('laboratoryId')
-  });
-
-  const { data: suppliers } = useQuery<Supplier[]>({
-    queryKey: ['suppliers'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('suppliers')
-        .select('*')
-        .order('name');
-      if (error) throw error;
-      return data;
-    },
   });
 
   const handleSubmit = async (values: FormData) => {

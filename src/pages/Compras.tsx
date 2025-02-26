@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,25 +14,17 @@ import { FormsTab } from "@/components/purchases/tabs/FormsTab";
 import { FaqTab } from "@/components/purchases/tabs/FaqTab";
 import { usePurchaseRequests } from "@/hooks/usePurchaseRequests";
 import { PurchaseRequest, FormData } from "@/components/purchases/types";
-// ... keep rest of imports
-import { TravelRequest } from "@/components/travel/types";
-import { AttachmentSection } from "@/components/purchases/form-sections/AttachmentSection";
-import { sanitizeFileName } from "@/components/purchases/form-sections/AttachmentSection";
-import { CreateTravelRequestDialog } from "@/components/travel/CreateTravelRequestDialog";
-import { TravelRequestList } from "@/components/travel/TravelRequestList";
 import { motion, AnimatePresence } from "framer-motion";
 
 const Compras = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentView, setCurrentView] = useState<'current' | 'history'>('current');
   const [selectedPurchaseRequest, setSelectedPurchaseRequest] = useState<PurchaseRequest | null>(null);
-  const [selectedTravelRequest, setSelectedTravelRequest] = useState<TravelRequest | null>(null);
   const [showPurchaseForm, setShowPurchaseForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const [tempRequestId, setTempRequestId] = useState<string | null>(null);
-  const [showTravelForm, setShowTravelForm] = useState(false);
 
   useEffect(() => {
     if (showPurchaseForm && !tempRequestId) {
@@ -471,19 +463,6 @@ const Compras = () => {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {showTravelForm && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-        >
-          <CreateTravelRequestDialog
-            open={showTravelForm}
-            onOpenChange={setShowTravelForm}
-          />
-        </motion.div>
-      )}
     </motion.div>
   );
 }
