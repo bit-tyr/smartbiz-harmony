@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface UserProfile {
@@ -8,13 +9,19 @@ export interface UserProfile {
   laboratory_id: string | null;
   first_name: string | null;
   last_name: string | null;
+  roles?: {
+    name: string;
+  };
 }
 
 export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
   try {
     const { data: profile, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select(`
+        *,
+        roles:roles(name)
+      `)
       .eq('id', userId)
       .single();
 

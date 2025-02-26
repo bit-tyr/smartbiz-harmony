@@ -70,7 +70,6 @@ export const PurchaseRequestList = ({ searchQuery, onSelect, view, onSearchChang
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) {
-          console.error('No hay sesión de usuario');
           toast.error("No hay sesión de usuario");
           throw new Error("No authenticated user");
         }
@@ -88,7 +87,12 @@ export const PurchaseRequestList = ({ searchQuery, onSelect, view, onSearchChang
               code,
               description
             ),
-            profiles!fk_user_id(first_name, last_name),
+            profile:profiles(
+              id,
+              first_name,
+              last_name,
+              roles:roles(name)
+            ),
             purchase_request_items(
               id,
               quantity,
@@ -118,25 +122,17 @@ export const PurchaseRequestList = ({ searchQuery, onSelect, view, onSearchChang
 
         const { data, error } = await query;
         if (error) {
-          console.error('Error detallado al cargar solicitudes:', error);
-          toast.error(`Error al cargar las solicitudes: ${error.message}`);
+          console.error('Error fetching purchase requests:', error);
+          toast.error("Error al cargar las solicitudes");
           throw error;
         }
 
-        if (!data) {
-          return [];
-        }
-
-        return data;
+        return data as unknown as PurchaseRequest[];
       } catch (error) {
-        console.error('Error inesperado al cargar solicitudes:', error);
-        toast.error("Error inesperado al cargar las solicitudes");
+        console.error('Error fetching purchase requests:', error);
         throw error;
       }
     },
-    retry: 1,
-    retryDelay: 1000,
-    enabled: initialLoadDone
   });
 
   const filteredRequests = useMemo(() => {
@@ -152,8 +148,8 @@ export const PurchaseRequestList = ({ searchQuery, onSelect, view, onSearchChang
         request.purchase_request_items?.[0]?.product?.name,
         request.purchase_request_items?.[0]?.product?.supplier?.name,
         request.observations,
-        request.profiles?.first_name,
-        request.profiles?.last_name,
+        request.profile?.first_name,
+        request.profile?.last_name,
         statusConfig[request.status]?.label
       ];
 
@@ -385,7 +381,7 @@ export const PurchaseRequestList = ({ searchQuery, onSelect, view, onSearchChang
         'Estado': statusConfig[request.status]?.label,
         'Fecha': new Date(request.created_at).toLocaleDateString(),
         'Observaciones': request.observations,
-        'Creado por': `${request.profiles?.first_name || ''} ${request.profiles?.last_name || ''}`
+        'Creado por': `${request.profile?.first_name || ''} ${request.profile?.last_name || ''}`
       }));
 
     const ws = utils.json_to_sheet(selectedData);
@@ -418,7 +414,7 @@ export const PurchaseRequestList = ({ searchQuery, onSelect, view, onSearchChang
         `${request.purchase_request_items?.[0]?.currency} ${request.purchase_request_items?.[0]?.unit_price}` || '',
         statusConfig[request.status]?.label || '',
         new Date(request.created_at).toLocaleDateString(),
-        `${request.profiles?.first_name || ''} ${request.profiles?.last_name || ''}`
+        `${request.profile?.first_name || ''} ${request.profile?.last_name || ''}`
       ]);
 
     (doc as any).autoTable({

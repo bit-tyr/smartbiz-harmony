@@ -24,14 +24,14 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
+AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
-interface Supplier {
+export interface Supplier {
   id: string;
   name: string;
   ruc: string;
@@ -40,6 +40,8 @@ interface Supplier {
   email: string;
   created_at: string;
   updated_at: string;
+  code: string;
+  description?: string;
 }
 
 export const Supplier = () => {
@@ -68,6 +70,7 @@ export const Supplier = () => {
 
   const handleCreate = async () => {
     try {
+      const code = newName.toLowerCase().replace(/\s+/g, '_');
       const { error } = await supabase
         .from('suppliers')
         .insert([{ 
@@ -75,7 +78,8 @@ export const Supplier = () => {
           ruc: newRuc,
           address: newAddress,
           phone: newPhone,
-          email: newEmail
+          email: newEmail,
+          code: code
         }]);
 
       if (error) {
@@ -104,6 +108,7 @@ export const Supplier = () => {
     if (!selectedSupplier) return;
 
     try {
+      const code = newName.toLowerCase().replace(/\s+/g, '_');
       const { error } = await supabase
         .from('suppliers')
         .update({ 
@@ -111,7 +116,8 @@ export const Supplier = () => {
           ruc: newRuc,
           address: newAddress,
           phone: newPhone,
-          email: newEmail
+          email: newEmail,
+          code: code
         })
         .eq('id', selectedSupplier.id);
 
@@ -335,4 +341,4 @@ export const Supplier = () => {
       </AlertDialog>
     </div>
   );
-}; 
+};

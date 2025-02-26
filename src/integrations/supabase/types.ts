@@ -385,6 +385,7 @@ export type Database = {
           file_type: string | null
           id: string
           purchase_request_id: string | null
+          updated_at: string | null
           uploaded_by: string | null
         }
         Insert: {
@@ -395,6 +396,7 @@ export type Database = {
           file_type?: string | null
           id?: string
           purchase_request_id?: string | null
+          updated_at?: string | null
           uploaded_by?: string | null
         }
         Update: {
@@ -405,6 +407,7 @@ export type Database = {
           file_type?: string | null
           id?: string
           purchase_request_id?: string | null
+          updated_at?: string | null
           uploaded_by?: string | null
         }
         Relationships: [
@@ -580,25 +583,40 @@ export type Database = {
       }
       suppliers: {
         Row: {
+          address: string | null
           code: string
           created_at: string
           description: string | null
+          email: string | null
           id: string
           name: string
+          phone: string | null
+          ruc: string | null
+          updated_at: string | null
         }
         Insert: {
+          address?: string | null
           code: string
           created_at?: string
           description?: string | null
+          email?: string | null
           id?: string
           name: string
+          phone?: string | null
+          ruc?: string | null
+          updated_at?: string | null
         }
         Update: {
+          address?: string | null
           code?: string
           created_at?: string
           description?: string | null
+          email?: string | null
           id?: string
           name?: string
+          phone?: string | null
+          ruc?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -651,6 +669,7 @@ export type Database = {
       }
       travel_requests: {
         Row: {
+          budget_code_id: string | null
           created_at: string | null
           description: string | null
           destination: string
@@ -664,6 +683,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          budget_code_id?: string | null
           created_at?: string | null
           description?: string | null
           destination: string
@@ -677,6 +697,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          budget_code_id?: string | null
           created_at?: string | null
           description?: string | null
           destination?: string
@@ -690,6 +711,20 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "travel_requests_budget_code_id_fkey"
+            columns: ["budget_code_id"]
+            isOneToOne: false
+            referencedRelation: "budget_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "travel_requests_budget_code_id_fkey"
+            columns: ["budget_code_id"]
+            isOneToOne: false
+            referencedRelation: "user_laboratory_budget_codes"
+            referencedColumns: ["budget_code_id"]
+          },
           {
             foreignKeyName: "travel_requests_laboratory_id_fkey"
             columns: ["laboratory_id"]
@@ -841,6 +876,49 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_laboratory_budget_codes"
             referencedColumns: ["budget_code_id"]
+          },
+        ]
+      }
+      profile_roles: {
+        Row: {
+          email: string | null
+          first_name: string | null
+          is_admin: boolean | null
+          is_blocked: boolean | null
+          laboratory_id: string | null
+          last_name: string | null
+          profile_id: string | null
+          role_id: string | null
+          role_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_profiles_roles"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "user_laboratory_budget_codes"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "profiles_laboratory_id_fkey"
+            columns: ["laboratory_id"]
+            isOneToOne: false
+            referencedRelation: "laboratories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
           },
         ]
       }

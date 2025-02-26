@@ -52,7 +52,7 @@ export interface PurchaseRequest {
   budget_code_id: string;
   observations: string;
   status: string;
-  actions: string[];
+  actions: string[] | null;
   laboratory?: Laboratory;
   budget_code?: BudgetCode;
   profile?: Profile;
