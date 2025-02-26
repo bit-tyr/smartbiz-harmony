@@ -12,7 +12,6 @@ import { CreatePurchaseRequestDialog } from "@/components/purchases/CreatePurcha
 import PurchaseRequestView from "@/components/purchases/PurchaseRequestView";
 import { FormsTab } from "@/components/purchases/tabs/FormsTab";
 import { FaqTab } from "@/components/purchases/tabs/FaqTab";
-import { usePurchaseRequests } from "@/hooks/usePurchaseRequests";
 import { PurchaseRequest, FormData } from "@/components/purchases/types";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -25,6 +24,10 @@ const Compras = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const [tempRequestId, setTempRequestId] = useState<string | null>(null);
+
+  const sanitizeFileName = (fileName: string): string => {
+    return fileName.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
+  };
 
   useEffect(() => {
     if (showPurchaseForm && !tempRequestId) {
@@ -199,6 +202,9 @@ const Compras = () => {
     }
   };
 
+  const [showTravelForm, setShowTravelForm] = useState(false);
+  const [selectedTravelRequest, setSelectedTravelRequest] = useState(null);
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -315,7 +321,7 @@ const Compras = () => {
                           </motion.div>
                         </CardHeader>
                         <CardContent className="pt-6">
-                          <TravelRequestList onSelectRequest={setSelectedTravelRequest} />
+                          {/* <TravelRequestList onSelectRequest={setSelectedTravelRequest} /> */}
                         </CardContent>
                       </Card>
                     </motion.div>

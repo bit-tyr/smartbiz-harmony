@@ -1,10 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { FormSection } from "./form-sections/FormSection";
 import { RequestDetails } from "./form-sections/RequestDetails";
 import { ProductDetails } from "./form-sections/ProductDetails";
 import { AttachmentSection } from "./form-sections/AttachmentSection";
@@ -22,9 +22,9 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Database } from "@/types/database.types";
 
-type Tables = Database['public']['Tables'];
-type Supplier = Tables['suppliers']['Row'];
-type LaboratoryUser = Tables['laboratory_users']['Row'];
+type BudgetCodeResponse = Database['public']['Tables']['budget_codes']['Row'] & {
+  laboratory_budget_codes: Array<{ laboratory_id: string }>;
+};
 
 export interface PurchaseRequestFormProps {
   onSubmit: (values: FormData & { files: File[] }) => Promise<void>;
@@ -64,65 +64,12 @@ export const PurchaseRequestForm = ({
     )
   });
 
-  useEffect(() => {
-    const getUserInfo = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role_id')
-          .eq('user_id', user.id)
-          .single();
-
-        if (profile) {
-          const { data: role } = await supabase
-            .from('roles')
-            .select('name')
-            .eq('id', profile.role_id)
-            .single();
-
-          if (role?.name) {
-            setUserRole(role.name);
-            const canSelect = role.name === 'admin' || role.name === 'purchases';
-            setCanSelectLaboratory(canSelect);
-
-            if (!canSelect) {
-              const { data: laboratoryUsers } = await supabase
-                .from('laboratories')
-                .select(`
-                  id,
-                  laboratory_users!inner(user_id)
-                `)
-                .eq('laboratory_users.user_id', user.id)
-                .returns<Array<{ id: string; laboratory_users: Array<{ user_id: string }> }>>();
-
-              if (laboratoryUsers) {
-                const laboratoryIds = laboratoryUsers.map(lu => lu.id);
-                setUserLaboratories(laboratoryIds);
-                
-                if (laboratoryIds.length === 1) {
-                  form.setValue('laboratoryId', laboratoryIds[0]);
-                }
-              }
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error getting user info:', error);
-      }
-    };
-
-    getUserInfo();
-  }, [form]);
-
   const { data: laboratories } = useQuery<Laboratory[]>({
     queryKey: ['laboratories'],
     queryFn: async () => {
       let query = supabase
         .from('laboratories')
-        .select('*')
+        .select('id, name, created_at, description')
         .order('name');
       
       if (!canSelectLaboratory && userLaboratories.length > 0) {
@@ -136,7 +83,7 @@ export const PurchaseRequestForm = ({
     enabled: canSelectLaboratory || userLaboratories.length > 0
   });
 
-  const { data: budgetCodes } = useQuery<BudgetCode[]>({
+  const { data: budgetCodes } = useQuery<BudgetCodeResponse[]>({
     queryKey: ['budgetCodes', form.watch('laboratoryId')],
     queryFn: async () => {
       const laboratoryId = form.watch('laboratoryId');
@@ -149,32 +96,23 @@ export const PurchaseRequestForm = ({
           code,
           description,
           created_at,
-          updated_at,
           laboratory_budget_codes!inner(laboratory_id)
         `)
         .eq('laboratory_budget_codes.laboratory_id', laboratoryId)
         .order('code');
 
       if (error) throw error;
-
-      return data.map(budgetCode => ({
-        ...budgetCode,
-        laboratory_budget_codes: budgetCode.laboratory_budget_codes || []
-      }));
+      return data;
     },
     enabled: !!form.watch('laboratoryId')
   });
-
-  const handleSubmit = async (values: FormData) => {
-    await onSubmit({ ...values, files: selectedFiles });
-  };
 
   const handleFilesChange = (files: File[]) => {
     setSelectedFiles(files);
   };
 
   return (
-    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
       <RequestDetails 
         form={form}
         laboratories={laboratories || []}
@@ -184,10 +122,7 @@ export const PurchaseRequestForm = ({
         isEditing={isEditing}
       />
       
-      <ProductDetails
-        form={form}
-        suppliers={suppliers || []}
-      />
+      <ProductDetails form={form} />
 
       <FormField
         control={form.control}
