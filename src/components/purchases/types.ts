@@ -11,6 +11,7 @@ export interface BudgetCode {
 }
 
 export interface Profile {
+  id: string;
   first_name: string;
   last_name: string;
   email?: string;
@@ -48,11 +49,12 @@ export interface PurchaseRequest {
   actions: string[];
   laboratory?: Laboratory;
   budget_code?: BudgetCode;
-  profiles?: Profile;
+  profile?: Profile;
   purchase_request_items?: PurchaseRequestItem[];
   bank?: string;
   account_number?: string;
   account_holder?: string;
+  total_amount?: number;
 }
 
 export interface Attachment {

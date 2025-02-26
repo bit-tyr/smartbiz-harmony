@@ -11,62 +11,90 @@ export type Database = {
     Tables: {
       admin_users: {
         Row: {
-          created_at: string | null
+          created_at: string
           user_id: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           user_id: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "admin_users_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_laboratory_budget_codes"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      budget_code_products: {
+        Row: {
+          budget_code_id: string
+          created_at: string
+          id: string
+          product_id: string
+        }
+        Insert: {
+          budget_code_id: string
+          created_at?: string
+          id?: string
+          product_id: string
+        }
+        Update: {
+          budget_code_id?: string
+          created_at?: string
+          id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_code_products_budget_code_id_fkey"
+            columns: ["budget_code_id"]
+            isOneToOne: false
+            referencedRelation: "budget_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_code_products_budget_code_id_fkey"
+            columns: ["budget_code_id"]
+            isOneToOne: false
+            referencedRelation: "user_laboratory_budget_codes"
+            referencedColumns: ["budget_code_id"]
+          },
+          {
+            foreignKeyName: "budget_code_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       budget_codes: {
         Row: {
           code: string
-          created_at: string | null
+          created_at: string
           description: string | null
-          end_date: string | null
           id: string
-          laboratory_id: string | null
-          start_date: string | null
-          total_budget: number | null
-          updated_at: string | null
         }
         Insert: {
           code: string
-          created_at?: string | null
+          created_at?: string
           description?: string | null
-          end_date?: string | null
           id?: string
-          laboratory_id?: string | null
-          start_date?: string | null
-          total_budget?: number | null
-          updated_at?: string | null
         }
         Update: {
           code?: string
-          created_at?: string | null
+          created_at?: string
           description?: string | null
-          end_date?: string | null
           id?: string
-          laboratory_id?: string | null
-          start_date?: string | null
-          total_budget?: number | null
-          updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "budget_codes_laboratory_id_fkey"
-            columns: ["laboratory_id"]
-            isOneToOne: false
-            referencedRelation: "laboratories"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       chat_messages: {
         Row: {
@@ -90,34 +118,109 @@ export type Database = {
           sender_id?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "user_laboratory_budget_codes"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       laboratories: {
         Row: {
-          code: string | null
-          created_at: string | null
+          created_at: string
           description: string | null
           id: string
           name: string
-          updated_at: string | null
         }
         Insert: {
-          code?: string | null
-          created_at?: string | null
+          created_at?: string
           description?: string | null
           id?: string
           name: string
-          updated_at?: string | null
         }
         Update: {
-          code?: string | null
-          created_at?: string | null
+          created_at?: string
           description?: string | null
           id?: string
           name?: string
-          updated_at?: string | null
         }
         Relationships: []
+      }
+      laboratory_budget_codes: {
+        Row: {
+          budget_code_id: string
+          created_at: string
+          laboratory_id: string
+        }
+        Insert: {
+          budget_code_id: string
+          created_at?: string
+          laboratory_id: string
+        }
+        Update: {
+          budget_code_id?: string
+          created_at?: string
+          laboratory_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laboratory_budget_codes_budget_code_id_fkey"
+            columns: ["budget_code_id"]
+            isOneToOne: false
+            referencedRelation: "budget_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laboratory_budget_codes_budget_code_id_fkey"
+            columns: ["budget_code_id"]
+            isOneToOne: false
+            referencedRelation: "user_laboratory_budget_codes"
+            referencedColumns: ["budget_code_id"]
+          },
+          {
+            foreignKeyName: "laboratory_budget_codes_laboratory_id_fkey"
+            columns: ["laboratory_id"]
+            isOneToOne: false
+            referencedRelation: "laboratories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      laboratory_users: {
+        Row: {
+          created_at: string
+          laboratory_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          laboratory_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          laboratory_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laboratory_users_laboratory_id_fkey"
+            columns: ["laboratory_id"]
+            isOneToOne: false
+            referencedRelation: "laboratories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laboratory_users_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_laboratory_budget_codes"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -158,41 +261,42 @@ export type Database = {
             referencedRelation: "purchase_requests"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_laboratory_budget_codes"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       products: {
         Row: {
-          code: string | null
-          created_at: string | null
-          currency: string | null
+          code: string
+          created_at: string
           description: string | null
           id: string
           name: string
           supplier_id: string | null
-          unit_price: number | null
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
-          code?: string | null
-          created_at?: string | null
-          currency?: string | null
+          code: string
+          created_at?: string
           description?: string | null
           id?: string
           name: string
           supplier_id?: string | null
-          unit_price?: number | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
-          code?: string | null
-          created_at?: string | null
-          currency?: string | null
+          code?: string
+          created_at?: string
           description?: string | null
           id?: string
           name?: string
           supplier_id?: string | null
-          unit_price?: number | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -206,74 +310,33 @@ export type Database = {
       }
       profiles: {
         Row: {
-          created_at: string | null
-          default_group_id: string | null
-          email: string | null
-          first_name: string | null
+          created_at: string
           id: string
           is_admin: boolean | null
           is_blocked: boolean | null
-          laboratory_id: string | null
-          last_name: string | null
-          role_id: string | null
-          role_name: string | null
-          updated_at: string | null
-          user_id: string | null
-          username: string | null
+          updated_at: string
         }
         Insert: {
-          created_at?: string | null
-          default_group_id?: string | null
-          email?: string | null
-          first_name?: string | null
+          created_at?: string
           id: string
           is_admin?: boolean | null
           is_blocked?: boolean | null
-          laboratory_id?: string | null
-          last_name?: string | null
-          role_id?: string | null
-          role_name?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-          username?: string | null
+          updated_at?: string
         }
         Update: {
-          created_at?: string | null
-          default_group_id?: string | null
-          email?: string | null
-          first_name?: string | null
+          created_at?: string
           id?: string
           is_admin?: boolean | null
           is_blocked?: boolean | null
-          laboratory_id?: string | null
-          last_name?: string | null
-          role_id?: string | null
-          role_name?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-          username?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "profiles_laboratory_id_fkey"
-            columns: ["laboratory_id"]
-            isOneToOne: false
-            referencedRelation: "laboratories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "profiles_role_id_fkey"
-            columns: ["role_id"]
-            isOneToOne: false
-            referencedRelation: "roles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "profiles_role_id_fkey"
-            columns: ["role_id"]
-            isOneToOne: false
-            referencedRelation: "user_roles_view"
-            referencedColumns: ["role_id"]
+            foreignKeyName: "profiles_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "user_laboratory_budget_codes"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -397,13 +460,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "purchase_request_items_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "purchase_request_items_purchase_request_id_fkey"
             columns: ["purchase_request_id"]
             isOneToOne: false
@@ -454,20 +510,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "purchase_requests_budget_code_id_fkey"
-            columns: ["budget_code_id"]
-            isOneToOne: false
-            referencedRelation: "budget_codes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "purchase_requests_laboratory_id_fkey"
-            columns: ["laboratory_id"]
-            isOneToOne: false
-            referencedRelation: "laboratories"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "purchase_requests_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -478,19 +520,19 @@ export type Database = {
       }
       roles: {
         Row: {
-          created_at: string | null
+          created_at: string
           description: string | null
           id: string
           name: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           description?: string | null
           id?: string
           name: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           description?: string | null
           id?: string
           name?: string
@@ -499,34 +541,25 @@ export type Database = {
       }
       suppliers: {
         Row: {
-          address: string | null
-          created_at: string | null
-          email: string | null
+          code: string
+          created_at: string
+          description: string | null
           id: string
           name: string
-          phone: string | null
-          ruc: string | null
-          updated_at: string | null
         }
         Insert: {
-          address?: string | null
-          created_at?: string | null
-          email?: string | null
+          code: string
+          created_at?: string
+          description?: string | null
           id?: string
           name: string
-          phone?: string | null
-          ruc?: string | null
-          updated_at?: string | null
         }
         Update: {
-          address?: string | null
-          created_at?: string | null
-          email?: string | null
+          code?: string
+          created_at?: string
+          description?: string | null
           id?: string
           name?: string
-          phone?: string | null
-          ruc?: string | null
-          updated_at?: string | null
         }
         Relationships: []
       }
@@ -614,7 +647,15 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "travel_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_laboratory_budget_codes"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       user_laboratories: {
         Row: {
@@ -636,13 +677,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "user_laboratories_laboratory_id_fkey"
-            columns: ["laboratory_id"]
-            isOneToOne: false
-            referencedRelation: "laboratories"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "user_laboratories_user_id_fkey"
             columns: ["user_id"]
@@ -673,18 +707,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "user_role_mapping_role_id_fkey"
-            columns: ["role_id"]
+            foreignKeyName: "user_role_mapping_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "roles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_role_mapping_role_id_fkey"
-            columns: ["role_id"]
-            isOneToOne: false
-            referencedRelation: "user_roles_view"
-            referencedColumns: ["role_id"]
+            referencedRelation: "user_laboratory_budget_codes"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -705,20 +732,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "user_roles_role_id_fkey"
-            columns: ["role_id"]
-            isOneToOne: false
-            referencedRelation: "roles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_roles_role_id_fkey"
-            columns: ["role_id"]
-            isOneToOne: false
-            referencedRelation: "user_roles_view"
-            referencedColumns: ["role_id"]
-          },
           {
             foreignKeyName: "user_roles_user_id_fkey"
             columns: ["user_id"]
@@ -760,37 +773,34 @@ export type Database = {
       }
     }
     Views: {
-      user_primary_role: {
+      budget_code_products_mv: {
         Row: {
-          profile_id: string | null
-          role_description: string | null
-          role_id: string | null
-          role_name: string | null
-          user_id: string | null
+          budget_code_id: string | null
+          product_ids: string[] | null
         }
-        Insert: {
-          profile_id?: string | null
-          role_description?: never
-          role_id?: never
-          role_name?: never
-          user_id?: string | null
-        }
-        Update: {
-          profile_id?: string | null
-          role_description?: never
-          role_id?: never
-          role_name?: never
-          user_id?: string | null
-        }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "budget_code_products_budget_code_id_fkey"
+            columns: ["budget_code_id"]
+            isOneToOne: false
+            referencedRelation: "budget_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_code_products_budget_code_id_fkey"
+            columns: ["budget_code_id"]
+            isOneToOne: false
+            referencedRelation: "user_laboratory_budget_codes"
+            referencedColumns: ["budget_code_id"]
+          },
+        ]
       }
-      user_roles_view: {
+      user_laboratory_budget_codes: {
         Row: {
-          profile_id: string | null
-          role_description: string | null
-          role_id: string | null
-          role_name: string | null
-          role_system_name: string | null
+          budget_code_id: string | null
+          code: string | null
+          description: string | null
+          user_id: string | null
         }
         Relationships: []
       }
@@ -827,6 +837,20 @@ export type Database = {
           description: string
         }[]
       }
+      get_user_role: {
+        Args: {
+          user_uuid: string
+        }
+        Returns: string
+      }
+      get_user_roles: {
+        Args: {
+          user_uuid: string
+        }
+        Returns: {
+          role_name: string
+        }[]
+      }
       is_admin:
         | {
             Args: Record<PropertyKey, never>
@@ -838,6 +862,18 @@ export type Database = {
             }
             Returns: boolean
           }
+      is_administrator: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_manager: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_purchases: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       list_existing_tables: {
         Args: Record<PropertyKey, never>
         Returns: {

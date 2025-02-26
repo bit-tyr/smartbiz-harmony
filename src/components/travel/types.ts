@@ -48,3 +48,14 @@ export interface TravelRequest {
   end_date: string;
   description?: string;
 }
+
+export interface TravelRequestFormData extends Omit<TravelRequest, 'id' | 'created_at' | 'updated_at'> {
+  laboratoryId: string;
+  budgetCodeId?: string;
+  departureDate: Date;
+  returnDate: Date;
+  birthDate?: Date;
+  documentExpiry?: Date;
+  checkIn?: Date | null;
+  checkOut?: Date | null;
+}
