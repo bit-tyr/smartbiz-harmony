@@ -78,20 +78,13 @@ export const PurchaseRequestList = ({ searchQuery, onSelect, view, onSearchChang
           .from('purchase_requests')
           .select(`
             *,
-            laboratory:laboratories(
-              id,
-              name
-            ),
-            budget_code:budget_codes(
-              id,
-              code,
-              description
-            ),
-            profile:profiles(
+            laboratory:laboratories!laboratory_id(id, name),
+            budget_code:budget_codes!budget_code_id(id, code, description),
+            profile:profiles!user_id(
               id,
               first_name,
               last_name,
-              roles:roles(name)
+              roles:roles!role_id(name)
             ),
             purchase_request_items(
               id,
@@ -127,7 +120,7 @@ export const PurchaseRequestList = ({ searchQuery, onSelect, view, onSearchChang
           throw error;
         }
 
-        return data as unknown as PurchaseRequest[];
+        return (data || []) as PurchaseRequest[];
       } catch (error) {
         console.error('Error fetching purchase requests:', error);
         throw error;
@@ -454,7 +447,7 @@ export const PurchaseRequestList = ({ searchQuery, onSelect, view, onSearchChang
           .from('profiles')
           .select(`
             role_id,
-            roles:roles(name)
+            roles:roles!role_id(name)
           `)
           .eq('id', session.user.id)
           .single();

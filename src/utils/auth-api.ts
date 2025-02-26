@@ -11,7 +11,7 @@ export interface UserProfile {
   last_name: string | null;
   roles?: {
     name: string;
-  };
+  } | null;
 }
 
 export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
@@ -20,10 +20,10 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
       .from('profiles')
       .select(`
         *,
-        roles:roles(name)
+        roles:roles!role_id(name)
       `)
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Error fetching user profile:', error);

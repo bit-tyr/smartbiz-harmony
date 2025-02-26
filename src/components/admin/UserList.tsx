@@ -15,22 +15,7 @@ import { toast } from "sonner";
 import { LoadingSpinner } from "@/components/ui/loading";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-
-interface Profile {
-  id: string;
-  email: string | null;
-  is_admin: boolean | null;
-  is_blocked: boolean | null;
-  role_id: string;
-  laboratory_id: string | null;
-  first_name: string | null;
-  last_name: string | null;
-  created_at: string;
-  updated_at: string;
-  roles?: {
-    name: string;
-  };
-}
+import { Profile } from "@/components/purchases/types";
 
 interface UserListProps {
   searchQuery: string;
@@ -47,9 +32,7 @@ export const UserList = ({ searchQuery }: UserListProps) => {
         .from('profiles')
         .select(`
           *,
-          roles (
-            name
-          )
+          roles:roles!role_id(name)
         `);
 
       if (profilesError) {
@@ -62,7 +45,7 @@ export const UserList = ({ searchQuery }: UserListProps) => {
       }
 
       console.log("Fetched profiles data:", profilesData);
-      setProfiles(profilesData);
+      setProfiles(profilesData as Profile[]);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Error al cargar los datos');

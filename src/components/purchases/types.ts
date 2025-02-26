@@ -8,6 +8,8 @@ export interface BudgetCode {
   id: string;
   code: string;
   description: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Profile {
@@ -21,7 +23,7 @@ export interface Profile {
   laboratory_id: string | null;
   roles?: {
     name: string;
-  };
+  } | null;
   created_at: string;
   updated_at: string;
 }
@@ -74,3 +76,7 @@ export interface Attachment {
   created_at: string;
   updated_at: string;
 }
+
+export interface JsonError {
+  error: true;
+} & String;
