@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -73,7 +72,7 @@ export const PurchaseRequestForm = ({
       
       const { data, error } = await query;
       if (error) throw error;
-      return data;
+      return data || [];
     },
     enabled: canSelectLaboratory || userLaboratories.length > 0
   });
@@ -91,14 +90,13 @@ export const PurchaseRequestForm = ({
           code,
           description,
           created_at,
-          updated_at,
           laboratory_budget_codes!inner(laboratory_id)
         `)
         .eq('laboratory_budget_codes.laboratory_id', laboratoryId)
         .order('code');
 
       if (error) throw error;
-      return data;
+      return data || [];
     },
     enabled: !!form.watch('laboratoryId')
   });
@@ -111,7 +109,7 @@ export const PurchaseRequestForm = ({
         .select('*')
         .order('name');
       if (error) throw error;
-      return data;
+      return data || [];
     }
   });
 

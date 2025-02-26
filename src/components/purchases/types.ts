@@ -1,4 +1,3 @@
-
 import { Json } from "@/types/supabase";
 
 export interface Laboratory {
@@ -13,7 +12,6 @@ export interface BudgetCodeResponse {
   code: string;
   description: string | null;
   created_at: string;
-  updated_at: string;
   laboratory_budget_codes: { laboratory_id: string; }[];
 }
 

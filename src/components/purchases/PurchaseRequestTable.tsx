@@ -10,28 +10,26 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table";
-import { formatDate } from "@/lib/utils";
 
 export const PurchaseRequestTable = () => {
-  const { data: requests = [] } = useQuery<PurchaseRequest[]>({
+  const { data: requests } = useQuery<PurchaseRequest[]>({
     queryKey: ['purchaseRequests'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('purchase_requests')
         .select(`
-          id,
-          number,
-          created_at,
-          deleted_at,
-          user_id,
-          laboratory_id,
-          budget_code_id,
-          observations,
-          status,
-          actions,
-          total_amount,
-          laboratory:laboratories(id, name, created_at, description),
-          budget_code:budget_codes(id, code, description),
+          *,
+          laboratory:laboratories(
+            id,
+            name,
+            created_at,
+            description
+          ),
+          budget_code:budget_codes(
+            id,
+            code,
+            description
+          ),
           purchase_request_items(
             id,
             quantity,
@@ -50,11 +48,11 @@ export const PurchaseRequestTable = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as PurchaseRequest[];
+      return (data || []) as PurchaseRequest[];
     }
   });
 
-  if (requests.length === 0) {
+  if (!requests || requests.length === 0) {
     return <div>No hay solicitudes</div>;
   }
 
@@ -74,7 +72,9 @@ export const PurchaseRequestTable = () => {
             <TableCell>{request.number}</TableCell>
             <TableCell>{request.laboratory?.name}</TableCell>
             <TableCell>{request.status}</TableCell>
-            <TableCell>{request.created_at ? new Date(request.created_at).toLocaleDateString() : '-'}</TableCell>
+            <TableCell>
+              {request.created_at ? new Date(request.created_at).toLocaleDateString() : '-'}
+            </TableCell>
           </TableRow>
         ))}
       </TableBody>
